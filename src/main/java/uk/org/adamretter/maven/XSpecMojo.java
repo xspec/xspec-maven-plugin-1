@@ -34,14 +34,19 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * Goal which touches a timestamp file.
+ * Goal which runs any XSpec tests
  *
- * @goal touch
- * 
- * @phase process-sources
+ * @author Adam Retter
+ *
+ * @requiresDependencyResolution test
+ * @goal run-xspec
+ * @phase verify
  */
-public class XSpecMojo extends AbstractMojo
-{
+public class XSpecMojo extends AbstractMojo {
+
+    /** @parameter expression="${skipTests}" default-value="false" */
+    private boolean skipTests;
+
     /**
      * Location of the file.
      * @parameter expression="${project.build.directory}"
@@ -49,9 +54,7 @@ public class XSpecMojo extends AbstractMojo
      */
     private File outputDirectory;
 
-    public void execute()
-        throws MojoExecutionException
-    {
+    public void execute() throws MojoExecutionException {
         File f = outputDirectory;
 
         if ( !f.exists() )
