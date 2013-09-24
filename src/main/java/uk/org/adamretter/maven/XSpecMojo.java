@@ -26,12 +26,18 @@
  */
 package uk.org.adamretter.maven;
 
+import net.sf.saxon.TransformerFactoryImpl;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import javax.xml.transform.*;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Goal which runs any XSpec tests
@@ -48,46 +54,91 @@ public class XSpecMojo extends AbstractMojo {
     private boolean skipTests;
 
     /**
-     * Location of the file.
+     * Location of the outputDirectory
      * @parameter expression="${project.build.directory}"
      * @required
      */
     private File outputDirectory;
 
+    /**
+     * Location of the XSpec tests
+     * @parameter expression="${xspecReportDir}" default-value="${basedir}/src/test/resources/xspec"
+     */
+    private File xspecTestDir;
+
+    /**
+     * Location of the XSpec reports
+     * @parameter expression="${xspecReportDir}" default-value="${project.build.directory}/xspec-reports"
+     */
+    private File xspecReportDir;
+
     public void execute() throws MojoExecutionException {
-        File f = outputDirectory;
 
-        if ( !f.exists() )
-        {
-            f.mkdirs();
-        }
+        final TransformerFactoryImpl factory = new TransformerFactoryImpl();
+        InputStream isCompiler = null;
 
-        File touch = new File( f, "touch.txt" );
+        try {
+            isCompiler = getClass().getClassLoader().getResourceAsStream("xspec/src/compiler/generate-xspec-tests.xsl");
+            final Source srcCompiler = new StreamSource(isCompiler);
 
-        FileWriter w = null;
-        try
-        {
-            w = new FileWriter( touch );
+            final Templates tCompiler = factory.newTemplates(srcCompiler);
 
-            w.write( "touch.txt" );
-        }
-        catch ( IOException e )
-        {
-            throw new MojoExecutionException( "Error creating file " + touch, e );
-        }
-        finally
-        {
-            if ( w != null )
-            {
-                try
-                {
-                    w.close();
-                }
-                catch ( IOException e )
-                {
-                    // ignore
-                }
+            getLog().debug("Looking for XSpecs in: " + xspecTestDir);
+            final List<File> xspecs = findAllXSpecs(xspecTestDir);
+            getLog().info("Found " + xspecs.size() + "XSpecs...");
+
+            for(final File xspec : xspecs) {
+                getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
+
+                /* create the test stylesheet */
+                getLog().info("Creating test stylesheet...");
+
+                final Result result = new StreamResult(new File("/tmp/adam-" + System.currentTimeMillis() + ".xml"));
+
+
+                final TransformerHandler hCompiler = factory.newTransformerHandler(tCompiler);
+                final Transformer transformer = hCompiler.getTransformer();
+                transformer.transform(new StreamSource(xspec), result);
+
+            }
+        } catch(final TransformerException te) {
+            throw new MojoExecutionException(te.getMessage(), te);
+        } finally {
+            if(isCompiler != null) {
+                try { isCompiler.close(); } catch(final IOException ioe) { getLog().warn(ioe); };
             }
         }
+    }
+
+    /**
+     * Recursively find any files whoose name ends '.xspec'
+     * under the directory xspecTestDir
+     *
+     * @param xspecTestDir The directory to search for XSpec files
+     *
+     * @return List of XSpec files
+     */
+    private List<File> findAllXSpecs(final File xspecTestDir) {
+
+        final List<File> specs = new ArrayList<File>();
+
+        final File[] specFiles = xspecTestDir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(final File file) {
+                return file.isFile() && file.getName().endsWith(".xspec");
+            }
+        });
+        specs.addAll(Arrays.asList(specFiles));
+
+        for(final File subDir : xspecTestDir.listFiles(new FileFilter(){
+            @Override
+            public boolean accept(final File file) {
+                return file.isDirectory();
+            }
+        })){
+            specs.addAll(findAllXSpecs(subDir));
+        }
+
+        return specs;
     }
 }
