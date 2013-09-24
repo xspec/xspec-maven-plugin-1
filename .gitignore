@@ -5,6 +5,9 @@
 *.war
 *.ear
 
+# Maven compilation #
+target/
+
 # Intelli-J Files #
 .idea/
 *.iml
