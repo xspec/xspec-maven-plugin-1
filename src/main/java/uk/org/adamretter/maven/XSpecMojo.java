@@ -204,7 +204,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 xtXSpec.transform();
 
             } catch(final SaxonApiException te) {
-                getLog().error(te);
+                getLog().error(te.getMessage());
+                getLog().debug(te);
             }
 
             //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
@@ -257,11 +258,13 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             return new CompiledXSpec(xspecTestFilter.getTests(), compiledXSpec);
 
         } catch(final SaxonApiException sae) {
-            getLog().error(sae);
+            getLog().error(sae.getMessage());
+            getLog().debug(sae);
         } catch(final ParserConfigurationException pce) {
             getLog().error(pce);
         } catch(SAXException saxe) {
-            getLog().error(saxe);
+            getLog().error(saxe.getMessage());
+            getLog().debug(saxe);
         } catch(final FileNotFoundException fnfe) {
             getLog().error(fnfe);
         } finally {

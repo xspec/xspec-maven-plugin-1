@@ -60,7 +60,7 @@ public class ResourceResolver {
             getLogProvider().getLog().debug("Found resource from classpath: " + path);
             return is;
         } else {
-            getLogProvider().getLog().warn("Could not find resource from classpath: " + path);
+            getLogProvider().getLog().debug("Could not find resource from classpath: " + path);
 
             final File f = new File(path);
             try {
@@ -68,10 +68,10 @@ public class ResourceResolver {
                     getLogProvider().getLog().debug("Found resource from filesystem: " + f.getAbsolutePath());
                     return new FileInputStream(f);
                 } else {
-                    getLogProvider().getLog().warn("Could not find resource from filesystem: " + f.getAbsolutePath());
+                    getLogProvider().getLog().debug("Could not find resource from filesystem: " + f.getAbsolutePath());
                 }
             } catch(final FileNotFoundException fnfe) {
-                getLogProvider().getLog().warn("Could not find resource from filesystem: " + f.getAbsolutePath(), fnfe);
+                getLogProvider().getLog().debug("Could not find resource from filesystem: " + f.getAbsolutePath(), fnfe);
             }
         }
 
