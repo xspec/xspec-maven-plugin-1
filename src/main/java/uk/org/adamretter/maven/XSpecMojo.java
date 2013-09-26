@@ -26,11 +26,9 @@
  */
 package uk.org.adamretter.maven;
 
-
 import net.sf.saxon.s9api.*;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -56,19 +54,6 @@ import java.util.List;
  * @phase verify
  */
 public class XSpecMojo extends AbstractMojo implements LogProvider {
-
-    //TODO remove
-    public static void main(String[] args) throws MojoExecutionException {
-        final XSpecMojo mojo = new XSpecMojo();
-        mojo.setLog(new SystemStreamLog());
-        mojo.setXspecCompiler("/opt/xspec/src/compiler/generate-xspec-tests.xsl");
-        mojo.setXspecReporter("/opt/xspec/src/reporter/format-xspec-report.xsl");
-        mojo.setTestDir(new File("/home/dev/svn-root/trunk/transformations/src/test/xspec"));
-        mojo.setReportDir(new File("/tmp/xspec-maven-plugin"));
-
-        mojo.execute();
-    }
-
 
     /** @parameter expression="${skipTests}" default-value="false" */
     private boolean skipTests;
@@ -371,28 +356,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         }
 
         return specs;
-    }
-
-
-    //TODO remove
-    public void setSkipTests(boolean skipTests) {
-        this.skipTests = skipTests;
-    }
-
-    public void setXspecCompiler(String xspecCompiler) {
-        this.xspecCompiler = xspecCompiler;
-    }
-
-    public void setXspecReporter(String xspecReporter) {
-        this.xspecReporter = xspecReporter;
-    }
-
-    public void setReportDir(File reportDir) {
-        this.reportDir = reportDir;
-    }
-
-    public void setTestDir(File testDir) {
-        this.testDir = testDir;
     }
 
     protected boolean isSkipTests() {
