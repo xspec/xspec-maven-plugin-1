@@ -145,7 +145,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             boolean failed = false;
             for(final File xspec : xspecs) {
                 if(shouldExclude(xspec)) {
-                    getLog().warn("Skipping excluded XSpec: " + xspec.getName());
+                    getLog().warn("Skipping excluded XSpec: " + xspec.getAbsolutePath());
                 } else {
                     if(!processXSpec(xspec, xtCompiler, xtReporter)) {
                         failed = true;
