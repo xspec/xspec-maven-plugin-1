@@ -76,14 +76,14 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * Location of the XSpec Compiler XSLT i.e.generate-xspec-tests.xsl
      *
-     * @parameter expression="${compilerXsl}" default-value="xspec/src/compiler/generate-xspec-tests.xsl"
+     * @parameter expression="${compilerXsl}" default-value="/xspec/compiler/generate-xspec-tests.xsl"
      */
     private String xspecCompiler;
 
     /**
      * Location of the XSpec Reporter XSLT i.e. format-xspec-report.xsl
      *
-     * @parameter expression="${reporterXsl}" default-value="xspec/src/reporter/format-xspec-report.xsl"
+     * @parameter expression="${reporterXsl}" default-value="/xspec/reporter/format-xspec-report.xsl"
      */
     private String xspecReporter;
 

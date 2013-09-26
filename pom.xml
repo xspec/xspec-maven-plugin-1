@@ -2,11 +2,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
+    <!-- parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
         <version>7</version>
-    </parent>
+    </parent -->
 
 
     <groupId>uk.org.adamretter.maven</groupId>
@@ -60,7 +60,18 @@
             <version>9.5.1-2</version>
         </dependency>
 
-        <dependency>
+        <!-- dependency>
+            <groupId>org.apache.maven.plugin-testing</groupId>
+            <artifactId>maven-plugin-testing-harness</artifactId>
+            <version>2.1</version>
+            <scope>test</scope>
+        </dependency -->
+        <!-- dependency>
+            <groupId>org.sonatype.aether</groupId>
+            <artifactId>aether-api</artifactId>
+            <version>1.13.1</version>
+        </dependency -->
+        <!-- dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
@@ -71,7 +82,8 @@
             <artifactId>mockito-core</artifactId>
             <version>1.9.5</version>
             <scope>test</scope>
-        </dependency>
+        </dependency -->
+
     </dependencies>
 
     <build>
@@ -154,13 +166,6 @@
                             <goal>install-external</goal>
                         </goals>
                     </execution>
-                    <execution>
-                        <id>deploy-external-dependencies</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <goal>deploy-external</goal>
-                        </goals>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -200,6 +205,7 @@
                             <target>
                                 <copy todir="${project.build.directory}/classes/xspec" verbose="true">
                                     <fileset dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}/src" includes="compiler/**"/>
+                                    <fileset dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}/src" includes="reporter/**"/>
                                 </copy>
                             </target>
                         </configuration>

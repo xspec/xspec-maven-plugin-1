@@ -52,7 +52,10 @@ public class ResourceResolver {
      * @return An InputStream for the resource or null if the resource could not be found
      */
     public InputStream getResource(final String path) {
-        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+
+        getLogProvider().getLog().debug("Attempting to resolve resource: " + path);
+
+        final InputStream is = getClass().getResourceAsStream(path);
         if(is != null) {
             getLogProvider().getLog().debug("Found resource from classpath: " + path);
             return is;
