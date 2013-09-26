@@ -29,6 +29,7 @@ package uk.org.adamretter.maven;
 import net.sf.saxon.s9api.*;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -94,8 +95,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         xsltCompiler.setURIResolver(new XSpecURIResolver(this, resourceResolver));
     }
 
-
-    public void execute() throws MojoExecutionException {
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
 
         if(isSkipTests()) {
             getLog().info("'skipTests' is set... skipping XSpec tests!");
@@ -144,7 +145,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             }
 
             if(failed) {
-                throw new MojoExecutionException("Some XSpec tests failed or were missed!");
+                throw new MojoFailureException("Some XSpec tests failed or were missed!");
             }
 
         } catch(final SaxonApiException sae) {
