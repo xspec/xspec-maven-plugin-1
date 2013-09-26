@@ -28,8 +28,12 @@ package uk.org.adamretter.maven;
 
 import net.sf.saxon.s9api.*;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -49,40 +53,41 @@ import java.util.List;
  * Goal which runs any XSpec tests in src/test/xspec
  *
  * @author Adam Retter <adam.retter@googlemail.com>
- *
- * @requiresDependencyResolution test
- * @goal run-xspec
- * @phase verify
  */
+@Mojo(name = "run-xspec", defaultPhase = LifecyclePhase.VERIFY, requiresDependencyResolution = ResolutionScope.TEST)
 public class XSpecMojo extends AbstractMojo implements LogProvider {
 
-    /** @parameter expression="${skipTests}" default-value="false" */
+    @Parameter(property = "skipTests", defaultValue = "false")
     private boolean skipTests;
 
     /**
      * Location of the XSpec Compiler XSLT i.e.generate-xspec-tests.xsl
-     *
-     * @parameter expression="${compilerXsl}" default-value="/xspec/compiler/generate-xspec-tests.xsl"
      */
+    @Parameter(defaultValue = "/xspec/compiler/generate-xspec-tests.xsl", required = true)
     private String xspecCompiler;
 
     /**
      * Location of the XSpec Reporter XSLT i.e. format-xspec-report.xsl
-     *
-     * @parameter expression="${reporterXsl}" default-value="/xspec/reporter/format-xspec-report.xsl"
      */
+    @Parameter(defaultValue = "/xspec/reporter/format-xspec-report.xsl", required = true)
     private String xspecReporter;
 
     /**
      * Location of the XSpec tests
-     * @parameter expression="${testDir}" default-value="${basedir}/src/test/xspec"
      */
+    @Parameter(defaultValue = "${basedir}/src/test/xspec", required = true)
     private File testDir;
+
+    /***
+     * Exclude various XSpec tests
+     */
+    @Parameter(alias = "excludes")
+    private List<String> excludes;
 
     /**
      * Location of the XSpec reports
-     * @parameter expression="${reportDir}" default-value="${project.build.directory}/xspec-reports"
      */
+    @Parameter(defaultValue = "${project.build.directory}/xspec-reports", required = true)
     private File reportDir;
 
 
@@ -139,8 +144,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             boolean failed = false;
             for(final File xspec : xspecs) {
-                if(!processXSpec(xspec, xtCompiler, xtReporter)) {
-                    failed = true;
+                if(shouldExclude(xspec)) {
+                    getLog().warn("Skipping excluded XSpec: " + xspec.getName());
+                } else {
+                    if(!processXSpec(xspec, xtCompiler, xtReporter)) {
+                        failed = true;
+                    }
                 }
             }
 
@@ -156,6 +165,26 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 try { isCompiler.close(); } catch(final IOException ioe) { getLog().warn(ioe); };
             }
         }
+    }
+
+    /**
+     * Checks whether an XSpec should be
+     * excluded from processing
+     *
+     * The comparison is performed on the
+     * filename of the xspec
+     *
+     * @param xspec The filepath of the XSpec
+     *
+     * @return true if the XSpec should be excluded, false otherwise
+     */
+    private boolean shouldExclude(final File xspec) {
+        for(final String exclude : getExcludes()) {
+            if(xspec.getAbsolutePath().endsWith(exclude)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -383,5 +412,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     protected File getTestDir() {
         return testDir;
+    }
+
+    protected List<String> getExcludes() {
+        return excludes;
     }
 }
