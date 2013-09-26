@@ -41,6 +41,10 @@ public class XSpecTestFilter extends XMLFilterImpl {
     private final static String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
 
     private int tests = 0;
+    private int pendingTests = 0;
+
+    private int pendingWrapper = 0;
+    private boolean pendingScenario = true;
 
     public XSpecTestFilter(final XMLReader parent) {
         super(parent);
@@ -49,15 +53,50 @@ public class XSpecTestFilter extends XMLFilterImpl {
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         super.startElement(uri, localName, qName, atts);
+
+        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("pendingTests")) {
+            pendingWrapper++;
+        }
+
+        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("scenario") && atts.getValue("pendingTests") != null) {
+            pendingWrapper++;
+            pendingScenario = true;
+        }
+
         if(uri != null && uri.equals(XSPEC_NS) && localName.equals("expect")) {
+            if(pendingWrapper > 0) {
+                pendingTests++;
+            }
             tests++;
+        }
+    }
+
+    @Override
+    public void endElement(final String uri, final String localName, final String qName) throws SAXException {
+        super.endElement(uri, localName, qName);
+
+        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("pendingTests")) {
+            pendingWrapper--;
+        }
+
+        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("scenario") && pendingScenario == true) {
+            pendingWrapper--;
+            pendingScenario = false;
         }
     }
 
     /**
      * The total number of test expectations in the provided XSpec
+     * includes pendingTests tests
      */
     public int getTests() {
         return tests;
+    }
+
+    /**
+     * The total number of pendingTests test expectations in the provided XSpec
+     */
+    public int getPendingTests() {
+        return pendingTests;
     }
 }

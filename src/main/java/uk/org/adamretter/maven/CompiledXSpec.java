@@ -36,18 +36,28 @@ import java.io.File;
 public class CompiledXSpec {
 
     private final int tests;
+    private final int pendingTests;
     private final File compiledStylesheet;
 
-    public CompiledXSpec(final int tests, final File compiledStylesheet) {
+    public CompiledXSpec(final int tests, final int pendingTests, final File compiledStylesheet) {
         this.tests = tests;
+        this.pendingTests = pendingTests;
         this.compiledStylesheet = compiledStylesheet;
     }
 
     /**
      * Count of the number of tests in the compiled XSpec
+     * (including pending tests)
      */
     public int getTests() {
         return tests;
+    }
+
+    /**
+     * Count of the number of pending tests in the compiled XSpec
+     */
+    public int getPendingTests() {
+        return pendingTests;
     }
 
     /**

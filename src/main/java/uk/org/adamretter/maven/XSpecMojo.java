@@ -212,7 +212,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             final int missed = compiledXSpec.getTests() - resultsHandler.getTests();
 
             //report results
-            final String msg = String.format("%s results [Total/Passed/Failed/Missed] = [%d/%d/%d/%d]", xspec.getName(), compiledXSpec.getTests(), resultsHandler.getPassed(), resultsHandler.getFailed(), missed);
+            final String msg = String.format("%s results [Passed/Pending/Failed/Missed/Total] = [%d/%d/%d/%d/%d]", xspec.getName(), resultsHandler.getPassed(), compiledXSpec.getPendingTests(), resultsHandler.getFailed(), missed, compiledXSpec.getTests());
             if(resultsHandler.getFailed() + missed > 0) {
                 getLog().error(msg);
                 return false;
@@ -255,7 +255,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             compiler.transform();
 
-            return new CompiledXSpec(xspecTestFilter.getTests(), compiledXSpec);
+            return new CompiledXSpec(xspecTestFilter.getTests(), xspecTestFilter.getPendingTests(), compiledXSpec);
 
         } catch(final SaxonApiException sae) {
             getLog().error(sae.getMessage());
