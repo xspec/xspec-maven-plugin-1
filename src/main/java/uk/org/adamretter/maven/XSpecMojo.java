@@ -87,7 +87,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     private final static SAXParserFactory parserFactory = SAXParserFactory.newInstance();
     private final static Processor processor = new Processor(false);
-    private final static XsltCompiler xsltCompiler = processor.newXsltCompiler();
+
+    private final ResourceResolver resourceResolver = new ResourceResolver(this);
+    private final XsltCompiler xsltCompiler = processor.newXsltCompiler();
+    {
+        xsltCompiler.setURIResolver(new XSpecURIResolver(this, resourceResolver));
+    }
 
 
     public void execute() throws MojoExecutionException {
@@ -96,8 +101,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             getLog().info("'skipTests' is set... skipping XSpec tests!");
             return;
         }
-
-        final ResourceResolver resourceResolver = new ResourceResolver(this);
 
         final String compilerPath = getXspecCompiler();
         getLog().debug("Using XSpec Compiler: " + compilerPath);
@@ -178,7 +181,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 final XsltTransformer xtXSpec = xeXSpec.load();
                 xtXSpec.setInitialTemplate(QName.fromClarkName("{http://www.jenitennison.com/xslt/xspec}main"));
 
-                getLog().info("Executing XSpec: " + compiledXSpec);
+                getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
 
                 //setup xml report output
                 final File xspecXmlResult = getXSpecXmlResultPath(getReportDir(), xspec);
