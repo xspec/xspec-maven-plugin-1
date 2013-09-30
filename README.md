@@ -20,7 +20,7 @@ __Plugin declaration__
 			<plugin>
 				<groupId>uk.org.adamretter.maven</groupId>
 				<artifactId>xspec-maven-plugin</artifactId>
-				<version>1.0</version>
+				<version>1.0.1</version>
 				<executions>
 					<execution>
 						<phase>verify</phase>
