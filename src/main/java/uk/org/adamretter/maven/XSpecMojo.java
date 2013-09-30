@@ -179,9 +179,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * @return true if the XSpec should be excluded, false otherwise
      */
     private boolean shouldExclude(final File xspec) {
-        for(final String exclude : getExcludes()) {
-            if(xspec.getAbsolutePath().endsWith(exclude)) {
-                return true;
+        final List<String> excludePatterns = getExcludes();
+        if(excludePatterns != null) {
+            for(final String excludePattern : excludePatterns) {
+                if(xspec.getAbsolutePath().endsWith(excludePattern)) {
+                    return true;
+                }
             }
         }
         return false;
