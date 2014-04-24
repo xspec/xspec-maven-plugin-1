@@ -61,4 +61,5 @@ By default the folder `target/xspec-reports` is used.
 ### FAQ
 
 * How can I skip the XSpec tests?
-XSpec will adhere to the Maven option `-DskipTests`
+XSpec will adhere to the Maven option `-DskipTests`.
+If you are doing this in a forked execution such as that used by the Maven Release plugin you may also have to use the Maven option `-Darguments="-DskipTests"`.
