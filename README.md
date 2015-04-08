@@ -60,6 +60,7 @@ By default the folder `target/xspec-reports` is used.
 
 ### FAQ
 * Where should I put my XSLT?
+
 You can put it anywhere you like, although within `src/` would make the most sense! We would suggest keeping your XSLT files in `src/resources/`. If you do that, then to reference the XSLT from your XSpec, you should set the `@template` attribute use relative path to that folder. For example, given `src/resources/some.xslt` and `src/test/xspec/some.xspec`, your `some.xspec` would reference `some.xslt` like so:
 
 ```xml
@@ -70,5 +71,6 @@ You can put it anywhere you like, although within `src/` would make the most sen
 ```
 
 * How can I skip the XSpec tests?
+
 XSpec will adhere to the Maven option `-DskipTests`.
 If you are doing this in a forked execution such as that used by the Maven Release plugin you may also have to use the Maven option `-Darguments="-DskipTests"`.
