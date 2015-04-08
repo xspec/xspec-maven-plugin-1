@@ -61,7 +61,7 @@ By default the folder `target/xspec-reports` is used.
 ### FAQ
 * Where should I put my XSLT?
 
-You can put it anywhere you like, although within `src/` would make the most sense! We would suggest keeping your XSLT files in `src/resources/`. If you do that, then to reference the XSLT from your XSpec, you should set the `@template` attribute use relative path to that folder. For example, given `src/resources/some.xslt` and `src/test/xspec/some.xspec`, your `some.xspec` would reference `some.xslt` like so:
+You can put it anywhere you like, although within `src/` would make the most sense! We would suggest keeping your XSLT files in `src/main/resources/`. If you do that, then to reference the XSLT from your XSpec, you should set the `@template` attribute use relative path to that folder. For example, given `src/main/resources/some.xslt` and `src/test/xspec/some.xspec`, your `some.xspec` would reference `some.xslt` like so:
 
 ```xml
 <x:description xmlns:x="http://www.jenitennison.com/xslt/xspec"
