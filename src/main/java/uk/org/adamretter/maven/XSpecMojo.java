@@ -377,7 +377,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
         final List<File> specs = new ArrayList<File>();
 
-        if(xspecTestDir.exists()) {
+        if (xspecTestDir.exists()) {
             final File[] specFiles = xspecTestDir.listFiles(new FileFilter() {
                 @Override
                 public boolean accept(final File file) {
@@ -386,12 +386,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             });
             specs.addAll(Arrays.asList(specFiles));
 
-            for(final File subDir : xspecTestDir.listFiles(new FileFilter(){
+            for (final File subDir : xspecTestDir.listFiles(new FileFilter() {
                 @Override
                 public boolean accept(final File file) {
                     return file.isDirectory();
                 }
-            })){
+            })) {
                 specs.addAll(findAllXSpecs(subDir));
             }
         }
