@@ -377,21 +377,23 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
         final List<File> specs = new ArrayList<File>();
 
-        final File[] specFiles = xspecTestDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(final File file) {
-                return file.isFile() && file.getName().endsWith(".xspec");
-            }
-        });
-        specs.addAll(Arrays.asList(specFiles));
+        if (xspecTestDir.exists()) {
+            final File[] specFiles = xspecTestDir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(final File file) {
+                    return file.isFile() && file.getName().endsWith(".xspec");
+                }
+            });
+            specs.addAll(Arrays.asList(specFiles));
 
-        for(final File subDir : xspecTestDir.listFiles(new FileFilter(){
-            @Override
-            public boolean accept(final File file) {
-                return file.isDirectory();
+            for (final File subDir : xspecTestDir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(final File file) {
+                    return file.isDirectory();
+                }
+            })) {
+                specs.addAll(findAllXSpecs(subDir));
             }
-        })){
-            specs.addAll(findAllXSpecs(subDir));
         }
 
         return specs;
