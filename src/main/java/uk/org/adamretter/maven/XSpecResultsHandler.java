@@ -33,7 +33,7 @@ import org.xml.sax.ext.DefaultHandler2;
 /**
  * Extracts test results from the SAX Stream
  *
- * @author Adam Retter <adam.retter@googlemail.com>
+ * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  */
 public class XSpecResultsHandler extends DefaultHandler2 {
 
@@ -59,6 +59,8 @@ public class XSpecResultsHandler extends DefaultHandler2 {
 
     /**
      * Get the total number of executed tests
+     *
+     * @return The number of tests
      */
     public int getTests() {
         return tests;
@@ -66,6 +68,8 @@ public class XSpecResultsHandler extends DefaultHandler2 {
 
     /**
      * Get the total number of executed tests which passed
+     *
+     * @return The number of tests which passed
      */
     public int getPassed() {
         return passed;
@@ -73,6 +77,8 @@ public class XSpecResultsHandler extends DefaultHandler2 {
 
     /**
      * Get the total number of executed tests which failed
+     *
+     * @return The number of tests which failed
      */
     public int getFailed() {
         return failed;

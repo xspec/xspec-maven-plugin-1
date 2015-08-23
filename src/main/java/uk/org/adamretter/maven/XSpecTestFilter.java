@@ -34,7 +34,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
 /**
  * Extracts test results from the XSpec Reader
  *
- * @author Adam Retter <adam.retter@googlemail.com>
+ * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  */
 public class XSpecTestFilter extends XMLFilterImpl {
 
@@ -88,6 +88,8 @@ public class XSpecTestFilter extends XMLFilterImpl {
     /**
      * The total number of test expectations in the provided XSpec
      * includes pendingTests tests
+     *
+     * @return The number of tests
      */
     public int getTests() {
         return tests;
@@ -95,6 +97,8 @@ public class XSpecTestFilter extends XMLFilterImpl {
 
     /**
      * The total number of pendingTests test expectations in the provided XSpec
+     *
+     * @return The number of pending tests
      */
     public int getPendingTests() {
         return pendingTests;

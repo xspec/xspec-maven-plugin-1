@@ -31,7 +31,7 @@ import org.apache.maven.plugin.logging.Log;
 /**
  * Interface for passing a class that provides a Log
  *
- * @author Adam Retter <adam.retter@googlemail.com>
+ * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  */
 public interface LogProvider {
     public Log getLog();

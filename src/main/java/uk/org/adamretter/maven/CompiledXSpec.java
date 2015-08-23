@@ -31,7 +31,7 @@ import java.io.File;
 /**
  * Simple class holding the results of compiling an XSpec
  *
- * @author Adam Retter <adam.retter@googlemail.com>
+ * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  */
 public class CompiledXSpec {
 
@@ -48,6 +48,8 @@ public class CompiledXSpec {
     /**
      * Count of the number of tests in the compiled XSpec
      * (including pending tests)
+     *
+     * @return The number of tests
      */
     public int getTests() {
         return tests;
@@ -55,6 +57,8 @@ public class CompiledXSpec {
 
     /**
      * Count of the number of pending tests in the compiled XSpec
+     *
+     * @return The number of pending tests
      */
     public int getPendingTests() {
         return pendingTests;
@@ -62,6 +66,8 @@ public class CompiledXSpec {
 
     /**
      * File system path of the compiled XSpec stylesheet
+     *
+     * @return path to the compiled xspec stylesheet
      */
     public File getCompiledStylesheet() {
         return compiledStylesheet;

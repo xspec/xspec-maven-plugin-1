@@ -52,7 +52,7 @@ import java.util.List;
 /**
  * Goal which runs any XSpec tests in src/test/xspec
  *
- * @author Adam Retter <adam.retter@googlemail.com>
+ * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  */
 @Mojo(name = "run-xspec", defaultPhase = LifecyclePhase.VERIFY, requiresDependencyResolution = ResolutionScope.TEST)
 public class XSpecMojo extends AbstractMojo implements LogProvider {
