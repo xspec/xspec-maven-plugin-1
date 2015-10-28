@@ -89,6 +89,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     @Parameter(defaultValue = "${project.build.directory}/xspec-reports", required = true)
     private File reportDir;
+    
+    @Parameter(defaultValue = "${catalog.filename}")
+    private File catalogFile;
 
 
     private final static SAXParserFactory parserFactory = SAXParserFactory.newInstance();
@@ -96,13 +99,14 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     private final ResourceResolver resourceResolver = new ResourceResolver(this);
     private final XsltCompiler xsltCompiler = processor.newXsltCompiler();
-    {
-        xsltCompiler.setURIResolver(new XSpecURIResolver(this, resourceResolver));
-    }
+    private boolean uriResolverSet = false;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-
+        if(!uriResolverSet) {
+            xsltCompiler.setURIResolver(buildUriResolver());
+            uriResolverSet = true;
+        }
         if(isSkipTests()) {
             getLog().info("'skipTests' is set... skipping XSpec tests!");
             return;
@@ -162,7 +166,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             throw new MojoExecutionException(sae.getMessage(), sae);
         } finally {
             if(isCompiler != null) {
-                try { isCompiler.close(); } catch(final IOException ioe) { getLog().warn(ioe); };
+                try { isCompiler.close(); } catch(final IOException ioe) { getLog().warn(ioe); }
             }
         }
     }
@@ -293,16 +297,14 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         } catch(final SaxonApiException sae) {
             getLog().error(sae.getMessage());
             getLog().debug(sae);
-        } catch(final ParserConfigurationException pce) {
+        } catch(final ParserConfigurationException | FileNotFoundException pce) {
             getLog().error(pce);
         } catch(SAXException saxe) {
             getLog().error(saxe.getMessage());
             getLog().debug(saxe);
-        } catch(final FileNotFoundException fnfe) {
-            getLog().error(fnfe);
         } finally {
             if(isXSpec != null) {
-                try { isXSpec.close(); } catch(final IOException ioe) { getLog().warn(ioe); };
+                try { isXSpec.close(); } catch(final IOException ioe) { getLog().warn(ioe); }
             }
         }
 
@@ -375,7 +377,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     private List<File> findAllXSpecs(final File xspecTestDir) {
 
-        final List<File> specs = new ArrayList<File>();
+        final List<File> specs = new ArrayList<>();
 
         if (xspecTestDir.exists()) {
             final File[] specFiles = xspecTestDir.listFiles(new FileFilter() {
@@ -422,4 +424,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     protected List<String> getExcludes() {
         return excludes;
     }
+    
+    private URIResolver buildUriResolver() {
+        return new XSpecURIResolver(this, resourceResolver, catalogFile);
+    }
+    
+    static final String XSPEC_MOJO_PFX= "[xspec-mojo] ";
 }
