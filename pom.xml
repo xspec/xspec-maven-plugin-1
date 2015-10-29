@@ -177,7 +177,7 @@
             <plugin>
                 <groupId>com.savage7.maven.plugins</groupId>
                 <artifactId>maven-external-dependency-plugin</artifactId>
-                <version>0.5</version>
+                <version>0.6-SNAPSHOT</version>
                 <configuration>
                     <createChecksum>true</createChecksum>
                     <skipChecksumVerification>false</skipChecksumVerification>
@@ -333,6 +333,10 @@
         <pluginRepository>
             <id>sonatype-releases</id>
             <url>http://oss.sonatype.org/content/repositories/releases</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>sonatype-snapshots</id>
+            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
         </pluginRepository>
         <pluginRepository>
             <id>clojars.org</id>
