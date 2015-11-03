@@ -47,6 +47,7 @@ import org.apache.xml.resolver.tools.CatalogResolver;
  * classpath and filesystem
  *
  * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
+ * @author <a href="mailto:christophe.marchand@contactoffice.net">Christophe Marchand</a>
  */
 public class XSpecURIResolver extends StandardURIResolver {
 

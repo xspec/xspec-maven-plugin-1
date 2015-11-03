@@ -78,7 +78,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = "${basedir}/src/test/xspec", required = true)
     private File testDir;
 
-    /***
+    /**
+     * *
      * Exclude various XSpec tests
      */
     @Parameter(alias = "excludes")
@@ -89,10 +90,15 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     @Parameter(defaultValue = "${project.build.directory}/xspec-reports", required = true)
     private File reportDir;
-    
+
     @Parameter(defaultValue = "${catalog.filename}")
     private File catalogFile;
 
+    @Parameter(defaultValue = "${project.build.directory}/surefire-reports", required = true)
+    private File surefireReportDir;
+
+    @Parameter(defaultValue = "false")
+    private Boolean generateSurefireReport;
 
     private final static SAXParserFactory parserFactory = SAXParserFactory.newInstance();
     private final static Processor processor = new Processor(false);
@@ -103,11 +109,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if(!uriResolverSet) {
+        if (!uriResolverSet) {
             xsltCompiler.setURIResolver(buildUriResolver());
             uriResolverSet = true;
         }
-        if(isSkipTests()) {
+        if (isSkipTests()) {
             getLog().info("'skipTests' is set... skipping XSpec tests!");
             return;
         }
@@ -123,12 +129,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         try {
 
             isCompiler = resourceResolver.getResource(compilerPath);
-            if(isCompiler == null) {
+            if (isCompiler == null) {
                 throw new MojoExecutionException("Could not find XSpec Compiler stylesheets in: " + compilerPath);
             }
 
             isReporter = resourceResolver.getResource(reporterPath);
-            if(isReporter == null) {
+            if (isReporter == null) {
                 throw new MojoExecutionException("Could not find XSpec Reporter stylesheets in: " + reporterPath);
             }
 
@@ -147,36 +153,55 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             getLog().info("Found " + xspecs.size() + " XSpecs...");
 
             boolean failed = false;
-            for(final File xspec : xspecs) {
-                if(shouldExclude(xspec)) {
+            for (final File xspec : xspecs) {
+                if (shouldExclude(xspec)) {
                     getLog().warn("Skipping excluded XSpec: " + xspec.getAbsolutePath());
                 } else {
-                    if(!processXSpec(xspec, xtCompiler, xtReporter)) {
+                    if (!processXSpec(xspec, xtCompiler, xtReporter)) {
                         failed = true;
                     }
                 }
             }
 
-            if(failed) {
+            if (generateSurefireReport) {
+                XsltCompiler compiler = processor.newXsltCompiler();
+                XsltTransformer exec = compiler.compile(new StreamSource(getClass().getResourceAsStream("/surefire-reporter.xsl"))).load();
+                File[] inputFiles = reportDir.listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return name.endsWith(".xml");
+                    }
+                });
+                for (File input : inputFiles) {
+                    File outputFile = new File(surefireReportDir, input.getName());
+                    exec.setSource(new StreamSource(input));
+                    exec.setDestination(processor.newSerializer(outputFile));
+                    exec.transform();
+                }
+            }
+
+            if (failed) {
                 throw new MojoFailureException("Some XSpec tests failed or were missed!");
             }
 
-        } catch(final SaxonApiException sae) {
+        } catch (final SaxonApiException sae) {
             getLog().error("Unable to compile the XSpec Compiler: " + compilerPath);
             throw new MojoExecutionException(sae.getMessage(), sae);
         } finally {
-            if(isCompiler != null) {
-                try { isCompiler.close(); } catch(final IOException ioe) { getLog().warn(ioe); }
+            if (isCompiler != null) {
+                try {
+                    isCompiler.close();
+                } catch (final IOException ioe) {
+                    getLog().warn(ioe);
+                }
             }
         }
     }
 
     /**
-     * Checks whether an XSpec should be
-     * excluded from processing
+     * Checks whether an XSpec should be excluded from processing
      *
-     * The comparison is performed on the
-     * filename of the xspec
+     * The comparison is performed on the filename of the xspec
      *
      * @param xspec The filepath of the XSpec
      *
@@ -184,9 +209,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     private boolean shouldExclude(final File xspec) {
         final List<String> excludePatterns = getExcludes();
-        if(excludePatterns != null) {
-            for(final String excludePattern : excludePatterns) {
-                if(xspec.getAbsolutePath().endsWith(excludePattern)) {
+        if (excludePatterns != null) {
+            for (final String excludePattern : excludePatterns) {
+                if (xspec.getAbsolutePath().endsWith(excludePattern)) {
                     return true;
                 }
             }
@@ -208,7 +233,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
         /* compile the test stylesheet */
         final CompiledXSpec compiledXSpec = compileXSpec(compiler, xspec);
-        if(compiledXSpec == null) {
+        if (compiledXSpec == null) {
             return false;
         } else {
             /* execute the test stylesheet */
@@ -240,7 +265,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 xtXSpec.setDestination(destination);
                 xtXSpec.transform();
 
-            } catch(final SaxonApiException te) {
+            } catch (final SaxonApiException te) {
                 getLog().error(te.getMessage());
                 getLog().debug(te);
             }
@@ -250,7 +275,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             //report results
             final String msg = String.format("%s results [Passed/Pending/Failed/Missed/Total] = [%d/%d/%d/%d/%d]", xspec.getName(), resultsHandler.getPassed(), compiledXSpec.getPendingTests(), resultsHandler.getFailed(), missed, compiledXSpec.getTests());
-            if(resultsHandler.getFailed() + missed > 0) {
+            if (resultsHandler.getFailed() + missed > 0) {
                 getLog().error(msg);
                 return false;
             } else {
@@ -266,7 +291,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * @param compiler The XSpec XSLT compiler
      * @param xspec The XSpec test to compile
      *
-     * @return Details of the Compiled XSpec or null if the XSpec could not be compiled
+     * @return Details of the Compiled XSpec or null if the XSpec could not be
+     * compiled
      */
     final CompiledXSpec compileXSpec(final XsltTransformer compiler, final File xspec) {
 
@@ -294,17 +320,21 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             return new CompiledXSpec(xspecTestFilter.getTests(), xspecTestFilter.getPendingTests(), compiledXSpec);
 
-        } catch(final SaxonApiException sae) {
+        } catch (final SaxonApiException sae) {
             getLog().error(sae.getMessage());
             getLog().debug(sae);
-        } catch(final ParserConfigurationException | FileNotFoundException pce) {
+        } catch (final ParserConfigurationException | FileNotFoundException pce) {
             getLog().error(pce);
-        } catch(SAXException saxe) {
+        } catch (SAXException saxe) {
             getLog().error(saxe.getMessage());
             getLog().debug(saxe);
         } finally {
-            if(isXSpec != null) {
-                try { isXSpec.close(); } catch(final IOException ioe) { getLog().warn(ioe); }
+            if (isXSpec != null) {
+                try {
+                    isXSpec.close();
+                } catch (final IOException ioe) {
+                    getLog().warn(ioe);
+                }
             }
         }
 
@@ -321,7 +351,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     final File getCompiledXSpecPath(final File xspecReportDir, final File xspec) {
         final File fCompiledDir = new File(xspecReportDir, "xslt");
-        if(!fCompiledDir.exists()) {
+        if (!fCompiledDir.exists()) {
             fCompiledDir.mkdirs();
         }
         return new File(fCompiledDir, xspec.getName() + ".xslt");
@@ -361,15 +391,15 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * @return A filepath for the report
      */
     final File getXSpecResultPath(final File xspecReportDir, final File xspec, final String extension) {
-        if(!xspecReportDir.exists()) {
+        if (!xspecReportDir.exists()) {
             xspecReportDir.mkdirs();
         }
         return new File(xspecReportDir, xspec.getName().replace(".xspec", "") + "." + extension);
     }
 
     /**
-     * Recursively find any files whoose name ends '.xspec'
-     * under the directory xspecTestDir
+     * Recursively find any files whoose name ends '.xspec' under the directory
+     * xspecTestDir
      *
      * @param xspecTestDir The directory to search for XSpec files
      *
@@ -424,10 +454,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     protected List<String> getExcludes() {
         return excludes;
     }
-    
+
     private URIResolver buildUriResolver() {
         return new XSpecURIResolver(this, resourceResolver, catalogFile);
     }
-    
-    static final String XSPEC_MOJO_PFX= "[xspec-mojo] ";
+
+    static final String XSPEC_MOJO_PFX = "[xspec-mojo] ";
 }
