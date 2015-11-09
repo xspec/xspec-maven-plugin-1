@@ -21,9 +21,19 @@ __Plugin declaration__
 				<groupId>uk.org.adamretter.maven</groupId>
 				<artifactId>xspec-maven-plugin</artifactId>
 				<version>1.2</version>
+				<dependencies>
+					<dependency>
+						<groupId>net.sf.saxon</groupId>
+						<artifactId>Saxon-HE</artifactId>
+						<version>9.6.0-7</version>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<catalogFile>catalog.xml</catalogFile>
+					<generateSurefireReport>true</generateSurefireReport>
 				<executions>
 					<execution>
-						<phase>verify</phase>
+						<phase>test</phase>
 						<goals>
 							<goal>run-xspec</goal>
 						</goals>
@@ -57,6 +67,15 @@ You may specify one or more filenames (or partial filenames), which when matache
 This is the path to a folder where the XSpec tests reports will be stored.
 By default the folder `target/xspec-reports` is used.
 
+* catalogFile
+This is the path to a catalog file, as defined in https://www.oasis-open.org/committees/entity/spec-2001-08-06.html. There is no default value, and is ignored if empty or if catalog file does not exists.
+
+* surefireReportDir
+This is the path where to write surefire reports, if '${generateSurefireReports} is 'true'. Default value is '${project.build.directory}/surefire-report'.
+
+* generateSurefireReport
+If set to true, generates a surefire report in '${surefireReportDir}'.
+
 
 ### FAQ
 * Where should I put my XSLT?
@@ -74,3 +93,11 @@ You can put it anywhere you like, although within `src/` would make the most sen
 
 XSpec will adhere to the Maven option `-DskipTests`.
 If you are doing this in a forked execution such as that used by the Maven Release plugin you may also have to use the Maven option `-Darguments="-DskipTests"`.
+
+* Must I define the Saxon dependency ?
+
+Yes, you must. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, il you have licences. As Maven doesn't provide a mecanism for a default dependency, you must specify it.
+
+* How surefire reports are generated ?
+
+Surefire report is generated from the XSpec report, via a XSL. At this time, transformation should be improved, to have a good report in Jenkins. Any help will be appreciated.

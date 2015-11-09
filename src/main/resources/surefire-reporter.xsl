@@ -28,7 +28,7 @@
         
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    exclude-result-prefixes="xs"
+    exclude-result-prefixes="#all"
     xmlns:x="http://www.jenitennison.com/xslt/xspec"
     version="2.0">
     <!-- converts a XSpec report to a surefire report -->
@@ -36,6 +36,13 @@
     <xsl:output indent="yes"/>
     <xsl:variable name="reportFileName" select="tokenize(document-uri(/),'/')[last()]" as="xs:string"/>
     <xsl:variable name="classname" select="replace($reportFileName,'.xml','.xspec')"/>
+    <xsl:variable name="package" select="string-join(tokenize(/x:report/@stylesheet,'/')[position() gt last()],'/')"/>
+    
+    <xsl:template match="/">
+        <testsuites>
+            <xsl:apply-templates/>
+        </testsuites>
+    </xsl:template>
     
     <xsl:template match="x:report">
         <xsl:variable name="testsCount" select="count(//x:test)"/>
@@ -44,7 +51,7 @@
             <!-- it can not have any error, errors are compilation problem -->
         </xsl:variable>
         <xsl:variable name="skippedCount" select="count(//x:scenario[@pending])"/>
-        <testsuite tests="{$testsCount}" failures="{$failuresCount}" error="{$errorsCount}" skipped="{$skippedCount}">
+        <testsuite tests="{$testsCount}" failures="{$failuresCount}" errors="{$errorsCount}" skipped="{$skippedCount}" package="{$package}">
             <xsl:apply-templates select="x:scenario"/>
         </testsuite>
     </xsl:template>
@@ -56,13 +63,15 @@
     </xsl:template>
     
     <xsl:template match="x:test[@successful='false']">
-        <failure message="{x:label/text()}">
+        <failure message="{x:label/text()}" type="unexpected result">
             <xsl:apply-templates select="x:expect"/>
             <xsl:apply-templates select="x:result"/>
         </failure>
     </xsl:template>
     
+    <xsl:template match="x:test[@successful='true']"/>
+    
     <xsl:template match="x:expect | x:result">
-        <xsl:copy-of select="."/>
+        <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text><xsl:copy-of select="."/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
     </xsl:template>
 </xsl:stylesheet>
