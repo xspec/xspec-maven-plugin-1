@@ -34,17 +34,38 @@
     <!-- converts a XSpec report to a surefire report -->
     
     <xsl:output indent="yes"/>
+    
+    <xsl:param name="baseDir" as="xs:string" required="yes"/>
+    <xsl:param name="outputDir" as="xs:string" required="yes"/>
     <xsl:variable name="reportFileName" select="tokenize(document-uri(/),'/')[last()]" as="xs:string"/>
     <xsl:variable name="classname" select="replace($reportFileName,'.xml','.xspec')"/>
-    <xsl:variable name="package" select="string-join(tokenize(/x:report/@stylesheet,'/')[position() gt last()],'/')"/>
     
     <xsl:template match="/">
+            <xsl:variable name="xslUrl" select="/x:report/@stylesheet" as="xs:string"/>
+            <xsl:comment>xslUrl=<xsl:value-of select="$xslUrl"/></xsl:comment>
+            <xsl:variable name="relativeUri" select="substring-after($xslUrl, $baseDir)" as="xs:string"/>
+            <xsl:comment>relativeUrl=<xsl:value-of select="$relativeUri"/></xsl:comment>
+            <xsl:variable name="pathElements" select="tokenize($relativeUri, '/')" as="xs:string*"/>
+            <xsl:variable name="startingPos" as="xs:integer">
+                <xsl:choose>
+                    <xsl:when test="contains($pathElements[1],':')">2</xsl:when>
+                    <xsl:otherwise>1</xsl:otherwise>
+                </xsl:choose>
+            </xsl:variable>
+            <xsl:variable name="package" select="string-join($pathElements[position() &gt;= ($startingPos+3) and position() lt last()],'.')"></xsl:variable>
+            <xsl:comment>package=<xsl:value-of select="$package"/></xsl:comment>
+            
+        <xsl:result-document href="{concat($outputDir,'/TEST-',if(string-length($package) gt 0) then concat($package,'.') else '', $pathElements[last()])}">
         <testsuites>
-            <xsl:apply-templates/>
+            <xsl:apply-templates>
+                <xsl:with-param name="package" tunnel="yes" select="$package"/>
+            </xsl:apply-templates>
         </testsuites>
+        </xsl:result-document>
     </xsl:template>
     
     <xsl:template match="x:report">
+        <xsl:param name="package" tunnel="yes" required="yes" as="xs:string"/>
         <xsl:variable name="testsCount" select="count(//x:test)"/>
         <xsl:variable name="failuresCount" select="count(//x:test[@successful='false'])"/>
         <xsl:variable name="errorsCount" select="0">

@@ -48,6 +48,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.commons.io.output.NullOutputStream;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Goal which runs any XSpec tests in src/test/xspec
@@ -106,6 +108,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     private final ResourceResolver resourceResolver = new ResourceResolver(this);
     private final XsltCompiler xsltCompiler = processor.newXsltCompiler();
     private boolean uriResolverSet = false;
+    
+    @Parameter(defaultValue="${project}", readonly = true, required = true)
+    MavenProject project;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -166,6 +171,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             if (generateSurefireReport) {
                 XsltCompiler compiler = processor.newXsltCompiler();
                 XsltTransformer exec = compiler.compile(new StreamSource(getClass().getResourceAsStream("/surefire-reporter.xsl"))).load();
+                try {
+                    exec.setParameter(new QName("baseDir"), new XdmAtomicValue(project.getBasedir().toURI().toURL().toExternalForm()));
+                    exec.setParameter(new QName("outputDir"), new XdmAtomicValue(surefireReportDir.toURI().toURL().toExternalForm()));
+                } catch(Exception ignorable) {}
                 File[] inputFiles = reportDir.listFiles(new FilenameFilter() {
                     @Override
                     public boolean accept(File dir, String name) {
@@ -173,9 +182,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                     }
                 });
                 for (File input : inputFiles) {
-                    File outputFile = new File(surefireReportDir, input.getName());
+//                    File outputFile = new File(surefireReportDir, "TEST-"+input.getName());
                     exec.setSource(new StreamSource(input));
-                    exec.setDestination(processor.newSerializer(outputFile));
+                    exec.setDestination(processor.newSerializer(new NullOutputStream()));
                     exec.transform();
                 }
             }
