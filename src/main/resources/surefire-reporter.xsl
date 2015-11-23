@@ -55,7 +55,7 @@
             <xsl:variable name="package" select="string-join($pathElements[position() &gt;= ($startingPos+3) and position() lt last()],'.')"></xsl:variable>
             <xsl:comment>package=<xsl:value-of select="$package"/></xsl:comment>
             
-        <xsl:result-document href="{concat($outputDir,'/TEST-',if(string-length($package) gt 0) then concat($package,'.') else '', $pathElements[last()])}">
+        <xsl:result-document href="{concat($outputDir,'/TEST-',if(string-length($package) gt 0) then concat($package,'.') else '', $pathElements[last()],'.xml')}">
         <testsuites>
             <xsl:apply-templates>
                 <xsl:with-param name="package" tunnel="yes" select="$package"/>
@@ -65,32 +65,45 @@
     </xsl:template>
     
     <xsl:template match="x:report">
-        <xsl:param name="package" tunnel="yes" required="yes" as="xs:string"/>
-        <xsl:variable name="testsCount" select="count(//x:test)"/>
-        <xsl:variable name="failuresCount" select="count(//x:test[@successful='false'])"/>
-        <xsl:variable name="errorsCount" select="0">
-            <!-- it can not have any error, errors are compilation problem -->
-        </xsl:variable>
-        <xsl:variable name="skippedCount" select="count(//x:scenario[@pending])"/>
-        <testsuite tests="{$testsCount}" failures="{$failuresCount}" errors="{$errorsCount}" skipped="{$skippedCount}" package="{$package}">
-            <xsl:apply-templates select="x:scenario"/>
-        </testsuite>
+        <xsl:apply-templates select="x:scenario"/>
     </xsl:template>
     
     <xsl:template match="x:scenario">
-        <testcase classname="{$classname}" name="{./x:label/text()}" time="0">
+        <xsl:param name="package" tunnel="yes" required="yes" as="xs:string"/>
+        <xsl:param name="libelle" required="no" as="xs:string?"/>
+        <xsl:variable name="testsCount" select="count(.//x:test)"/>
+        <xsl:variable name="failuresCount" select="count(.//x:test[@successful='false'])"/>
+        <xsl:variable name="errorsCount" select="0">
+            <!-- it can not have any error, errors are compilation problem -->
+        </xsl:variable>
+        <xsl:variable name="skippedCount" select="count(.//x:test[@pending])"/>
+        <xsl:if test="./x:test">
+        <testsuite tests="{$testsCount}" failures="{$failuresCount}" errors="{$errorsCount}" skipped="{$skippedCount}" package="{$package}" name="{concat($libelle,./x:label/text())}">
             <xsl:apply-templates select="x:test"/>
-        </testcase>
+        </testsuite>
+        </xsl:if>
+        <xsl:apply-templates select="x:scenario">
+            <xsl:with-param name="libelle" select="concat(x:label/text(),': ')"/>
+        </xsl:apply-templates>
+    </xsl:template>
+    <xsl:template match="x:scenario[@pending]">
+        <xsl:param name="package" tunnel="yes" required="yes" as="xs:string"/>
+        <testsuite tests="0" failures="0" errors="0" skipped="1" package="{$package}"/>
     </xsl:template>
     
     <xsl:template match="x:test[@successful='false']">
-        <failure message="{x:label/text()}" type="unexpected result">
-            <xsl:apply-templates select="x:expect"/>
-            <xsl:apply-templates select="x:result"/>
-        </failure>
+        <testcase classname="{$classname}" name="{./x:label/text()}" time="0">
+            <failure message="{x:label/text()}" type="unexpected result">
+                <xsl:apply-templates select="x:expect"/>
+                <xsl:apply-templates select="x:result"/>
+            </failure>
+        </testcase>
     </xsl:template>
     
-    <xsl:template match="x:test[@successful='true']"/>
+    <xsl:template match="x:test[@successful='true']">
+        <testcase classname="{$classname}" name="{./x:label/text()}" time="0">
+        </testcase>
+    </xsl:template>
     
     <xsl:template match="x:expect | x:result">
         <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text><xsl:copy-of select="."/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
