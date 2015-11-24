@@ -107,8 +107,7 @@
     </xsl:template>
     
     <xsl:template match="x:expect | x:result">
-        <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text><xsl:value-of select="local:nomPropre(local-name(.))"/><xsl:text disable-output-escaping="yes">
-</xsl:text><xsl:copy-of select="./node()"/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
+        <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text>&#xA;<xsl:value-of select="local:nomPropre(local-name(.))"/>&#xA;<xsl:copy-of select="./node()"/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
     </xsl:template>
     
     <xsl:function name="local:nomPropre" as="xs:string">
