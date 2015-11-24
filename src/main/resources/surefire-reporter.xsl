@@ -102,12 +102,11 @@
     </xsl:template>
     
     <xsl:template match="x:test[@successful='true']">
-        <testcase classname="{$classname}" name="{./x:label/text() | ./@label}" time="0">
-        </testcase>
+        <testcase classname="{$classname}" name="{./x:label/text() | ./@label}" time="0"/>
     </xsl:template>
     
     <xsl:template match="x:expect | x:result">
-        <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text>&#xA;<xsl:value-of select="local:nomPropre(local-name(.))"/>&#xA;<xsl:copy-of select="./node()"/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
+        <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text>&#xA;<xsl:value-of select="local:nomPropre(local-name(.))"/><xsl:if test="x:label"><xsl:value-of select="concat(' ',x:label)"/></xsl:if>&#xA;<xsl:copy-of select="./(node() except x:label)"/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
     </xsl:template>
     
     <xsl:function name="local:nomPropre" as="xs:string">
