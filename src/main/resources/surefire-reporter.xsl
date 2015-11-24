@@ -71,7 +71,7 @@
     
     <xsl:template match="x:scenario">
         <xsl:param name="package" tunnel="yes" required="yes" as="xs:string"/>
-        <xsl:param name="libelle" required="no" as="xs:string?"/>
+        <xsl:param name="libelle" required="no" as="xs:string?" select="''"/>
         <xsl:variable name="testsCount" select="count(.//x:test)"/>
         <xsl:variable name="failuresCount" select="count(.//x:test[@successful='false'])"/>
         <xsl:variable name="errorsCount" select="0">
@@ -84,7 +84,7 @@
         </testsuite>
         </xsl:if>
         <xsl:apply-templates select="x:scenario">
-            <xsl:with-param name="libelle" select="concat(x:label/text(),': ')"/>
+            <xsl:with-param name="libelle" select="concat($libelle,x:label/text(),': ')"/>
         </xsl:apply-templates>
     </xsl:template>
     <xsl:template match="x:scenario[@pending]">
@@ -93,7 +93,7 @@
     </xsl:template>
     
     <xsl:template match="x:test[@successful='false']">
-        <testcase classname="{$classname}" name="{./x:label/text()}" time="0">
+        <testcase classname="{$classname}" name="{./x:label/text() | ./@label}" time="0">
             <failure message="{x:label/text()}" type="unexpected result">
                 <xsl:apply-templates select="x:expect"/>
                 <xsl:apply-templates select="x:result"/>
@@ -102,7 +102,7 @@
     </xsl:template>
     
     <xsl:template match="x:test[@successful='true']">
-        <testcase classname="{$classname}" name="{./x:label/text()}" time="0">
+        <testcase classname="{$classname}" name="{./x:label/text() | ./@label}" time="0">
         </testcase>
     </xsl:template>
     
