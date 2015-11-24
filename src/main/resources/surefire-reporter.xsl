@@ -28,6 +28,7 @@
         
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:local="com:oxiane:common:local"
     exclude-result-prefixes="#all"
     xmlns:x="http://www.jenitennison.com/xslt/xspec"
     version="2.0">
@@ -106,6 +107,13 @@
     </xsl:template>
     
     <xsl:template match="x:expect | x:result">
-        <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text><xsl:copy-of select="."/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
+        <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text><xsl:value-of select="local:nomPropre(local-name(.))"/><xsl:text disable-output-escaping="yes">
+</xsl:text><xsl:copy-of select="./node()"/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
     </xsl:template>
+    
+    <xsl:function name="local:nomPropre" as="xs:string">
+        <xsl:param name="s" as="xs:string" required="yes"/>
+        <xsl:value-of select="concat(upper-case(substring($s,1,1)),lower-case(substring($s,2)))"/>
+    </xsl:function>
+    
 </xsl:stylesheet>
