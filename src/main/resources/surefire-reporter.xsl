@@ -94,12 +94,14 @@
     
     <xsl:template match="x:test[@successful='false']">
         <testcase classname="{$classname}" name="{./x:label/text() | ./@label}" time="0">
-            <failure message="{x:label/text()}" type="unexpected result">
+            <failure message="{x:label/text() | ./@label}" type="unexpected result">
                 <xsl:apply-templates select="x:expect"/>
                 <xsl:apply-templates select="x:result"/>
             </failure>
         </testcase>
     </xsl:template>
+    
+    <xsl:template match="x:test[@succesful='false']/x:label"/>
     
     <xsl:template match="x:test[@successful='true']">
         <testcase classname="{$classname}" name="{./x:label/text() | ./@label}" time="0"/>
