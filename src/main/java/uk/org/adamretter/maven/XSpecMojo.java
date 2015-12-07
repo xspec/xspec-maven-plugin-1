@@ -181,11 +181,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                         return name.endsWith(".xml");
                     }
                 });
-                for (File input : inputFiles) {
-//                    File outputFile = new File(surefireReportDir, "TEST-"+input.getName());
-                    exec.setSource(new StreamSource(input));
-                    exec.setDestination(processor.newSerializer(new NullOutputStream()));
-                    exec.transform();
+                if(inputFiles!=null) {
+                    for (File input : inputFiles) {
+                        exec.setSource(new StreamSource(input));
+                        exec.setDestination(processor.newSerializer(new NullOutputStream()));
+                        exec.transform();
+                    }
                 }
             }
 
