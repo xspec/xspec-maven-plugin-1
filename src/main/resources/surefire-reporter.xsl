@@ -38,7 +38,7 @@
     
     <xsl:param name="baseDir" as="xs:string" required="yes"/>
     <xsl:param name="outputDir" as="xs:string" required="yes"/>
-    <xsl:variable name="reportFileName" select="tokenize(document-uri(/),'/')[last()]" as="xs:string"/>
+    <xsl:param name="reportFileName" select="tokenize(document-uri(/),'/')[last()]" as="xs:string"/>
     <xsl:variable name="classname" select="replace($reportFileName,'.xml','.xspec')"/>
     
     <xsl:template match="/">
