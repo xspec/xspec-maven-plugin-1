@@ -20,7 +20,7 @@ __Plugin declaration__
 			<plugin>
 				<groupId>uk.org.adamretter.maven</groupId>
 				<artifactId>xspec-maven-plugin</artifactId>
-				<version>1.2</version>
+				<version>1.4</version>
 				<dependencies>
 					<dependency>
 						<groupId>net.sf.saxon</groupId>
@@ -96,7 +96,7 @@ If you are doing this in a forked execution such as that used by the Maven Relea
 
 * Must I define the Saxon dependency ?
 
-Yes, you must. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, il you have licences. As Maven doesn't provide a mecanism for a default dependency, you must specify it.
+Yes, you must. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, if you have licences. As Maven doesn't provide a mecanism for a default dependency, you must specify it. You can also choose another releases of Saxon ; 9.6.0-x works correctly.
 
 * How surefire reports are generated ?
 
