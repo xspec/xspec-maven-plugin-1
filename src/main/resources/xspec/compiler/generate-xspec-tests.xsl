@@ -31,6 +31,8 @@
 <xsl:output indent="yes" encoding="ISO-8859-1" />  
 
 
+<xsl:variable name="xspec-ns" select="'http://www.jenitennison.com/xslt/xspec'"/>
+
 <xsl:variable name="stylesheet-uri" as="xs:anyURI" 
   select="resolve-uri(/x:description/@stylesheet, base-uri(/x:description))" />  
 
@@ -46,7 +48,10 @@
   
 <xsl:template match="x:description" mode="x:generate-tests">
   <!-- The compiled stylesheet element. -->
-  <stylesheet version="2.0">
+  <!-- OXYGEN patch to support XSLT 3.0 -->
+  <!-- Patch is under MIT : https://www.oxygenxml.com/pipermail/oxygen-user/2016-January/005696.html -->
+  <stylesheet version="{( @xslt-version, '2.0' )[1]}"
+	      exclude-result-prefixes="pkg impl">
     <xsl:apply-templates select="." mode="x:copy-namespaces" />
   	<import href="{$stylesheet-uri}" />
   	<import href="{resolve-uri('generate-tests-utils.xsl', static-base-uri())}"/>
@@ -273,7 +278,7 @@
         <call-template name="test:report-value">
           <with-param name="value" select="$x:result" />
           <with-param name="wrapper-name" select="'x:result'" />
-          <with-param name="wrapper-ns" select="'http://www.jenitennison.com/xslt/xspec'" />
+          <with-param name="wrapper-ns" select="'{ $xspec-ns }'"/>
         </call-template>
       </xsl:if>
       <xsl:call-template name="x:call-scenarios"/>
@@ -394,14 +399,14 @@
                <call-template name="test:report-value">
                   <with-param name="value"        select="$impl:test-result"/>
                   <with-param name="wrapper-name" select="'x:result'"/>
-                  <with-param name="wrapper-ns"   select="'http://www.jenitennison.com/xslt/xspec'"/>
+                  <with-param name="wrapper-ns"   select="'{ $xspec-ns }'"/>
                </call-template>
             </if>
          </xsl:if>
          <call-template name="test:report-value">
             <with-param name="value"        select="$impl:expected"/>
             <with-param name="wrapper-name" select="'x:expect'"/>
-            <with-param name="wrapper-ns"   select="'http://www.jenitennison.com/xslt/xspec'"/>
+            <with-param name="wrapper-ns"   select="'{ $xspec-ns }'"/>
          </call-template>
       </xsl:if>
     </x:test>

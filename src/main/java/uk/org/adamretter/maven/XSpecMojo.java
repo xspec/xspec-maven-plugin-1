@@ -66,7 +66,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * Location of the XSpec Compiler XSLT i.e.generate-xspec-tests.xsl
      */
-    @Parameter(defaultValue = "/xspec/compiler/generate-xspec-tests-oxygen.xsl", required = true)
+    @Parameter(defaultValue = "/xspec/compiler/generate-xspec-tests.xsl", required = true)
     private String xspecCompiler;
 
     /**
@@ -117,7 +117,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        getLog().warn("C'est le nouveau !");
         if (!uriResolverSet) {
             xsltCompiler.setURIResolver(buildUriResolver());
             uriResolverSet = true;
@@ -335,7 +334,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             compiler.setSource(new SAXSource(xspecTestFilter, inXSpec));
 
-            final Serializer serializer = new Serializer();
+            final Serializer serializer = processor.newSerializer();
             serializer.setOutputFile(compiledXSpec);
             compiler.setDestination(serializer);
 
