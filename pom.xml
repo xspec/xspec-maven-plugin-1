@@ -365,6 +365,29 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>ELS</id>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>nexus-public</id>
+                    <url>http://srvic/nexus/content/groups/public</url>
+                    <layout>default</layout>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+            <repositories>
+                <repository>
+                    <id>nexus-public</id>
+                    <url>http://srvic/nexus/content/groups/public</url>
+                    <layout>default</layout>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
     </profiles>
 
 </project>
