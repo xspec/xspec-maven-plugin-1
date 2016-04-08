@@ -36,8 +36,8 @@
     
     <xsl:output indent="yes"/>
     
-    <xsl:param name="baseDir" as="xs:string" />
-    <xsl:param name="outputDir" as="xs:string" />
+    <xsl:param name="baseDir" as="xs:string" required="yes"/>
+    <xsl:param name="outputDir" as="xs:string" required="yes"/>
     <xsl:param name="reportFileName" select="tokenize(document-uri(/),'/')[last()]" as="xs:string"/>
     <xsl:variable name="classname" select="replace($reportFileName,'.xml','.xspec')"/>
     
@@ -112,7 +112,7 @@
     </xsl:template>
     
     <xsl:function name="local:nomPropre" as="xs:string">
-        <xsl:param name="s" as="xs:string" required="yes"/>
+        <xsl:param name="s" as="xs:string"/>
         <xsl:value-of select="concat(upper-case(substring($s,1,1)),lower-case(substring($s,2)))"/>
     </xsl:function>
     
