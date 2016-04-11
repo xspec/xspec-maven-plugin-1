@@ -54,11 +54,11 @@ public class XSpecTestFilter extends XMLFilterImpl {
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         super.startElement(uri, localName, qName, atts);
 
-        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("pendingTests")) {
+        if(uri != null && uri.equals(XSPEC_NS) && (localName.equals("pendingTests") || localName.equals("pending"))) {
             pendingWrapper++;
         }
 
-        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("scenario") && atts.getValue("pendingTests") != null) {
+        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("scenario") && (atts.getValue("pendingTests") != null || atts.getValue("pending") != null)) {
             pendingWrapper++;
             pendingScenario = true;
         }
@@ -75,7 +75,7 @@ public class XSpecTestFilter extends XMLFilterImpl {
     public void endElement(final String uri, final String localName, final String qName) throws SAXException {
         super.endElement(uri, localName, qName);
 
-        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("pendingTests")) {
+        if(uri != null && uri.equals(XSPEC_NS) && (localName.equals("pendingTests") || localName.equals("pending"))) {
             pendingWrapper--;
         }
 
