@@ -133,7 +133,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         getLog().debug("Using XSpec Reporter: " + reporterPath);
 
         InputStream isCompiler = null;
-        InputStream isReporter = null;
+        InputStream isReporter;
         try {
 
             isCompiler = resourceResolver.getResource(compilerPath);
@@ -149,7 +149,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             final Source srcCompiler = new StreamSource(isCompiler);
             srcCompiler.setSystemId(compilerPath);
             final XsltExecutable xeCompiler = xsltCompiler.compile(srcCompiler);
-            final XsltTransformer xtCompiler = xeCompiler.load();
+//            final XsltTransformer xtCompiler = xeCompiler.load();
 
             final Source srcReporter = new StreamSource(isReporter);
             srcReporter.setSystemId(reporterPath);
@@ -160,10 +160,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             final List<File> xspecs = findAllXSpecs(getTestDir());
             getLog().info("Found " + xspecs.size() + " XSpecs...");
 
-            XsltExecutable xtSurefire = null;
+            XsltExecutable xeSurefire = null;
             if (generateSurefireReport) {
                 XsltCompiler compiler = processor.newXsltCompiler();
-                xtSurefire = compiler.compile(new StreamSource(getClass().getResourceAsStream("/surefire-reporter.xsl")));
+                xeSurefire = compiler.compile(new StreamSource(getClass().getResourceAsStream("/surefire-reporter.xsl")));
             }
 
             boolean failed = false;
@@ -171,7 +171,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 if (shouldExclude(xspec)) {
                     getLog().warn("Skipping excluded XSpec: " + xspec.getAbsolutePath());
                 } else {
-                    if (!processXSpec(xspec, xtCompiler, xtReporter, xtSurefire)) {
+                    if (!processXSpec(xspec, xeCompiler, xtReporter, xeSurefire)) {
                         failed = true;
                     }
                 }
@@ -225,11 +225,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      *
      * @return true if all tests in XSpec pass, false otherwise
      */
-    final boolean processXSpec(final File xspec, final XsltTransformer compiler, final XsltTransformer reporter, final XsltExecutable xeSurefire) {
+    final boolean processXSpec(final File xspec, final XsltExecutable executable, final XsltTransformer reporter, final XsltExecutable xeSurefire) {
         getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
 
         /* compile the test stylesheet */
-        final CompiledXSpec compiledXSpec = compileXSpec(compiler, xspec);
+        final CompiledXSpec compiledXSpec = compileXSpec(executable, xspec);
         if (compiledXSpec == null) {
             return false;
         } else {
@@ -316,8 +316,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * @return Details of the Compiled XSpec or null if the XSpec could not be
      * compiled
      */
-    final CompiledXSpec compileXSpec(final XsltTransformer compiler, final File xspec) {
-
+    final CompiledXSpec compileXSpec(final XsltExecutable executable, final File xspec) {
+        XsltTransformer compiler = executable.load();
         InputStream isXSpec = null;
         try {
             final File compiledXSpec = getCompiledXSpecPath(getReportDir(), xspec);
@@ -492,16 +492,17 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         }
     }
     
-    private static final Configuration getSaxonConfiguration() {
+    private static Configuration getSaxonConfiguration() {
         Configuration config = null;
-        try {
-            config = (Configuration)Class.forName("com.saxonica.config.ProfessionalConfiguration").newInstance();
+//        try {
+//            config = (Configuration)Class.forName("com.saxonica.config.ProfessionalConfiguration").newInstance();
+            config = Configuration.newConfiguration();
             config.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
-        } catch(ClassNotFoundException cnf) {
-            config = new Configuration();
-        } catch (InstantiationException | IllegalAccessException ex) {
-            throw new RuntimeException(ex);
-        }
+//        } catch(ClassNotFoundException cnf) {
+//            config = new Configuration();
+//        } catch (InstantiationException | IllegalAccessException ex) {
+//            throw new RuntimeException(ex);
+//        }
         return config;
     }
 }
