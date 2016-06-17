@@ -43,6 +43,14 @@ public class XSpecResultsHandler extends DefaultHandler2 {
     private int passed = 0;
     private int failed = 0;
     private int pending = 0;
+    private final LogProvider logProvider;
+
+    public XSpecResultsHandler(LogProvider logProvider) {
+        super();
+        this.logProvider=logProvider;
+    }
+    
+    
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
@@ -56,11 +64,13 @@ public class XSpecResultsHandler extends DefaultHandler2 {
             } else if(sPending!=null && sPending.length()>0) {
                 this.pending++;
             } else {
-//                System.err.print("<test");
-//                for(int i=0;i<attributes.getLength();i++) {
-//                    System.err.print(" "+attributes.getLocalName(i)+"="+attributes.getValue(i));
-//                }
-//                System.err.println("/>");
+                StringBuilder sb = new StringBuilder();
+                sb.append("<test");
+                for(int i=0;i<attributes.getLength();i++) {
+                    sb.append(" ").append(attributes.getLocalName(i)).append("=").append(attributes.getValue(i));
+                }
+                sb.append("/>");
+                logProvider.getLog().debug(sb.toString());
                 failed++;
             }
         }
