@@ -50,10 +50,10 @@ public class XSpecResultsHandler extends DefaultHandler2 {
         if(uri != null && uri.equals(XSPEC_NS) && localName.equals("test")) {
             tests++;
             final String successful = attributes.getValue("successful");
-            final String pending = attributes.getValue("pending");
+            final String sPending = attributes.getValue("pending");
             if(successful != null && successful.equals("true")) {
                 passed++;
-            } else if(pending!=null && pending.length()>0) {
+            } else if(sPending!=null && sPending.length()>0) {
                 this.pending++;
             } else {
 //                System.err.print("<test");
