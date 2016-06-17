@@ -54,6 +54,7 @@ public class ResourceResolver {
     public InputStream getResource(final String path) {
 
         getLogProvider().getLog().debug("Attempting to resolve resource: " + path);
+	if(path==null) return null;
 
         final InputStream is = getClass().getResourceAsStream(path);
         if(is != null) {

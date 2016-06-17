@@ -58,6 +58,9 @@ public class XSpecURIResolver extends StandardURIResolver {
     public XSpecURIResolver(final LogProvider logProvider, final ResourceResolver resourceResolver, File catalogFile) {
         this.logProvider = logProvider;
         this.resourceResolver = resourceResolver;
+	if(resourceResolver==null) {
+		System.err.println("resourceResolver is null !!!");
+	}
         URIResolver tmpCatalogResolver = null;
         if(catalogFile!=null && catalogFile.exists()) {
             CatalogManager cm = new CatalogManager();
@@ -74,6 +77,7 @@ public class XSpecURIResolver extends StandardURIResolver {
 
     @Override
     public Source resolve(final String href, final String base) throws XPathException {
+	getLogProvider().getLog().debug(String.format("resolve(%s,%s)",href,base));
         final Source saxonSource = super.resolve(href, base);
         if(saxonSource != null && new File(saxonSource.getSystemId()).exists()) {
             getLogProvider().getLog().debug(String.format("Saxon Resolved URI href=%s ,base=%s to %s", href, base, saxonSource));
@@ -93,7 +97,11 @@ public class XSpecURIResolver extends StandardURIResolver {
                 if(catalogResolver!=null) {
                     getLogProvider().getLog().debug(String.format("Attempting catalog resolution for %s", path));
                     try {
-                        return catalogResolver.resolve(href, base);
+                        Source ret = catalogResolver.resolve(href, base);
+			if(ret==null) {
+				getLogProvider().getLog().warn(String.format("Resolution failed for %s %s",href, base));
+			}
+			return ret;
                     } catch(TransformerException ex) {
                         getLogProvider().getLog().warn("Could not Resolve URI for XSpec!");
                         return null;
