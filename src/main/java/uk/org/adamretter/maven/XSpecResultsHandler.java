@@ -48,6 +48,8 @@ public class XSpecResultsHandler extends DefaultHandler2 {
     public XSpecResultsHandler(LogProvider logProvider) {
         super();
         this.logProvider=logProvider;
+	System.out.println("XSpecResultHandler.<init>");
+	logProvider.getLog().debug("XSpecResultHandler.<init>");
     }
     
     
@@ -55,6 +57,8 @@ public class XSpecResultsHandler extends DefaultHandler2 {
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
+	logProvider.getLog().debug("[XSpecResultsHandler] in "+qName);
+	System.out.println("[XSpecResultsHandler] in "+qName);
         if(uri != null && uri.equals(XSPEC_NS) && localName.equals("test")) {
             tests++;
             final String successful = attributes.getValue("successful");
@@ -70,7 +74,8 @@ public class XSpecResultsHandler extends DefaultHandler2 {
                     sb.append(" ").append(attributes.getLocalName(i)).append("=").append(attributes.getValue(i));
                 }
                 sb.append("/>");
-                logProvider.getLog().debug(sb.toString());
+                logProvider.getLog().error(sb.toString());
+		System.out.println(sb.toString());
                 failed++;
             }
         }
@@ -101,5 +106,9 @@ public class XSpecResultsHandler extends DefaultHandler2 {
      */
     public int getFailed() {
         return failed;
+    }
+
+    public int getPending() {
+	return pending;
     }
 }
