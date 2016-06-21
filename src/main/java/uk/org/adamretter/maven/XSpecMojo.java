@@ -296,10 +296,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             final int missed = compiledXSpec.getTests() - resultsHandler.getTests();
 
             //report results
-            final String msg = String.format("%s RESULTS [Passed/Pending/Failed/Missed/Total] = [%d/%d/%d/%d/%d]", 
+            final String msg = String.format("%s results [Passed/Pending/Failed/Missed/Total] = [%d/%d/%d/%d/%d]", 
                     xspec.getName(), 
                     resultsHandler.getPassed(), 
-/*                    compiledXSpec.getPendingTests(), */
 		    resultsHandler.getPending(),
                     resultsHandler.getFailed(), 
                     missed, 
