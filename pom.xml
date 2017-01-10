@@ -1,23 +1,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
+    <!--parent>
         <groupId>org.sonatype.oss</groupId>
         <artifactId>oss-parent</artifactId>
         <version>7</version>
-    </parent>
+    </parent-->
 
 
-    <groupId>uk.org.adamretter.maven</groupId>
+    <groupId>io.xspec.maven</groupId>
     <artifactId>xspec-maven-plugin</artifactId>
     <version>1.4.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
 
     <name>XSpec plugin for Maven</name>
-    <description>Maven plugin that executes XSpec tests</description>
-    <inceptionYear>2013</inceptionYear>
-    <url>https://github.com/adamretter/xspec-maven-plugin</url>
+    <description>Maven plugin that executes XSpec tests. Forked from Adam Retter xspec-maven-plugin</description>
+    <inceptionYear>2017</inceptionYear>
+    <url>https://github.com/xspec/xspec-maven-plugin</url>
 
 
     <licenses>
@@ -29,9 +29,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:https://github.com/adamretter/xspec-maven-plugin.git</connection>
-        <developerConnection>scm:git:https://github.com/adamretter/xspec-maven-plugin.git</developerConnection>
-        <url>scm:git:https://github.com/adamretter/xspec-maven-plugin.git</url>
+        <connection>scm:git:https://github.com/xspec/xspec-maven-plugin.git</connection>
+        <developerConnection>scm:git:https://github.com/xspec/xspec-maven-plugin.git</developerConnection>
+        <url>scm:git:https://github.com/xspec/xspec-maven-plugin.git</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -44,19 +44,20 @@
         </developer>
         <developer>
             <name>Christophe Marchand</name>
-            <email>christophe.marchand@contactoffice.net</email>
+            <email>christophe@marchand.top</email>
+            <organizationUrl>https://www.github.com/xspec</organizationUrl>
             <timezone>GMT+1</timezone>
         </developer>
     </developers>
 
     <properties>
-        <xspec.groupId>com.google.code.xspec</xspec.groupId>
+        <xspec.groupId>io.xspec</xspec.groupId>
         <xspec.artifactId>xspec</xspec.artifactId>
-        <xspec.version>0.4.0rc1</xspec.version>
+        <xspec.version>0.5.0</xspec.version>
         <xspec.packaging>zip</xspec.packaging>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.plugin-plugin.version>3.4</maven.plugin-plugin.version>
-        <project.inceptionYear>2013</project.inceptionYear>
+        <!--project.inceptionYear>2013</project.inceptionYear-->
     </properties>
 
 
@@ -80,7 +81,7 @@
         <dependency>
             <groupId>net.sf.saxon</groupId>
             <artifactId>Saxon-HE</artifactId>
-            <version>9.7.0-1</version>
+            <version>9.7.0-14</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -108,11 +109,11 @@
                     <artifactId>maven-source-plugin</artifactId>
                     <version>2.4</version>
                 </plugin>
-                <plugin>
+                <!--plugin>
                     <groupId>com.mycila</groupId>
                     <artifactId>license-maven-plugin</artifactId>
                     <version>2.11</version>
-                </plugin>
+                </plugin-->
 
                 <plugin>
                     <!-- needed for mojo with annotations -->
@@ -179,7 +180,8 @@
                             <artifactId>${xspec.artifactId}</artifactId>
                             <version>${xspec.version}</version>
                             <packaging>${xspec.packaging}</packaging>
-                            <downloadUrl>http://{artifactId}.googlecode.com/files/{artifactId}-{version}.{packaging}</downloadUrl>
+                            <!--downloadUrl>https://github.com/xspec/xspec/archive/v0.5.0.zip</downloadUrl-->
+                            <downloadUrl>http://github.com/xspec/{artifactId}/archive/v{version}.{packaging}</downloadUrl>
                         </artifactItem>
                     </artifactItems>
                 </configuration>
@@ -240,8 +242,8 @@
                                     <fileset dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}/src" includes="compiler/**" excludes="compiler/generate-xspec-tests.xsl"/>
                                     <fileset dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}/src" includes="reporter/**" />
                                     <filelist dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}">
-                                        <file name="README" />
-                                        <file name="VERSION" />
+                                        <file name="README.md" />
+                                        <!--file name="VERSION" /-->
                                     </filelist>
                                 </copy>
                             </target>
@@ -256,7 +258,7 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
-            <plugin>
+            <!--plugin>
                 <groupId>com.mycila</groupId>
                 <artifactId>license-maven-plugin</artifactId>
                 <configuration>
@@ -280,7 +282,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin-->
             <plugin>
                 <groupId>com.code54.mojo</groupId>
                 <artifactId>buildversion-plugin</artifactId>
@@ -322,15 +324,26 @@
         </plugins>
     </build>
     
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+    
     <pluginRepositories>
         <pluginRepository>
             <id>sonatype-releases</id>
             <url>http://oss.sonatype.org/content/repositories/releases</url>
         </pluginRepository>
-        <pluginRepository>
+        <!--pluginRepository>
             <id>sonatype-snapshots</id>
             <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-        </pluginRepository>
+        </pluginRepository-->
         <pluginRepository>
             <id>clojars.org</id>
             <url>http://clojars.org/repo</url>
@@ -338,11 +351,10 @@
     </pluginRepositories>
 
     <profiles>
-        <profile>
+        <!--profile>
             <id>release-sign-artifacts</id>
             <activation>
                 <property>
-                    <!-- performRelease will be true when mvn:release-perform is executed -->
                     <name>performRelease</name>
                     <value>true</value>
                 </property>
@@ -364,8 +376,8 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
+        </profile-->
+        <!--profile>
             <id>ELS</id>
             <pluginRepositories>
                 <pluginRepository>
@@ -387,6 +399,43 @@
                     </snapshots>
                 </repository>
             </repositories>
+        </profile-->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-release-plugin</artifactId>
+                        <version>2.5.3</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.7</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 
