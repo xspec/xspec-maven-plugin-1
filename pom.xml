@@ -1,16 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!--parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
-    </parent-->
-
-
     <groupId>io.xspec.maven</groupId>
     <artifactId>xspec-maven-plugin</artifactId>
-    <version>1.4.1-SNAPSHOT</version>
+    <version>1.4.1-RC1</version>
     <packaging>maven-plugin</packaging>
 
 
@@ -57,7 +50,6 @@
         <xspec.packaging>zip</xspec.packaging>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.plugin-plugin.version>3.4</maven.plugin-plugin.version>
-        <!--project.inceptionYear>2013</project.inceptionYear-->
     </properties>
 
 
@@ -109,14 +101,7 @@
                     <artifactId>maven-source-plugin</artifactId>
                     <version>2.4</version>
                 </plugin>
-                <!--plugin>
-                    <groupId>com.mycila</groupId>
-                    <artifactId>license-maven-plugin</artifactId>
-                    <version>2.11</version>
-                </plugin-->
-
                 <plugin>
-                    <!-- needed for mojo with annotations -->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
                     <version>${maven.plugin-plugin.version}</version>
@@ -243,7 +228,6 @@
                                     <fileset dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}/src" includes="reporter/**" />
                                     <filelist dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}">
                                         <file name="README.md" />
-                                        <!--file name="VERSION" /-->
                                     </filelist>
                                 </copy>
                             </target>
@@ -258,31 +242,6 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
-            <!--plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <configuration>
-                    <header>com/mycila/maven/plugin/license/templates/BSD-3.txt</header>
-                    <properties>
-                        <owner>Adam Retter</owner>
-                        <year>${project.inceptionYear}</year>
-                        <email>adam.retter@googlemail.com</email>
-                    </properties>
-                    <excludes>
-                        <exclude>pom.xml</exclude>
-                        <exclude>LICENSE</exclude>
-                        <exclude>src/main/resources/surefire-reporter.xsl</exclude>
-                        <exclude>src/main/resources/xspec/compiler/*</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin-->
             <plugin>
                 <groupId>com.code54.mojo</groupId>
                 <artifactId>buildversion-plugin</artifactId>
@@ -340,10 +299,6 @@
             <id>sonatype-releases</id>
             <url>http://oss.sonatype.org/content/repositories/releases</url>
         </pluginRepository>
-        <!--pluginRepository>
-            <id>sonatype-snapshots</id>
-            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-        </pluginRepository-->
         <pluginRepository>
             <id>clojars.org</id>
             <url>http://clojars.org/repo</url>
@@ -351,55 +306,6 @@
     </pluginRepositories>
 
     <profiles>
-        <!--profile>
-            <id>release-sign-artifacts</id>
-            <activation>
-                <property>
-                    <name>performRelease</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile-->
-        <!--profile>
-            <id>ELS</id>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>nexus-public</id>
-                    <url>http://srvic/nexus/content/groups/public</url>
-                    <layout>default</layout>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
-            <repositories>
-                <repository>
-                    <id>nexus-public</id>
-                    <url>http://srvic/nexus/content/groups/public</url>
-                    <layout>default</layout>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-        </profile-->
         <profile>
             <id>release</id>
             <build>
