@@ -1,6 +1,6 @@
 ## XSpec Plugin for Maven
 
-A very simple plugin for Maven that will execute your XSpec tests as part of the *verify* phase of your Maven build, reports are generated and if any tests fail the build will be failed.
+A very simple plugin for Maven that will execute your XSpec tests as part of the *test* phase of your Maven build, reports are generated and if any tests fail the build will be failed.
 The XSpec Maven plugin is licensed under the [BSD license](http://opensource.org/licenses/BSD-3-Clause). The plugin bundles aspects of the XSpec processor implementaion (written in XSLT) from http://code.google.com/p/xspec/ which is released under the [MIT license](http://opensource.org/licenses/MIT). 
 
 ***Note*** at present only XSpec tests written in XSLT are supported. It should not be too difficult to add support for XQuery as well for a future release.
@@ -11,38 +11,40 @@ By default the plugin expects to find your tests in `src/test/xspec` and both XM
 ### Goals
 
 The plugin binds to the *verify* phase by default and there is only one goal: `run-xspec`.
-The plugin has been published to [Maven Central](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22uk.org.adamretter.maven%22%20AND%20a%3A%22xspec-maven-plugin%22) and as such using the plugin should simply be a matter of declaring the plugin in your build configuration inside your `pom.xml`:
+The plugin has been published to [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22xspec-maven-plugin%22)
 
 __Plugin declaration__
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>uk.org.adamretter.maven</groupId>
-				<artifactId>xspec-maven-plugin</artifactId>
-				<version>1.4</version>
-				<dependencies>
-					<dependency>
-						<groupId>net.sf.saxon</groupId>
-						<artifactId>Saxon-HE</artifactId>
-						<version>9.6.0-7</version>
-					</dependency>
-				</dependencies>
-				<configuration>
-					<catalogFile>catalog.xml</catalogFile>
-					<generateSurefireReport>true</generateSurefireReport>
-				<executions>
-					<execution>
-						<phase>test</phase>
-						<goals>
-							<goal>run-xspec</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
-
+```xml
+<build>
+	<plugins>
+		<plugin>
+			<groupId>io.xspec.maven</groupId>
+			<artifactId>xspec-maven-plugin</artifactId>
+			<version>1.4.1-RC1</version>
+			<dependencies>
+				<!-- if you have a license, feel free to add Saxon-PE
+					 or Saxon-EE instead of Saxon-HE -->
+				<dependency>
+					<groupId>net.sf.saxon</groupId>
+					<artifactId>Saxon-HE</artifactId>
+					<version>9.7.0-14</version>
+				</dependency>
+			</dependencies>
+			<configuration>
+				<catalogFile>catalog.xml</catalogFile>
+				<generateSurefireReport>true</generateSurefireReport>
+			<executions>
+				<execution>
+					<phase>test</phase>
+					<goals>
+						<goal>run-xspec</goal>
+					</goals>
+				</execution>
+			</executions>
+		</plugin>
+	</plugins>
+</build>
+```
 
 ### Configuration
 
@@ -80,11 +82,11 @@ If set to true, generates a surefire report in '${surefireReportDir}'.
 ### FAQ
 * Where should I put my XSLT?
 
-You can put it anywhere you like, although within `src/` would make the most sense! We would suggest keeping your XSLT files in `src/main/resources/`. If you do that, then to reference the XSLT from your XSpec, you should set the `@template` attribute use relative path to that folder. For example, given `src/main/resources/some.xslt` and `src/test/xspec/some.xspec`, your `some.xspec` would reference `some.xslt` like so:
+You can put it anywhere you like, although within `src/` would make the most sense! We would suggest keeping your XSLT files in `src/main/xsl/`. If you do that, then to reference the XSLT from your XSpec, you should set the `@template` attribute use relative path to that folder. For example, given `src/main/xsl/some.xslt` and `src/test/xspec/some.xspec`, your `some.xspec` would reference `some.xslt` like so:
 
 ```xml
 <x:description xmlns:x="http://www.jenitennison.com/xslt/xspec"
-  stylesheet="../../main/resources/some.xslt">
+  stylesheet="../../main/xsl/some.xslt">
   
   ...
 ```
