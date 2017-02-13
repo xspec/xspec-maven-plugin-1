@@ -56,6 +56,7 @@ import org.apache.maven.project.MavenProject;
  * Goal which runs any XSpec tests in src/test/xspec
  *
  * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
+ * @author <a href="mailto:christophe@marchand.top">Christophe Marchand</a>
  */
 @Mojo(name = "run-xspec", defaultPhase = LifecyclePhase.VERIFY, requiresDependencyResolution = ResolutionScope.TEST)
 public class XSpecMojo extends AbstractMojo implements LogProvider {
@@ -149,12 +150,13 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             final Source srcCompiler = new StreamSource(isCompiler);
             srcCompiler.setSystemId(compilerPath);
             final XsltExecutable xeCompiler = xsltCompiler.compile(srcCompiler);
-//            final XsltTransformer xtCompiler = xeCompiler.load();
 
             final Source srcReporter = new StreamSource(isReporter);
             srcReporter.setSystemId(reporterPath);
             final XsltExecutable xeReporter = xsltCompiler.compile(srcReporter);
             final XsltTransformer xtReporter = xeReporter.load();
+//            xtReporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(new File(getReportDir(), RESOURCES_TEST_REPORT_CSS).toURI().toURL().toExternalForm()));
+            xtReporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(RESOURCES_TEST_REPORT_CSS));
 
             getLog().debug("Looking for XSpecs in: " + getTestDir());
             final List<File> xspecs = findAllXSpecs(getTestDir());
@@ -177,13 +179,30 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 }
             }
 
+            // extract css
+            File cssFile = new File(getReportDir(),RESOURCES_TEST_REPORT_CSS);
+            cssFile.getParentFile().mkdirs();
+            BufferedInputStream is = new BufferedInputStream(resourceResolver.getResource("/xspec/reporter/test-report.css"));
+            try {
+                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(cssFile));
+                byte[] buffer = new byte[1024];
+                int read = is.read(buffer);
+                while(read>0) {
+                    bos.write(buffer, 0, read);
+                    read = is.read(buffer);
+                }
+            } catch (IOException ex) {
+                getLog().error("while extracting CSS: ",ex);
+            }
+
             if (failed) {
                 throw new MojoFailureException("Some XSpec tests failed or were missed!");
             }
-
         } catch (final SaxonApiException sae) {
             getLog().error("Unable to compile the XSpec Compiler: " + compilerPath);
             throw new MojoExecutionException(sae.getMessage(), sae);
+//        } catch (MalformedURLException ex) {
+//            getLog().error(null, ex);
         } finally {
             if (isCompiler != null) {
                 try {
@@ -194,6 +213,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             }
         }
     }
+    private static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
 
     /**
      * Checks whether an XSpec should be excluded from processing
@@ -291,7 +311,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 getLog().error(te.getMessage());
                 getLog().debug(te);
             }
-
+            
             //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
             final int missed = compiledXSpec.getTests() - resultsHandler.getTests();
 
@@ -489,26 +509,19 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     static final String XSPEC_MOJO_PFX = "[xspec-mojo] ";
     
-    private static boolean checkIfSaxonPE() {
-        try {
-            Class.forName("com.saxonica.config.ProfessionalConfiguration");
-            return true;
-        } catch(Exception ex) {
-            return false;
-        }
-    }
+//    private static boolean checkIfSaxonPE() {
+//        try {
+//            Class.forName("com.saxonica.config.ProfessionalConfiguration");
+//            return true;
+//        } catch(Exception ex) {
+//            return false;
+//        }
+//    }
     
     private static Configuration getSaxonConfiguration() {
-        Configuration config = null;
-//        try {
-//            config = (Configuration)Class.forName("com.saxonica.config.ProfessionalConfiguration").newInstance();
-            config = Configuration.newConfiguration();
-            config.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
-//        } catch(ClassNotFoundException cnf) {
-//            config = new Configuration();
-//        } catch (InstantiationException | IllegalAccessException ex) {
-//            throw new RuntimeException(ex);
-//        }
-        return config;
+        Configuration ret = null;
+        ret = Configuration.newConfiguration();
+        ret.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
+        return ret;
     }
 }
