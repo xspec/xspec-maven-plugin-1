@@ -26,8 +26,10 @@
  */
 package uk.org.adamretter.maven;
 
+import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import net.sf.saxon.s9api.*;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -45,8 +47,12 @@ import javax.xml.transform.*;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import net.sf.saxon.Configuration;
 import org.apache.commons.io.output.NullOutputStream;
@@ -103,6 +109,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     @Parameter(defaultValue = "false")
     private Boolean generateSurefireReport;
+    
+    @Parameter(defaultValue = "${mojoExecution}", readonly = true)
+    private MojoExecution execution;
 
     private final static SAXParserFactory parserFactory = SAXParserFactory.newInstance();
     private static final Configuration saxonConfiguration = getSaxonConfiguration();
@@ -112,6 +121,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     private final ResourceResolver resourceResolver = new ResourceResolver(this);
     private final XsltCompiler xsltCompiler = processor.newXsltCompiler();
     private boolean uriResolverSet = false;
+    private List<ProcessedFile> processedFiles;
+    private static final List<ProcessedFile> staticProcessFiles = new ArrayList<>();
     
     @Parameter(defaultValue="${project}", readonly = true, required = true)
     MavenProject project;
@@ -155,7 +166,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             srcReporter.setSystemId(reporterPath);
             final XsltExecutable xeReporter = xsltCompiler.compile(srcReporter);
             final XsltTransformer xtReporter = xeReporter.load();
-//            xtReporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(new File(getReportDir(), RESOURCES_TEST_REPORT_CSS).toURI().toURL().toExternalForm()));
             xtReporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(RESOURCES_TEST_REPORT_CSS));
 
             getLog().debug("Looking for XSpecs in: " + getTestDir());
@@ -169,6 +179,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             }
 
             boolean failed = false;
+            processedFiles= new ArrayList<>(xspecs.size());
             for (final File xspec : xspecs) {
                 if (shouldExclude(xspec)) {
                     getLog().warn("Skipping excluded XSpec: " + xspec.getAbsolutePath());
@@ -211,6 +222,52 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                     getLog().warn(ioe);
                 }
             }
+        }
+        staticProcessFiles.addAll(processedFiles);
+        // if there is many executions, index file is generated each time, but results are appended...
+        generateIndex();
+    }
+    
+    private void generateIndex() {
+        File index = new File(reportDir, "index.html");
+        try (BufferedWriter fos = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(index), Charset.forName("UTF-8")))) {
+            fos.write("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n");
+            fos.write("<html>");
+            fos.write("<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n");
+            fos.write("<style>\n\ttable {border: solid black 1px; border-collapse: collapse; }\n");
+            fos.write("\ttd,th {border: solid black 1px; }\n");
+            fos.write("\ttd:not(:first-child) {text-align: right; }\n");
+            fos.write("</style>\n");
+            fos.write("<title>XSpec results</title><meta name=\"date\" content=\"");
+            fos.write(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
+            fos.write("\"></head>\n");
+            fos.write("<body><h3>XSpec results</h3>");
+            fos.write("<table><thead><tr><th>XSpec file</th><th>Passed</th><th>Pending</th><th>Failed</th><th>Missed</th><th>Total</th></tr></thead>\n");
+            fos.write("<tbody>");
+            String lastRootDir="";
+            for(ProcessedFile pf:staticProcessFiles) {
+                String rootDir = pf.getRootSourceDir().toString();
+                if(!lastRootDir.equals(rootDir)) {
+                    fos.write("<tr><td colspan=\"6\">");
+                    fos.write(rootDir);
+                    fos.write("</td></tr>\n");
+                    lastRootDir = rootDir;
+                }
+                fos.write("<tr><td><a href=\"");
+                fos.write(pf.getReportFile().toUri().toString());
+                fos.write("\">"+pf.getRelativeSourcePath()+"</a></td>");
+                fos.write("<td>"+pf.getPassed()+"</td>");
+                fos.write("<td>"+pf.getPending()+"</td>");
+                fos.write("<td>"+pf.getFailed()+"</td>");
+                fos.write("<td>"+pf.getMissed()+"</td>");
+                fos.write("<td>"+pf.getTotal()+"</td>");
+                fos.write("</tr>\n");
+            }
+            fos.write("</tbody></table>");
+            fos.write("</body></html>");
+            fos.flush();
+        } catch (IOException ex) {
+            getLog().warn("while writing XSpec index file", ex);
         }
     }
     private static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
@@ -277,6 +334,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 htmlSerializer.setOutputFile(xspecHtmlResult);
                 reporter.setDestination(htmlSerializer);
 
+
                 // setup surefire report output
                 Destination xtSurefire = null;
                 if(xeSurefire!=null) {
@@ -291,7 +349,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 } else {
                     xtSurefire = processor.newSerializer(new NullOutputStream());
                 }
-
+                ProcessedFile pf = new ProcessedFile(testDir, xspec, reportDir, xspecHtmlResult);
+                processedFiles.add(pf);
+                String relativeCssPath = 
+                        (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + RESOURCES_TEST_REPORT_CSS;
+                reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
                 //execute
                 final Destination destination = 
                         new TeeDestination(
@@ -320,6 +382,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                     xspec.getName(), 
                     resultsHandler.getPassed(), 
 		    resultsHandler.getPending(),
+                    resultsHandler.getFailed(), 
+                    missed, 
+                    compiledXSpec.getTests());
+            processedFiles.get(processedFiles.size()-1).setResults(
+                    resultsHandler.getPassed(), 
+                    resultsHandler.getPending(), 
                     resultsHandler.getFailed(), 
                     missed, 
                     compiledXSpec.getTests());
@@ -398,7 +466,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * @return A filepath to place the compiled XSpec in
      */
     final File getCompiledXSpecPath(final File xspecReportDir, final File xspec) {
-        final File fCompiledDir = new File(xspecReportDir, "xslt");
+        if (!xspecReportDir.exists()) {
+            xspecReportDir.mkdirs();
+        }
+        Path relativeSource = testDir.toPath().relativize(xspec.toPath());
+//        Path relativeSource = xspec.getParentFile().toPath().relativize(testDir.toPath());
+        File executionReportDir = (
+                execution!=null && execution.getExecutionId()!=null && !"default".equals(execution.getExecutionId()) ? 
+                new File(xspecReportDir,execution.getExecutionId()) :
+                xspecReportDir);
+        executionReportDir.mkdirs();
+        File outputDir = executionReportDir.toPath().resolve(relativeSource).toFile();
+        final File fCompiledDir = new File(outputDir, "xslt");
         if (!fCompiledDir.exists()) {
             fCompiledDir.mkdirs();
         }
@@ -442,7 +521,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         if (!xspecReportDir.exists()) {
             xspecReportDir.mkdirs();
         }
-        return new File(xspecReportDir, xspec.getName().replace(".xspec", "") + "." + extension);
+        Path relativeSource = testDir.toPath().relativize(xspec.toPath());
+        getLog().debug("executionId="+execution.getExecutionId());
+        getLog().debug("relativeSource="+relativeSource.toString());
+        File executionReportDir = (
+                execution!=null && execution.getExecutionId()!=null && !"default".equals(execution.getExecutionId()) ? 
+                new File(xspecReportDir,execution.getExecutionId()) :
+                xspecReportDir);
+        executionReportDir.mkdirs();
+        getLog().debug("executionReportDir="+executionReportDir.getAbsolutePath());
+        File outputDir = executionReportDir.toPath().resolve(relativeSource).toFile();
+        getLog().debug("outputDir="+outputDir.getAbsolutePath());
+        return new File(outputDir, xspec.getName().replace(".xspec", "") + "." + extension);
     }
 
     /**
@@ -508,19 +598,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     }
 
     static final String XSPEC_MOJO_PFX = "[xspec-mojo] ";
-    
-//    private static boolean checkIfSaxonPE() {
-//        try {
-//            Class.forName("com.saxonica.config.ProfessionalConfiguration");
-//            return true;
-//        } catch(Exception ex) {
-//            return false;
-//        }
-//    }
-    
+        
     private static Configuration getSaxonConfiguration() {
-        Configuration ret = null;
-        ret = Configuration.newConfiguration();
+        Configuration ret = Configuration.newConfiguration();
         ret.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
         return ret;
     }

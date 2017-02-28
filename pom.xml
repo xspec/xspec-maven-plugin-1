@@ -3,7 +3,7 @@
 
     <groupId>io.xspec.maven</groupId>
     <artifactId>xspec-maven-plugin</artifactId>
-    <version>1.5.0-RC1</version>
+    <version>1.5.0-RC2-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
 
@@ -60,6 +60,11 @@
             <version>3.3.3</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-core</artifactId>
+            <version>3.3.9</version>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
@@ -86,6 +91,18 @@
             <artifactId>xml-resolver</artifactId>
             <version>1.2</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <!--dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.3.2</version>
+            <scope>test</scope>
+        </dependency-->
     </dependencies>
 
     <build>
@@ -204,7 +221,7 @@
                                     <artifactId>${xspec.artifactId}</artifactId>
                                     <version>${xspec.version}</version>
                                     <type>${xspec.packaging}</type>
-                                    <overWrite>false</overWrite>
+                                    <overWrite>true</overWrite>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
