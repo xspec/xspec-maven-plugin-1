@@ -332,6 +332,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 htmlSerializer.setOutputProperty(Serializer.Property.METHOD, "html");
                 htmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
                 htmlSerializer.setOutputFile(xspecHtmlResult);
+//                reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
                 reporter.setDestination(htmlSerializer);
 
 
@@ -365,6 +366,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                                         ), 
                                 reporter);
                 xtXSpec.setDestination(destination);
+                xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
                 Source xspecSource = new StreamSource(xspec);
                 xtXSpec.setSource(xspecSource);
                 xtXSpec.transform();
