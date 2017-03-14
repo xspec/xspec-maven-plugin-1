@@ -26,6 +26,7 @@
  */
 package uk.org.adamretter.maven;
 
+import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import net.sf.saxon.s9api.*;
 import org.apache.maven.plugin.AbstractMojo;
@@ -47,6 +48,9 @@ import javax.xml.transform.*;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
@@ -54,8 +58,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import net.sf.saxon.Configuration;
 import org.apache.commons.io.output.NullOutputStream;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.project.MavenProject;
 
 /**
@@ -66,6 +75,11 @@ import org.apache.maven.project.MavenProject;
  */
 @Mojo(name = "run-xspec", defaultPhase = LifecyclePhase.VERIFY, requiresDependencyResolution = ResolutionScope.TEST)
 public class XSpecMojo extends AbstractMojo implements LogProvider {
+    public static final transient String XSPEC_PREFIX = "xspec:/";
+    public static final transient String CATALOG_NS = "urn:oasis:names:tc:entity:xmlns:xml:catalog";
+
+    @Parameter( defaultValue = "${project}", readonly = true, required = true )
+    private MavenProject project;
 
     @Parameter(property = "skipTests", defaultValue = "false")
     private boolean skipTests;
@@ -73,19 +87,19 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * Location of the XSpec Compiler XSLT i.e.generate-xspec-tests.xsl
      */
-    @Parameter(defaultValue = "/xspec/compiler/generate-xspec-tests.xsl", required = true)
+    @Parameter(defaultValue = XSPEC_PREFIX+"xspec/compiler/generate-xspec-tests.xsl", required = true)
     private String xspecCompiler;
 
     /**
      * Location of the XSpec Reporter XSLT i.e. format-xspec-report.xsl
      */
-    @Parameter(defaultValue = "/xspec/reporter/format-xspec-report.xsl", required = true)
+    @Parameter(defaultValue = XSPEC_PREFIX+"xspec/reporter/format-xspec-report.xsl", required = true)
     private String xspecReporter;
 
     /**
      * Location of the XSpec tests
      */
-    @Parameter(defaultValue = "${basedir}/src/test/xspec", required = true)
+    @Parameter(defaultValue = "${project.basedir}/src/test/xspec", required = true)
     private File testDir;
 
     /**
@@ -110,6 +124,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = "false")
     private Boolean generateSurefireReport;
     
+    @Parameter(defaultValue = "false")
+    private Boolean keepGeneratedCatalog;
+    
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
     private MojoExecution execution;
 
@@ -118,21 +135,24 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     
     private final static Processor processor = new Processor(saxonConfiguration);
 
-    private final ResourceResolver resourceResolver = new ResourceResolver(this);
+//    private final ResourceResolver resourceResolver = new ResourceResolver(this);
     private final XsltCompiler xsltCompiler = processor.newXsltCompiler();
     private boolean uriResolverSet = false;
     private List<ProcessedFile> processedFiles;
     private static final List<ProcessedFile> staticProcessFiles = new ArrayList<>();
     
-    @Parameter(defaultValue="${project}", readonly = true, required = true)
-    MavenProject project;
-
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (!uriResolverSet) {
-            xsltCompiler.setURIResolver(buildUriResolver());
-            uriResolverSet = true;
+            try {
+                xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver()));
+                uriResolverSet = true;
+            } catch(DependencyResolutionRequiredException | IOException | XMLStreamException ex) {
+                throw new MojoExecutionException("while creating URI resolver", ex);
+            }
         }
+        URIResolver resolver = xsltCompiler.getURIResolver();
+        
         if (isSkipTests()) {
             getLog().info("'skipTests' is set... skipping XSpec tests!");
             return;
@@ -144,26 +164,22 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         final String reporterPath = getXspecReporter();
         getLog().debug("Using XSpec Reporter: " + reporterPath);
 
-        InputStream isCompiler = null;
-        InputStream isReporter;
+        Source srcCompiler;
+        Source srcReporter;
         try {
-
-            isCompiler = resourceResolver.getResource(compilerPath);
-            if (isCompiler == null) {
+            String baseUri = project.getBasedir().toURI().toURL().toExternalForm();
+            srcCompiler = resolver.resolve(compilerPath, baseUri);
+            if (srcCompiler == null) {
                 throw new MojoExecutionException("Could not find XSpec Compiler stylesheets in: " + compilerPath);
             }
 
-            isReporter = resourceResolver.getResource(reporterPath);
-            if (isReporter == null) {
+            srcReporter = resolver.resolve(reporterPath, baseUri);
+            if (srcReporter == null) {
                 throw new MojoExecutionException("Could not find XSpec Reporter stylesheets in: " + reporterPath);
             }
 
-            final Source srcCompiler = new StreamSource(isCompiler);
-            srcCompiler.setSystemId(compilerPath);
             final XsltExecutable xeCompiler = xsltCompiler.compile(srcCompiler);
 
-            final Source srcReporter = new StreamSource(isReporter);
-            srcReporter.setSystemId(reporterPath);
             final XsltExecutable xeReporter = xsltCompiler.compile(srcReporter);
             final XsltTransformer xtReporter = xeReporter.load();
             xtReporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(RESOURCES_TEST_REPORT_CSS));
@@ -193,8 +209,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             // extract css
             File cssFile = new File(getReportDir(),RESOURCES_TEST_REPORT_CSS);
             cssFile.getParentFile().mkdirs();
-            BufferedInputStream is = new BufferedInputStream(resourceResolver.getResource("/xspec/reporter/test-report.css"));
             try {
+                Source cssSource = resolver.resolve(XSPEC_PREFIX+"xspec/reporter/test-report.css", baseUri);
+                BufferedInputStream is = new BufferedInputStream(new URL(cssSource.getSystemId()).openStream());
                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(cssFile));
                 byte[] buffer = new byte[1024];
                 int read = is.read(buffer);
@@ -202,26 +219,16 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                     bos.write(buffer, 0, read);
                     read = is.read(buffer);
                 }
-            } catch (IOException ex) {
+            } catch (IOException | TransformerException ex) {
                 getLog().error("while extracting CSS: ",ex);
             }
 
             if (failed) {
                 throw new MojoFailureException("Some XSpec tests failed or were missed!");
             }
-        } catch (final SaxonApiException sae) {
+        } catch (final SaxonApiException | TransformerException | MalformedURLException sae) {
             getLog().error("Unable to compile the XSpec Compiler: " + compilerPath);
             throw new MojoExecutionException(sae.getMessage(), sae);
-//        } catch (MalformedURLException ex) {
-//            getLog().error(null, ex);
-        } finally {
-            if (isCompiler != null) {
-                try {
-                    isCompiler.close();
-                } catch (final IOException ioe) {
-                    getLog().warn(ioe);
-                }
-            }
         }
         staticProcessFiles.addAll(processedFiles);
         // if there is many executions, index file is generated each time, but results are appended...
@@ -387,12 +394,14 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                     resultsHandler.getFailed(), 
                     missed, 
                     compiledXSpec.getTests());
-            processedFiles.get(processedFiles.size()-1).setResults(
-                    resultsHandler.getPassed(), 
-                    resultsHandler.getPending(), 
-                    resultsHandler.getFailed(), 
-                    missed, 
-                    compiledXSpec.getTests());
+            if(processedFiles.size()>0) {
+                processedFiles.get(processedFiles.size()-1).setResults(
+                        resultsHandler.getPassed(), 
+                        resultsHandler.getPending(), 
+                        resultsHandler.getFailed(), 
+                        missed, 
+                        compiledXSpec.getTests());
+            }
             if (resultsHandler.getFailed() + missed > 0) {
                 getLog().error(msg);
                 return false;
@@ -595,8 +604,75 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return excludes;
     }
 
-    private URIResolver buildUriResolver() {
-        return new XSpecURIResolver(this, resourceResolver, catalogFile);
+    private URIResolver buildUriResolver(final URIResolver saxonUriResolver) throws DependencyResolutionRequiredException, IOException, XMLStreamException, MojoFailureException {
+        String thisJar = null;
+        String marker = createMarker();
+        getLog().debug("marker="+marker);
+        for(String s:getClassPathElements()) {
+            getLog().debug("\t"+s);
+            if(s.contains(marker)) {
+                thisJar = s;
+                break;
+            }
+        }
+        if(thisJar==null) {
+            throw new MojoFailureException("Unable to locate plugin jar file from classpath-");
+        }
+        String jarUri = makeJarUri(thisJar);
+        File tmpCatalog = File.createTempFile("tmp", "-catalog.xml");
+        try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(tmpCatalog), Charset.forName("UTF-8"))) {
+            XMLStreamWriter xmlWriter = XMLOutputFactory.newFactory().createXMLStreamWriter(osw);
+            xmlWriter.writeStartDocument("UTF-8", "1.0");
+            xmlWriter.writeStartElement("catalog");
+            xmlWriter.setDefaultNamespace(CATALOG_NS);
+            xmlWriter.writeNamespace("", CATALOG_NS);
+            xmlWriter.writeStartElement("rewriteURI");
+            xmlWriter.writeAttribute("uriStartString", XSPEC_PREFIX);
+            xmlWriter.writeAttribute("rewritePrefix", jarUri);
+            xmlWriter.writeEndElement();
+            xmlWriter.writeStartElement("rewriteSystem");
+            xmlWriter.writeAttribute("uriStartString", XSPEC_PREFIX);
+            xmlWriter.writeAttribute("rewritePrefix", jarUri);
+            xmlWriter.writeEndElement();
+            if(catalogFile!=null) {
+                xmlWriter.writeStartElement("nextCatalog");
+                xmlWriter.writeAttribute("catalog", catalogFile.toURI().toURL().toExternalForm());
+                xmlWriter.writeEndElement();
+            }
+            xmlWriter.writeEndElement();
+            xmlWriter.writeEndDocument();
+            osw.flush();
+//            System.setProperty("xml.catalog.files", tmpCatalog.getAbsolutePath());
+        }
+        if(!keepGeneratedCatalog) tmpCatalog.deleteOnExit();
+        else getLog().info("keeping generated catalog: "+tmpCatalog.toURI().toURL().toExternalForm());
+        return new Resolver(saxonUriResolver, tmpCatalog, getLog());
+    }
+    
+    private String makeJarUri(String jarFile) throws MalformedURLException {
+        getLog().debug(String.format("makeJarUri(%s)", jarFile));
+//        return "jar:" + new File(jarFile).toURI().toURL().toExternalForm();
+        return "jar:" + jarFile +"!/";
+    }
+    
+    private List<String> getClassPathElements() throws MojoFailureException {
+        ClassLoader cl = getClass().getClassLoader();
+        if(cl instanceof URLClassLoader) {
+            URLClassLoader ucl = (URLClassLoader)cl;
+            List<String> ret = new ArrayList(ucl.getURLs().length);
+            for(URL u:ucl.getURLs()) {
+                ret.add(u.toExternalForm());
+            }
+            return ret;
+        } else {
+            throw new MojoFailureException("classloader is not a URL classloader : "+cl.getClass().getName());
+        }
+    }
+    
+    private String createMarker() throws IOException {
+        Properties props = new Properties();
+        props.load(getClass().getResourceAsStream("/xspec-maven-plugin.properties"));
+        return String.format("%s-%s", props.getProperty("plugin.artifactId"), props.getProperty("plugin.version"));
     }
 
     static final String XSPEC_MOJO_PFX = "[xspec-mojo] ";
