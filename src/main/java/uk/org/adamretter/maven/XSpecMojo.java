@@ -130,16 +130,16 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
     private MojoExecution execution;
 
-    private final static SAXParserFactory parserFactory = SAXParserFactory.newInstance();
-    private static final Configuration saxonConfiguration = getSaxonConfiguration();
+    private static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
+    private static final Configuration SAXON_CONFIGURATION = getSaxonConfiguration();
     
-    private final static Processor processor = new Processor(saxonConfiguration);
+    private static final Processor PROCESSOR = new Processor(SAXON_CONFIGURATION);
 
 //    private final ResourceResolver resourceResolver = new ResourceResolver(this);
-    private final XsltCompiler xsltCompiler = processor.newXsltCompiler();
+    private final XsltCompiler xsltCompiler = PROCESSOR.newXsltCompiler();
     private boolean uriResolverSet = false;
     private List<ProcessedFile> processedFiles;
-    private static final List<ProcessedFile> staticProcessFiles = new ArrayList<>();
+    private static final List<ProcessedFile> PROCESS_FILES = new ArrayList<>();
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -190,7 +190,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             XsltExecutable xeSurefire = null;
             if (generateSurefireReport) {
-                XsltCompiler compiler = processor.newXsltCompiler();
+                XsltCompiler compiler = PROCESSOR.newXsltCompiler();
                 xeSurefire = compiler.compile(new StreamSource(getClass().getResourceAsStream("/surefire-reporter.xsl")));
             }
 
@@ -200,7 +200,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 if (shouldExclude(xspec)) {
                     getLog().warn("Skipping excluded XSpec: " + xspec.getAbsolutePath());
                 } else {
-                    if (!processXSpec(xspec, xeCompiler, xtReporter, xeSurefire)) {
+                    if (!processXSpec(xspec, xeCompiler, xtReporter, xeSurefire, resolver)) {
                         failed = true;
                     }
                 }
@@ -230,7 +230,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             getLog().error("Unable to compile the XSpec Compiler: " + compilerPath);
             throw new MojoExecutionException(sae.getMessage(), sae);
         }
-        staticProcessFiles.addAll(processedFiles);
+        PROCESS_FILES.addAll(processedFiles);
         // if there is many executions, index file is generated each time, but results are appended...
         generateIndex();
     }
@@ -252,7 +252,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             fos.write("<table><thead><tr><th>XSpec file</th><th>Passed</th><th>Pending</th><th>Failed</th><th>Missed</th><th>Total</th></tr></thead>\n");
             fos.write("<tbody>");
             String lastRootDir="";
-            for(ProcessedFile pf:staticProcessFiles) {
+            for(ProcessedFile pf:PROCESS_FILES) {
                 String rootDir = pf.getRootSourceDir().toString();
                 if(!lastRootDir.equals(rootDir)) {
                     fos.write("<tr><td colspan=\"6\">");
@@ -309,7 +309,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      *
      * @return true if all tests in XSpec pass, false otherwise
      */
-    final boolean processXSpec(final File xspec, final XsltExecutable executable, final XsltTransformer reporter, final XsltExecutable xeSurefire) {
+    final boolean processXSpec(final File xspec, final XsltExecutable executable, final XsltTransformer reporter, final XsltExecutable xeSurefire, final URIResolver uriResolver) {
         getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
 
         /* compile the test stylesheet */
@@ -328,14 +328,14 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
                 //setup xml report output
                 final File xspecXmlResult = getXSpecXmlResultPath(getReportDir(), xspec);
-                final Serializer xmlSerializer = processor.newSerializer();
+                final Serializer xmlSerializer = PROCESSOR.newSerializer();
                 xmlSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
                 xmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
                 xmlSerializer.setOutputFile(xspecXmlResult);
 
                 //setup html report output
                 final File xspecHtmlResult = getXSpecHtmlResultPath(getReportDir(), xspec);
-                final Serializer htmlSerializer = processor.newSerializer();
+                final Serializer htmlSerializer = PROCESSOR.newSerializer();
                 htmlSerializer.setOutputProperty(Serializer.Property.METHOD, "html");
                 htmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
                 htmlSerializer.setOutputFile(xspecHtmlResult);
@@ -351,7 +351,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                         xt.setParameter(new QName("baseDir"), new XdmAtomicValue(project.getBasedir().toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("outputDir"), new XdmAtomicValue(surefireReportDir.toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
-                        xt.setDestination(processor.newSerializer(new NullOutputStream()));
+                        xt.setDestination(PROCESSOR.newSerializer(new NullOutputStream()));
                         // setBaseOutputURI not required, surefire-reporter.xsl 
                         // does xsl:result-document with absolute @href
                         xtSurefire = xt;
@@ -359,7 +359,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                         getLog().warn("Unable to generate surefire report", ex);
                     }
                 } else {
-                    xtSurefire = processor.newSerializer(new NullOutputStream());
+                    xtSurefire = PROCESSOR.newSerializer(new NullOutputStream());
                 }
                 ProcessedFile pf = new ProcessedFile(testDir, xspec, reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
@@ -380,6 +380,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
                 Source xspecSource = new StreamSource(xspec);
                 xtXSpec.setSource(xspecSource);
+                xtXSpec.setURIResolver(uriResolver);
                 xtXSpec.transform();
 
             } catch (final SaxonApiException te) {
@@ -434,7 +435,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             isXSpec = new FileInputStream(xspec);
 
-            final SAXParser parser = parserFactory.newSAXParser();
+            final SAXParser parser = PARSER_FACTORY.newSAXParser();
             final XMLReader reader = parser.getXMLReader();
             final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(reader);
 
@@ -443,7 +444,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             compiler.setSource(new SAXSource(xspecTestFilter, inXSpec));
 
-            final Serializer serializer = processor.newSerializer();
+            final Serializer serializer = PROCESSOR.newSerializer();
             serializer.setOutputFile(compiledXSpec);
             compiler.setDestination(serializer);
 
