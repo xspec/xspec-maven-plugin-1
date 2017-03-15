@@ -3,7 +3,7 @@
 
     <groupId>io.xspec.maven</groupId>
     <artifactId>xspec-maven-plugin</artifactId>
-    <version>1.5.0-RC5-SNAPSHOT</version>
+    <version>1.5.0-RC5</version>
     <packaging>maven-plugin</packaging>
 
 
