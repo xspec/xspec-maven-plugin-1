@@ -85,7 +85,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     private boolean skipTests;
 
     /**
-     * Location of the XSpec Compiler XSLT i.e.generate-xspec-tests.xsl
+     * Location of the XSpec Compiler XSLT i.e. generate-xspec-tests.xsl
      */
     @Parameter(defaultValue = XSPEC_PREFIX+"xspec/compiler/generate-xspec-tests.xsl", required = true)
     private String xspecCompiler;
@@ -339,7 +339,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 htmlSerializer.setOutputProperty(Serializer.Property.METHOD, "html");
                 htmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
                 htmlSerializer.setOutputFile(xspecHtmlResult);
-//                reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
+                reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
                 reporter.setDestination(htmlSerializer);
 
 
@@ -352,8 +352,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                         xt.setParameter(new QName("outputDir"), new XdmAtomicValue(surefireReportDir.toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
                         xt.setDestination(processor.newSerializer(new NullOutputStream()));
+                        // setBaseOutputURI not required, surefire-reporter.xsl 
+                        // does xsl:result-document with absolute @href
                         xtSurefire = xt;
-                    } catch(Exception ignore) {}
+                    } catch(Exception ex) {
+                        getLog().warn("Unable to generate surefire report", ex);
+                    }
                 } else {
                     xtSurefire = processor.newSerializer(new NullOutputStream());
                 }
