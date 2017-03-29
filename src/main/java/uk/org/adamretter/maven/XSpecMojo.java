@@ -229,10 +229,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         } catch (final SaxonApiException | TransformerException | MalformedURLException sae) {
             getLog().error("Unable to compile the XSpec Compiler: " + compilerPath);
             throw new MojoExecutionException(sae.getMessage(), sae);
+        } finally {
+            PROCESS_FILES.addAll(processedFiles);
+            // if there is many executions, index file is generated each time, but results are appended...
+            generateIndex();
         }
-        PROCESS_FILES.addAll(processedFiles);
-        // if there is many executions, index file is generated each time, but results are appended...
-        generateIndex();
     }
     
     private void generateIndex() {
