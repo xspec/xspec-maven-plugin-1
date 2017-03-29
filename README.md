@@ -1,7 +1,7 @@
 ## XSpec Plugin for Maven
 
 A very simple plugin for Maven that will execute your XSpec tests as part of the *test* phase of your Maven build, reports are generated and if any tests fail the build will be failed.
-The XSpec Maven plugin is licensed under the [BSD license](http://opensource.org/licenses/BSD-3-Clause). The plugin bundles aspects of the XSpec processor implementaion (written in XSLT) from http://code.google.com/p/xspec/ which is released under the [MIT license](http://opensource.org/licenses/MIT). 
+The XSpec Maven plugin is licensed under the [BSD license](http://opensource.org/licenses/BSD-3-Clause). The plugin bundles aspects of the XSpec processor implementaion (written in XSLT) from https://github.com/xspec/xspec which is released under the [MIT license](http://opensource.org/licenses/MIT). 
 
 ***Note*** at present only XSpec tests written in XSLT are supported. It should not be too difficult to add support for XQuery as well for a future release.
 
@@ -20,7 +20,7 @@ __Plugin declaration__
 		<plugin>
 			<groupId>io.xspec.maven</groupId>
 			<artifactId>xspec-maven-plugin</artifactId>
-			<version>1.5.0-RC2</version>
+			<version>1.5.0</version>
 			<dependencies>
 				<!-- if you have a license, feel free to add Saxon-PE
 					 or Saxon-EE instead of Saxon-HE -->
