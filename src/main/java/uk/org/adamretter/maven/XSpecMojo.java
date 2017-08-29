@@ -28,6 +28,7 @@ package uk.org.adamretter.maven;
 
 import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
+import io.xspec.maven.xspecMavenPlugin.utils.SaxonOptions;
 import net.sf.saxon.s9api.*;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -63,6 +64,10 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import net.sf.saxon.Configuration;
+import net.sf.saxon.event.Builder;
+import net.sf.saxon.lib.FeatureKeys;
+import net.sf.saxon.lib.Validation;
+import net.sf.saxon.trans.XPathException;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.project.MavenProject;
@@ -101,6 +106,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     @Parameter(defaultValue = "${project.basedir}/src/test/xspec", required = true)
     private File testDir;
+    
+    @Parameter(name = "saxonOptions")
+    private SaxonOptions saxonOptions;
 
     /**
      * *
@@ -133,16 +141,25 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     private static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
     private static final Configuration SAXON_CONFIGURATION = getSaxonConfiguration();
     
-    private static final Processor PROCESSOR = new Processor(SAXON_CONFIGURATION);
+    private Processor PROCESSOR = null;
 
-//    private final ResourceResolver resourceResolver = new ResourceResolver(this);
-    private final XsltCompiler xsltCompiler = PROCESSOR.newXsltCompiler();
+    private XsltCompiler xsltCompiler = null;
     private boolean uriResolverSet = false;
     private List<ProcessedFile> processedFiles;
     private static final List<ProcessedFile> PROCESS_FILES = new ArrayList<>();
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        PROCESSOR = new Processor(SAXON_CONFIGURATION);
+        if(saxonOptions!=null) {
+            try {
+                prepareSaxonConfiguration();
+            } catch(XPathException ex) {
+                getLog().error(ex);
+                throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
+            }
+        }
+        xsltCompiler = PROCESSOR.newXsltCompiler();
         if (!uriResolverSet) {
             try {
                 xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver()));
@@ -657,7 +674,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     
     private String makeJarUri(String jarFile) throws MalformedURLException {
         getLog().debug(String.format("makeJarUri(%s)", jarFile));
-//        return "jar:" + new File(jarFile).toURI().toURL().toExternalForm();
         return "jar:" + jarFile +"!/";
     }
     
@@ -687,5 +703,120 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         Configuration ret = Configuration.newConfiguration();
         ret.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
         return ret;
+    }
+    
+    private void prepareSaxonConfiguration() throws XPathException {
+        Configuration config = PROCESSOR.getUnderlyingConfiguration();
+        if(saxonOptions!=null) {
+            if(saxonOptions.getXi()!=null) {
+                PROCESSOR.setConfigurationProperty(FeatureKeys.XINCLUDE, "on".equals(saxonOptions.getXi()));
+            }
+
+            String value = saxonOptions.getWarnings();
+            if(value!=null) {
+                if ("silent".equals(value)) {
+                    PROCESSOR.setConfigurationProperty(FeatureKeys.RECOVERY_POLICY, Configuration.RECOVER_SILENTLY);
+                } else if ("recover".equals(value)) {
+                    PROCESSOR.setConfigurationProperty(FeatureKeys.RECOVERY_POLICY, Configuration.RECOVER_WITH_WARNINGS);
+                } else if ("fatal".equals(value)) {
+                    PROCESSOR.setConfigurationProperty(FeatureKeys.RECOVERY_POLICY, Configuration.DO_NOT_RECOVER);
+                }
+            }
+            
+            value = saxonOptions.getVal();
+            if(value!=null) {
+                if ("strict".equals(value)) {
+                    PROCESSOR.setConfigurationProperty(FeatureKeys.SCHEMA_VALIDATION, Validation.STRICT);
+                } else if ("lax".equals(value)) {
+                    PROCESSOR.setConfigurationProperty(FeatureKeys.SCHEMA_VALIDATION, Validation.LAX);
+                }
+            }
+            
+            value = saxonOptions.getTree();
+            if(value!=null) {
+                if ("linked".equals(value)) {
+                    config.setTreeModel(Builder.LINKED_TREE);
+                } else if ("tiny".equals(value)) {
+                    config.setTreeModel(Builder.TINY_TREE);
+                } else if ("tinyc".equals(value)) {
+                    config.setTreeModel(Builder.TINY_TREE_CONDENSED);
+                }
+            }
+            
+            value = saxonOptions.getCollectionFinderClass();
+            if (value != null) {
+                Object resolver = config.getInstance(value, null);
+                PROCESSOR.setConfigurationProperty(FeatureKeys.COLLECTION_FINDER, resolver);
+            }
+            
+            value = saxonOptions.getDtd();
+            if (value != null) {
+                if ("on".equals(value)) {
+                    config.getParseOptions().setDTDValidationMode(Validation.STRICT);
+                } else if ("off".equals(value)) {
+                    config.getParseOptions().setDTDValidationMode(Validation.SKIP);
+                } else if ("recover".equals(value)) {
+                    config.getParseOptions().setDTDValidationMode(Validation.LAX);
+                }
+            }
+            
+            value = saxonOptions.getEa();
+            if (value != null) {
+                config.getDefaultXsltCompilerInfo().setAssertionsEnabled("on".equals(value));
+            }
+            
+            value = saxonOptions.getExpand();
+            if (value != null) {
+                config.getParseOptions().setExpandAttributeDefaults("on".equals(value));
+            }
+            
+            value = saxonOptions.getExt();
+            if (value != null) {
+                config.setBooleanProperty(FeatureKeys.ALLOW_EXTERNAL_FUNCTIONS, "on".equals(value));
+            }
+            
+            value = saxonOptions.getL();
+            if (value != null) {
+                config.setBooleanProperty(FeatureKeys.LINE_NUMBERING, "on".equals(value));
+            }
+            
+            value = saxonOptions.getM();
+            if (value != null) {
+                config.setConfigurationProperty(FeatureKeys.MESSAGE_EMITTER_CLASS, value);
+            }
+            
+            value = saxonOptions.getOpt();
+            if (value != null) {
+                config.setConfigurationProperty(FeatureKeys.OPTIMIZATION_LEVEL, value);
+            }
+            
+            value = saxonOptions.getOr();
+            if (value != null) {
+                Object resolver = config.getInstance(value, null);
+                config.setConfigurationProperty(FeatureKeys.OUTPUT_URI_RESOLVER, resolver);
+            }
+            
+            value = saxonOptions.getOutval();
+            if (value != null) {
+                Boolean isRecover = "recover".equals(value);
+                config.setConfigurationProperty(FeatureKeys.VALIDATION_WARNINGS, isRecover);
+                config.setConfigurationProperty(FeatureKeys.VALIDATION_COMMENTS, isRecover);
+            }
+            
+            value = saxonOptions.getStrip();
+            if (value != null) {
+                config.setConfigurationProperty(FeatureKeys.STRIP_WHITESPACE, value);
+            }
+            
+            value = saxonOptions.getT();
+            if (value != null) {
+                config.setCompileWithTracing(true);
+            }
+            
+            value = saxonOptions.getTJ();
+            if (value != null) {
+                config.setBooleanProperty(FeatureKeys.TRACE_EXTERNAL_FUNCTIONS,"on".equals(value));
+            }
+        }
     }
 }
