@@ -138,7 +138,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
     private MojoExecution execution;
 
-    private static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
+    public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
     private static final Configuration SAXON_CONFIGURATION = getSaxonConfiguration();
     
     private Processor PROCESSOR = null;
@@ -147,6 +147,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     private boolean uriResolverSet = false;
     private List<ProcessedFile> processedFiles;
     private static final List<ProcessedFile> PROCESS_FILES = new ArrayList<>();
+    private static final QName INITIAL_TEMPLATE_NAME=QName.fromClarkName("{http://www.jenitennison.com/xslt/xspec}main");
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -340,7 +341,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             try {
                 final XsltExecutable xeXSpec = xsltCompiler.compile(new StreamSource(compiledXSpec.getCompiledStylesheet()));
                 final XsltTransformer xtXSpec = xeXSpec.load();
-                xtXSpec.setInitialTemplate(QName.fromClarkName("{http://www.jenitennison.com/xslt/xspec}main"));
+                xtXSpec.setInitialTemplate(INITIAL_TEMPLATE_NAME);
 
                 getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
 
@@ -455,7 +456,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             final SAXParser parser = PARSER_FACTORY.newSAXParser();
             final XMLReader reader = parser.getXMLReader();
-            final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(reader);
+            final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(reader, xspec.getAbsolutePath(), xsltCompiler.getURIResolver(), this, getLog().isDebugEnabled());
 
             final InputSource inXSpec = new InputSource(isXSpec);
             inXSpec.setSystemId(xspec.getAbsolutePath());

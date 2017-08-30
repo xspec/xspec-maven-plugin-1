@@ -26,7 +26,10 @@
  */
 package uk.org.adamretter.maven;
 
+import io.xspec.maven.xspecMavenPlugin.utils.XSpecCounterCH;
+import javax.xml.transform.URIResolver;
 import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
@@ -35,54 +38,35 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * Extracts test results from the XSpec Reader
  *
  * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
+ * @author <a href="mailto:christophe@marchand.top">Christophe Marchand</a>
  */
-public class XSpecTestFilter extends XMLFilterImpl {
+public class XSpecTestFilter extends XMLFilterImpl implements ContentHandler {
 
     private final static String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
+    
+    final XSpecCounterCH innerCH;
 
-    private int tests = 0;
-    private int pendingTests = 0;
-
-    private int pendingWrapper = 0;
-    private boolean pendingScenario = true;
-
-    public XSpecTestFilter(final XMLReader parent) {
+    public XSpecTestFilter(
+            final XMLReader parent, 
+            final String systemId, 
+            final URIResolver uriResolver, 
+            final LogProvider logProvider,
+            boolean activateLogs,
+            final String... logPrefix) {
         super(parent);
+        this.innerCH = new XSpecCounterCH(systemId, uriResolver, logProvider, activateLogs, logPrefix);
     }
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         super.startElement(uri, localName, qName, atts);
-
-        if(uri != null && uri.equals(XSPEC_NS) && (localName.equals("pendingTests") || localName.equals("pending"))) {
-            pendingWrapper++;
-        }
-
-        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("scenario") && (atts.getValue("pendingTests") != null || atts.getValue("pending") != null)) {
-            pendingWrapper++;
-            pendingScenario = true;
-        }
-
-        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("expect")) {
-            if(pendingWrapper > 0) {
-                pendingTests++;
-            }
-            tests++;
-        }
+        innerCH.startElement(uri, localName, qName, atts);
     }
 
     @Override
     public void endElement(final String uri, final String localName, final String qName) throws SAXException {
         super.endElement(uri, localName, qName);
-
-        if(uri != null && uri.equals(XSPEC_NS) && (localName.equals("pendingTests") || localName.equals("pending"))) {
-            pendingWrapper--;
-        }
-
-        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("scenario") && pendingScenario == true) {
-            pendingWrapper--;
-            pendingScenario = false;
-        }
+        innerCH.endElement(uri, localName, qName);
     }
 
     /**
@@ -92,7 +76,7 @@ public class XSpecTestFilter extends XMLFilterImpl {
      * @return The number of tests
      */
     public int getTests() {
-        return tests;
+        return innerCH.getTests();
     }
 
     /**
@@ -101,6 +85,6 @@ public class XSpecTestFilter extends XMLFilterImpl {
      * @return The number of pending tests
      */
     public int getPendingTests() {
-        return pendingTests;
+        return innerCH.getTests();
     }
 }

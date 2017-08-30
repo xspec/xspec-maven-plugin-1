@@ -55,7 +55,7 @@ public class XSpecResultsHandler extends DefaultHandler2 {
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
-        if(uri != null && uri.equals(XSPEC_NS) && localName.equals("test")) {
+        if(XSPEC_NS.equals(uri) && localName.equals("test")) {
             tests++;
             final String successful = attributes.getValue("successful");
             final String sPending = attributes.getValue("pending");

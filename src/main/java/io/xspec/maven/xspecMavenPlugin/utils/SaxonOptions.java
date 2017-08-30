@@ -1,5 +1,5 @@
 /**
- * Copyright © 2013, Adam Retter
+ * Copyright © 2017, Christophe Marchand
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
