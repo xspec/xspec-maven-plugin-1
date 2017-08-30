@@ -16,33 +16,34 @@ The plugin has been published to [Maven Central](http://search.maven.org/#search
 __Plugin declaration__
 ```xml
 <build>
-	<plugins>
-		<plugin>
-			<groupId>io.xspec.maven</groupId>
-			<artifactId>xspec-maven-plugin</artifactId>
-			<version>1.5.0</version>
-			<dependencies>
-				<!-- if you have a license, feel free to add Saxon-PE
-					 or Saxon-EE instead of Saxon-HE -->
-				<dependency>
-					<groupId>net.sf.saxon</groupId>
-					<artifactId>Saxon-HE</artifactId>
-					<version>9.7.0-14</version>
-				</dependency>
-			</dependencies>
-			<configuration>
-				<catalogFile>catalog.xml</catalogFile>
-				<generateSurefireReport>true</generateSurefireReport>
-			<executions>
-				<execution>
-					<phase>test</phase>
-					<goals>
-						<goal>run-xspec</goal>
-					</goals>
-				</execution>
-			</executions>
-		</plugin>
-	</plugins>
+  <plugins>
+    <plugin>
+      <groupId>io.xspec.maven</groupId>
+      <artifactId>xspec-maven-plugin</artifactId>
+      <version>1.5.2</version>
+      <dependencies>
+        <!-- if you have a license, feel free to add Saxon-PE
+           or Saxon-EE instead of Saxon-HE -->
+        <dependency>
+          <groupId>net.sf.saxon</groupId>
+          <artifactId>Saxon-HE</artifactId>
+          <version>9.7.0-14</version>
+        </dependency>
+      </dependencies>
+      <configuration>
+        <catalogFile>catalog.xml</catalogFile>
+        <generateSurefireReport>true</generateSurefireReport>
+        <saxonOptions>See https://github.com/xspec/xspec-maven-plugin-1/wiki</saxonOptions>
+      <executions>
+        <execution>
+          <phase>test</phase>
+          <goals>
+            <goal>run-xspec</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
 </build>
 ```
 
@@ -78,6 +79,8 @@ This is the path where to write surefire reports, if '${generateSurefireReports}
 * generateSurefireReport
 If set to true, generates a surefire report in '${surefireReportDir}'.
 
+* saxonOptions
+Allows to specify saxon configuration options. See [Wiki](https://github.com/xspec/xspec-maven-plugin-1/wiki) for more details.
 
 ### FAQ
 * Where should I put my XSLT?
@@ -98,7 +101,7 @@ If you are doing this in a forked execution such as that used by the Maven Relea
 
 * Must I define the Saxon dependency ?
 
-**Yes, you must**. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, if you have licences. As Maven doesn't provide a mecanism for a default dependency, you must specify it. You can also choose another releases of Saxon ; 9.6.0-x works correctly.
+**Yes, you must**. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, if you have licences. As Maven doesn't provide a mecanism for a default dependency, you must specify it. You can also choose another releases of Saxon ; 9.7.0-x works correctly.
 
 * How surefire reports are generated ?
 
