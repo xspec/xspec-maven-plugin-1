@@ -100,7 +100,7 @@ public class XSpecCounterCH extends DefaultHandler2 {
             try {
                 Source source = uriResolver.resolve(atts.getValue("href"), systemId);
                 importedSystemId = source.getSystemId();
-            } catch(TransformerException ex) {
+            } catch(Exception ex) {
                 logProvider.getLog().error("while resolving "+atts.getValue("href")+" to "+systemId, ex);
             }
             if(importedSystemId!=null) {

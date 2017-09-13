@@ -61,7 +61,7 @@ public class SaxonOptions {
      */
     private String l;
     /**
-     * Reprensents the m configuration property
+     * Represents the m configuration property
      */
     private String m;
     /**
