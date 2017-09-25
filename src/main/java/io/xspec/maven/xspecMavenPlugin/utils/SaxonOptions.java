@@ -26,9 +26,9 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 /**
  * A class to store various Saxon options
