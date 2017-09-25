@@ -77,6 +77,10 @@ public class SaxonOptions {
      */
     private String outval;
     /**
+     * Represents the r configuration property
+     */
+    private String r;
+    /**
      * Represents the strip configuration property
      */
     private String strip;
@@ -121,6 +125,7 @@ public class SaxonOptions {
     public void setOpt(final String opt) { this.opt=opt; }
     public void setOr(final String or) { this.or=or; }
     public void setOutval(final String outval) { this.outval=outval; }
+    public void setR(final String r) { this.r = r; }
     public void setStrip(final String strip) { this.strip=strip; }
     public void setT(final String T) { this.T=T; }
     public void setTJ(final String TJ) { this.TJ=TJ; }
@@ -173,6 +178,7 @@ public class SaxonOptions {
         checkValue("outval", outval, "recover", "fatal");
         return outval;
     }
+    public String getR() { return r; }
     public String getStrip() throws IllegalArgumentException {
         if(strip==null) return null;
         checkValue("strip", strip, "all", "none", "ignorable");
@@ -224,6 +230,7 @@ public class SaxonOptions {
                 "\topt=%s\n" +
                 "\tor=%s\n" +
                 "\toutval=%s\n" +
+                "\tr=%s\n" +
                 "\tstrip=%s\n" +
                 "\tT=%s\n" +
                 "\tTJ=%s\n" +
@@ -241,6 +248,7 @@ public class SaxonOptions {
             getOpt(),
             getOr(),
             getOutval(),
+            getR(),
             getStrip(),
             getT(),
             getTJ(),

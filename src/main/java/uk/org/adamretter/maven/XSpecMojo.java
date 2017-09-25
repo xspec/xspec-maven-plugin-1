@@ -804,6 +804,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 config.setConfigurationProperty(FeatureKeys.VALIDATION_COMMENTS, isRecover);
             }
             
+            value = saxonOptions.getR();
+            if (value != null) {
+                Object resolver = config.getInstance(value, null);
+                config.setConfigurationProperty(FeatureKeys.URI_RESOLVER_CLASS, resolver);
+            }
+            
             value = saxonOptions.getStrip();
             if (value != null) {
                 config.setConfigurationProperty(FeatureKeys.STRIP_WHITESPACE, value);
