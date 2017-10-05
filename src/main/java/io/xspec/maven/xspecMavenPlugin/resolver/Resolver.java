@@ -31,6 +31,7 @@ import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import org.apache.maven.plugin.logging.Log;
+import org.xmlresolver.Catalog;
 import org.xmlresolver.CatalogSource;
 
 /**
@@ -53,7 +54,8 @@ public class Resolver implements javax.xml.transform.URIResolver {
         super();
         this.saxonResolver=saxonResolver;
         this.log=log;
-        cr = new org.xmlresolver.Resolver();
+        // issue #11 : Resolver() initializes and uses a static Catalog. We must not do this
+        cr = new org.xmlresolver.Resolver(new Catalog());
         cr.getCatalog().addSource(new CatalogSource.UriCatalogSource(catalog.toURI().toString()));
     }
 

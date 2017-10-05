@@ -148,6 +148,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     private List<ProcessedFile> processedFiles;
     private static final List<ProcessedFile> PROCESS_FILES = new ArrayList<>();
     private static final QName INITIAL_TEMPLATE_NAME=QName.fromClarkName("{http://www.jenitennison.com/xslt/xspec}main");
+    private static URIResolver initialUriResolver;
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -160,10 +161,13 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
             }
         }
+        if(initialUriResolver==null) {
+            initialUriResolver = xsltCompiler.getURIResolver();
+        }
         xsltCompiler = PROCESSOR.newXsltCompiler();
         if (!uriResolverSet) {
             try {
-                xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver()));
+                xsltCompiler.setURIResolver(buildUriResolver(initialUriResolver));
                 uriResolverSet = true;
             } catch(DependencyResolutionRequiredException | IOException | XMLStreamException ex) {
                 throw new MojoExecutionException("while creating URI resolver", ex);
@@ -633,7 +637,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         String marker = createMarker();
         getLog().debug("marker="+marker);
         for(String s:getClassPathElements()) {
-            getLog().debug("\t"+s);
+//            getLog().debug("\t"+s);
             if(s.contains(marker)) {
                 thisJar = s;
                 break;
