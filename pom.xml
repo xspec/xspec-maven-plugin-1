@@ -78,14 +78,9 @@
         <dependency>
             <groupId>net.sf.saxon</groupId>
             <artifactId>Saxon-HE</artifactId>
-            <version>9.7.0-14</version>
+            <version>9.8.0-5</version>
             <scope>provided</scope>
         </dependency>
-        <!--dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-project</artifactId>
-            <version>3.0-alpha-2</version>
-        </dependency-->
         <dependency>
             <groupId>org.xmlresolver</groupId>
             <artifactId>xmlresolver</artifactId>
@@ -108,25 +103,11 @@
             <version>3.3.0</version>
             <scope>test</scope>
         </dependency>
-        <!--dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-compat</artifactId>
-            <version>3.0.5</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
-            <groupId>org.sonatype.aether</groupId>
-            <artifactId>aether-api</artifactId>
-            <version>1.13.1</version>
-            <scope>test</scope>
+            <groupId>top.marchand.xml.maven</groupId>
+            <artifactId>saxon.options.mvn.utils</artifactId>
+            <version>1.1.0</version>
         </dependency>
-        <dependency>
-    <groupId>org.apache.maven</groupId>
-    <artifactId>maven-artifact</artifactId>
-    <version>2.2.1</version>
-    <scope>test</scope>
-</dependency-->
-
     </dependencies>
 
     <build>
