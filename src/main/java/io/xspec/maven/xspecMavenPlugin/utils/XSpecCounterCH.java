@@ -29,7 +29,6 @@ package io.xspec.maven.xspecMavenPlugin.utils;
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import org.xml.sax.Attributes;
 import org.xml.sax.Parser;

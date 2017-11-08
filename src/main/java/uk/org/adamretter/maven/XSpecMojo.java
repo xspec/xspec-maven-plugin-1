@@ -28,6 +28,7 @@ package uk.org.adamretter.maven;
 
 import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
+import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
 import net.sf.saxon.s9api.*;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
@@ -88,10 +89,17 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     private boolean skipTests;
 
     /**
-     * Location of the XSpec Compiler XSLT i.e. generate-xspec-tests.xsl
+     * Location of the XSpec-for-XSLT Compiler XSLT i.e. generate-xspec-tests.xsl
      */
     @Parameter(defaultValue = XSPEC_PREFIX+"xspec/compiler/generate-xspec-tests.xsl", required = true)
-    private String xspecCompiler;
+    private String xspecXslCompiler;
+
+    // issue #12
+    /**
+     * Location of the XSpec-for-XQ Compiler XSLT i.e. generate-xspec-tests.xsl
+     */
+    @Parameter(defaultValue = XSPEC_PREFIX+"xspec/compiler/generate-query-tests.xsl", required = true)
+    private String xspecXQueryCompiler;
 
     /**
      * Location of the XSpec Reporter XSLT i.e. format-xspec-report.xsl
@@ -139,9 +147,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
     private static final Configuration SAXON_CONFIGURATION = getSaxonConfiguration();
     
-    private Processor PROCESSOR = null;
-
-    private XsltCompiler xsltCompiler = null;
+    private XmlStuff xmlStuff;
+    
     private boolean uriResolverSet = false;
     private List<ProcessedFile> processedFiles;
     private static final List<ProcessedFile> PROCESS_FILES = new ArrayList<>();
@@ -150,77 +157,17 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        PROCESSOR = new Processor(SAXON_CONFIGURATION);
-        if(saxonOptions!=null) {
-            try {
-                SaxonUtils.prepareSaxonConfiguration(PROCESSOR, saxonOptions);
-            } catch(XPathException ex) {
-                getLog().error(ex);
-                throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
-            }
-        }
-        if(initialUriResolver==null) {
-            initialUriResolver = xsltCompiler.getURIResolver();
-        }
-        xsltCompiler = PROCESSOR.newXsltCompiler();
-        if(saxonOptions!=null) {
-            try {
-                SaxonUtils.configureXsltCompiler(xsltCompiler, saxonOptions);
-            } catch(XPathException ex) {
-                getLog().error(ex);
-                throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
-            }
-        }
-        if (!uriResolverSet) {
-            try {
-                xsltCompiler.setURIResolver(buildUriResolver(initialUriResolver));
-                uriResolverSet = true;
-            } catch(DependencyResolutionRequiredException | IOException | XMLStreamException ex) {
-                throw new MojoExecutionException("while creating URI resolver", ex);
-            }
-        }
-        URIResolver resolver = xsltCompiler.getURIResolver();
         
         if (isSkipTests()) {
             getLog().info("'skipTests' is set... skipping XSpec tests!");
             return;
         }
 
-        final String compilerPath = getXspecCompiler();
-        getLog().debug("Using XSpec Compiler: " + compilerPath);
-
-        final String reporterPath = getXspecReporter();
-        getLog().debug("Using XSpec Reporter: " + reporterPath);
-
-        Source srcCompiler;
-        Source srcReporter;
         try {
-            String baseUri = project.getBasedir().toURI().toURL().toExternalForm();
-            srcCompiler = resolver.resolve(compilerPath, baseUri);
-            if (srcCompiler == null) {
-                throw new MojoExecutionException("Could not find XSpec Compiler stylesheets in: " + compilerPath);
-            }
-
-            srcReporter = resolver.resolve(reporterPath, baseUri);
-            if (srcReporter == null) {
-                throw new MojoExecutionException("Could not find XSpec Reporter stylesheets in: " + reporterPath);
-            }
-
-            final XsltExecutable xeCompiler = xsltCompiler.compile(srcCompiler);
-
-            final XsltExecutable xeReporter = xsltCompiler.compile(srcReporter);
-            final XsltTransformer xtReporter = xeReporter.load();
-            xtReporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(RESOURCES_TEST_REPORT_CSS));
-
+            prepareXmlUtilities();
             getLog().debug("Looking for XSpecs in: " + getTestDir());
             final List<File> xspecs = findAllXSpecs(getTestDir());
             getLog().info("Found " + xspecs.size() + " XSpecs...");
-
-            XsltExecutable xeSurefire = null;
-            if (generateSurefireReport) {
-                XsltCompiler compiler = PROCESSOR.newXsltCompiler();
-                xeSurefire = compiler.compile(new StreamSource(getClass().getResourceAsStream("/surefire-reporter.xsl")));
-            }
 
             boolean failed = false;
             processedFiles= new ArrayList<>(xspecs.size());
@@ -228,17 +175,17 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 if (shouldExclude(xspec)) {
                     getLog().warn("Skipping excluded XSpec: " + xspec.getAbsolutePath());
                 } else {
-                    if (!processXSpec(xspec, xeCompiler, xtReporter, xeSurefire, resolver)) {
+                    if (!processXSpec(xspec)) {
                         failed = true;
                     }
                 }
             }
-
+            
             // extract css
-            File cssFile = new File(getReportDir(),RESOURCES_TEST_REPORT_CSS);
+            File cssFile = new File(getReportDir(),XmlStuff.RESOURCES_TEST_REPORT_CSS);
             cssFile.getParentFile().mkdirs();
             try {
-                Source cssSource = resolver.resolve(XSPEC_PREFIX+"xspec/reporter/test-report.css", baseUri);
+                Source cssSource = xmlStuff.getUriResolver().resolve(XSPEC_PREFIX+"xspec/reporter/test-report.css", project.getBasedir().toURI().toURL().toExternalForm());
                 BufferedInputStream is = new BufferedInputStream(new URL(cssSource.getSystemId()).openStream());
                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(cssFile));
                 byte[] buffer = new byte[1024];
@@ -255,7 +202,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 throw new MojoFailureException("Some XSpec tests failed or were missed!");
             }
         } catch (final SaxonApiException | TransformerException | MalformedURLException sae) {
-            getLog().error("Unable to compile the XSpec Compiler: " + compilerPath);
             throw new MojoExecutionException(sae.getMessage(), sae);
         } finally {
             PROCESS_FILES.addAll(processedFiles);
@@ -264,6 +210,68 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         }
     }
     
+    protected void prepareXmlUtilities() throws MojoExecutionException, MojoFailureException, SaxonApiException, MalformedURLException, TransformerException {
+        xmlStuff = new XmlStuff(new Processor(SAXON_CONFIGURATION));
+        if(saxonOptions!=null) {
+            try {
+                SaxonUtils.prepareSaxonConfiguration(xmlStuff.getProcessor(), saxonOptions);
+            } catch(XPathException ex) {
+                getLog().error(ex);
+                throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
+            }
+        }
+        if(initialUriResolver==null) {
+            initialUriResolver = xmlStuff.getXsltCompiler().getURIResolver();
+        }
+        if(saxonOptions!=null) {
+            try {
+                SaxonUtils.configureXsltCompiler(xmlStuff.getXsltCompiler(), saxonOptions);
+            } catch(XPathException ex) {
+                getLog().error(ex);
+                throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
+            }
+        }
+        if (!uriResolverSet) {
+            try {
+                xmlStuff.getXsltCompiler().setURIResolver(buildUriResolver(initialUriResolver));
+                uriResolverSet = true;
+            } catch(DependencyResolutionRequiredException | IOException | XMLStreamException ex) {
+                throw new MojoExecutionException("while creating URI resolver", ex);
+            }
+        }
+        xmlStuff.setXpExecGetXSpecType(xmlStuff.getXPathCompiler().compile("/*/@*"));
+        URIResolver resolver = xmlStuff.getUriResolver();
+        getLog().debug("Using XSpec Xslt Compiler: " + getXspecXslCompiler());
+        getLog().debug("Using XSpec Xquery Compiler: " + getXspecXQueryCompiler());
+        getLog().debug("Using XSpec Reporter: " + getXspecReporter());
+
+        Source srcXsltCompiler;
+        Source srcXqueryCompiler;
+        Source srcReporter;
+        String baseUri = project.getBasedir().toURI().toURL().toExternalForm();
+        srcXsltCompiler = resolver.resolve(getXspecXslCompiler(), baseUri);
+        if (srcXsltCompiler == null) {
+            throw new MojoExecutionException("Could not find XSpec Compiler stylesheets in: " + getXspecXslCompiler());
+        }
+        srcXqueryCompiler = resolver.resolve(getXspecXQueryCompiler(), baseUri);
+        if(srcXqueryCompiler==null) {
+            throw new MojoExecutionException("Could not find XSpec Compiler stylesheets in: " + getXspecXQueryCompiler());
+        }
+
+        srcReporter = resolver.resolve(getXspecReporter(), baseUri);
+        if (srcReporter == null) {
+            throw new MojoExecutionException("Could not find XSpec Reporter stylesheets in: " + getXspecReporter());
+        }
+
+        xmlStuff.setXspec4xsltCompiler(xmlStuff.getXsltCompiler().compile(srcXsltCompiler));
+        xmlStuff.setXspec4xqueryCompiler(xmlStuff.getXsltCompiler().compile(srcXqueryCompiler));
+        xmlStuff.setReporter(xmlStuff.getXsltCompiler().compile(srcReporter));
+
+        if (generateSurefireReport) {
+            xmlStuff.setXeSurefire(xmlStuff.getXsltCompiler().compile(new StreamSource(getClass().getResourceAsStream("/surefire-reporter.xsl"))));
+        }
+
+    }
     private void generateIndex() {
         File index = new File(reportDir, "index.html");
         try (BufferedWriter fos = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(index), Charset.forName("UTF-8")))) {
@@ -306,7 +314,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             getLog().warn("while writing XSpec index file", ex);
         }
     }
-    private static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
+    
 
     /**
      * Checks whether an XSpec should be excluded from processing
@@ -329,71 +337,85 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return false;
     }
 
+    final boolean processXSpec(final File xspec) throws SaxonApiException, IOException {
+        getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
+
+        XdmNode xspecDocument = xmlStuff.getDocumentBuilder().build(xspec);
+        XSpecType type = getXSpecType(xspecDocument);
+        switch(type) {
+            case XQ: return processXQueryXSpec(xspecDocument);
+            case SCH: {
+                XdmNode compiledSchXSpec = prepareSchematronDocument(xspecDocument);
+                return processXsltXSpec(compiledSchXSpec);
+            }
+            default: return processXsltXSpec(xspecDocument);
+            
+        }
+    }
     /**
-     * Process an XSpec Test
+     * Process an XSpec on XSLT Test
      *
      * @param xspec The path to the XSpec test file
-     * @param compiler A transformer for the XSpec compiler
-     * @param reporter A transformer for the XSpec reporter
      *
      * @return true if all tests in XSpec pass, false otherwise
      */
-    final boolean processXSpec(final File xspec, final XsltExecutable executable, final XsltTransformer reporter, final XsltExecutable xeSurefire, final URIResolver uriResolver) {
-        getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
-
+    final boolean processXsltXSpec(XdmNode xspec) throws SaxonApiException {
+        File sourceFile = new File(xspec.getBaseURI());
         /* compile the test stylesheet */
-        final CompiledXSpec compiledXSpec = compileXSpec(executable, xspec);
+        final CompiledXSpec compiledXSpec = compileXSpecForXslt(sourceFile);
         if (compiledXSpec == null) {
             return false;
         } else {
             /* execute the test stylesheet */
             final XSpecResultsHandler resultsHandler = new XSpecResultsHandler(this);
             try {
-                final XsltExecutable xeXSpec = xsltCompiler.compile(new StreamSource(compiledXSpec.getCompiledStylesheet()));
+                final XsltExecutable xeXSpec = xmlStuff.getXsltCompiler().compile(
+                        new StreamSource(compiledXSpec.getCompiledStylesheet()));
                 final XsltTransformer xtXSpec = xeXSpec.load();
                 xtXSpec.setInitialTemplate(INITIAL_TEMPLATE_NAME);
 
                 getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
 
                 //setup xml report output
-                final File xspecXmlResult = getXSpecXmlResultPath(getReportDir(), xspec);
-                final Serializer xmlSerializer = PROCESSOR.newSerializer();
+                final File xspecXmlResult = getXSpecXmlResultPath(getReportDir(), sourceFile);
+                final Serializer xmlSerializer = xmlStuff.getProcessor().newSerializer();
                 xmlSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
                 xmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
                 xmlSerializer.setOutputFile(xspecXmlResult);
 
                 //setup html report output
-                final File xspecHtmlResult = getXSpecHtmlResultPath(getReportDir(), xspec);
-                final Serializer htmlSerializer = PROCESSOR.newSerializer();
+                final File xspecHtmlResult = getXSpecHtmlResultPath(getReportDir(), sourceFile);
+                final Serializer htmlSerializer = xmlStuff.getProcessor().newSerializer();
                 htmlSerializer.setOutputProperty(Serializer.Property.METHOD, "html");
                 htmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
                 htmlSerializer.setOutputFile(xspecHtmlResult);
+                XsltTransformer reporter = xmlStuff.getReporter().load();
                 reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
                 reporter.setDestination(htmlSerializer);
 
 
                 // setup surefire report output
                 Destination xtSurefire = null;
-                if(xeSurefire!=null) {
-                    XsltTransformer xt = xeSurefire.load();
+                if(xmlStuff.getXeSurefire()!=null) {
+                    XsltTransformer xt = xmlStuff.getXeSurefire().load();
                     try {
                         xt.setParameter(new QName("baseDir"), new XdmAtomicValue(project.getBasedir().toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("outputDir"), new XdmAtomicValue(surefireReportDir.toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
-                        xt.setDestination(PROCESSOR.newSerializer(new NullOutputStream()));
+                        xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
                         // setBaseOutputURI not required, surefire-reporter.xsl 
                         // does xsl:result-document with absolute @href
                         xtSurefire = xt;
-                    } catch(Exception ex) {
+                    } catch(MalformedURLException ex) {
                         getLog().warn("Unable to generate surefire report", ex);
                     }
                 } else {
-                    xtSurefire = PROCESSOR.newSerializer(new NullOutputStream());
+                    xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
                 }
-                ProcessedFile pf = new ProcessedFile(testDir, xspec, reportDir, xspecHtmlResult);
+                ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
                 String relativeCssPath = 
-                        (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + RESOURCES_TEST_REPORT_CSS;
+                        (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
                 reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
                 //execute
                 final Destination destination = 
@@ -407,9 +429,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                                 reporter);
                 xtXSpec.setDestination(destination);
                 xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
-                Source xspecSource = new StreamSource(xspec);
+                Source xspecSource = new StreamSource(sourceFile);
                 xtXSpec.setSource(xspecSource);
-                xtXSpec.setURIResolver(uriResolver);
+                xtXSpec.setURIResolver(xmlStuff.getUriResolver());
                 xtXSpec.transform();
 
             } catch (final SaxonApiException te) {
@@ -422,7 +444,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
             //report results
             final String msg = String.format("%s results [Passed/Pending/Failed/Missed/Total] = [%d/%d/%d/%d/%d]", 
-                    xspec.getName(), 
+                    sourceFile.getName(), 
                     resultsHandler.getPassed(), 
 		    resultsHandler.getPending(),
                     resultsHandler.getFailed(), 
@@ -447,6 +469,126 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     }
 
     /**
+     * Process an XSpec on XQuery Test
+     *
+     * @param xspec The path to the XSpec test file
+     *
+     * @return true if all tests in XSpec pass, false otherwise
+     */
+    final boolean processXQueryXSpec(XdmNode xspec) throws SaxonApiException, FileNotFoundException, IOException {
+        File sourceFile = new File(xspec.getBaseURI());
+        /* compile the test stylesheet */
+        final CompiledXSpec compiledXSpec = compileXSpecForXQuery(sourceFile);
+        if (compiledXSpec == null) {
+            return false;
+        } else {
+            /* execute the test stylesheet */
+            final XSpecResultsHandler resultsHandler = new XSpecResultsHandler(this);
+            try {
+                final XQueryExecutable xeXSpec = xmlStuff.getXqueryCompiler().compile(new FileInputStream(compiledXSpec.getCompiledStylesheet()));
+                final XQueryEvaluator xtXSpec = xeXSpec.load();
+
+                getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
+
+                //setup xml report output
+                final File xspecXmlResult = getXSpecXmlResultPath(getReportDir(), sourceFile);
+                final Serializer xmlSerializer = xmlStuff.getProcessor().newSerializer();
+                xmlSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
+                xmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
+                xmlSerializer.setOutputFile(xspecXmlResult);
+
+                //setup html report output
+                final File xspecHtmlResult = getXSpecHtmlResultPath(getReportDir(), sourceFile);
+                final Serializer htmlSerializer = xmlStuff.getProcessor().newSerializer();
+                htmlSerializer.setOutputProperty(Serializer.Property.METHOD, "html");
+                htmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
+                htmlSerializer.setOutputFile(xspecHtmlResult);
+                XsltTransformer reporter = xmlStuff.getReporter().load();
+                reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
+                reporter.setDestination(htmlSerializer);
+
+
+                // setup surefire report output
+                Destination xtSurefire = null;
+                if(xmlStuff.getXeSurefire()!=null) {
+                    XsltTransformer xt = xmlStuff.getXeSurefire().load();
+                    try {
+                        xt.setParameter(new QName("baseDir"), new XdmAtomicValue(project.getBasedir().toURI().toURL().toExternalForm()));
+                        xt.setParameter(new QName("outputDir"), new XdmAtomicValue(surefireReportDir.toURI().toURL().toExternalForm()));
+                        xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
+                        xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
+                        // setBaseOutputURI not required, surefire-reporter.xsl 
+                        // does xsl:result-document with absolute @href
+                        xtSurefire = xt;
+                    } catch(MalformedURLException ex) {
+                        getLog().warn("Unable to generate surefire report", ex);
+                    }
+                } else {
+                    xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
+                }
+                ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
+                processedFiles.add(pf);
+                String relativeCssPath = 
+                        (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
+                reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
+                //execute
+                final Destination destination = 
+                        new TeeDestination(
+                                new TeeDestination(
+                                        new SAXDestination(resultsHandler), 
+                                        new TeeDestination(
+                                                xmlSerializer,
+                                                xtSurefire)
+                                        ), 
+                                reporter);
+                xtXSpec.setDestination(destination);
+                // ??? par quoi remplacer cela ???
+//                xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
+                Source xspecSource = new StreamSource(sourceFile);
+                xtXSpec.setSource(xspecSource);
+                xtXSpec.setURIResolver(xmlStuff.getUriResolver());
+                xtXSpec.evaluate();
+            } catch (final SaxonApiException te) {
+                getLog().error(te.getMessage());
+                getLog().debug(te);
+            }
+            
+            //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
+            final int missed = compiledXSpec.getTests() - resultsHandler.getTests();
+
+            //report results
+            final String msg = String.format("%s results [Passed/Pending/Failed/Missed/Total] = [%d/%d/%d/%d/%d]", 
+                    sourceFile.getName(), 
+                    resultsHandler.getPassed(), 
+		    resultsHandler.getPending(),
+                    resultsHandler.getFailed(), 
+                    missed, 
+                    compiledXSpec.getTests());
+            if(processedFiles.size()>0) {
+                processedFiles.get(processedFiles.size()-1).setResults(
+                        resultsHandler.getPassed(), 
+                        resultsHandler.getPending(), 
+                        resultsHandler.getFailed(), 
+                        missed, 
+                        compiledXSpec.getTests());
+            }
+            if (resultsHandler.getFailed() + missed > 0) {
+                getLog().error(msg);
+                return false;
+            } else {
+                getLog().info(msg);
+                return true;
+            }
+        }
+    }
+    final CompiledXSpec compileXSpecForXQuery(final File sourceFile) {
+        return compileXSpec(sourceFile, xmlStuff.getXspec4xqueryCompiler());
+    }
+    final CompiledXSpec compileXSpecForXslt(final File sourceFile) {
+        return compileXSpec(sourceFile, xmlStuff.getXspec4xsltCompiler());
+    }
+
+    /**
      * Compiles an XSpec using the provided XSLT XSpec compiler
      *
      * @param compiler The XSpec XSLT compiler
@@ -455,25 +597,30 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * @return Details of the Compiled XSpec or null if the XSpec could not be
      * compiled
      */
-    final CompiledXSpec compileXSpec(final XsltExecutable executable, final File xspec) {
-        XsltTransformer compiler = executable.load();
+    final CompiledXSpec compileXSpec(final File sourceFile, XsltExecutable compilerExec) {
+        XsltTransformer compiler = compilerExec.load();
         InputStream isXSpec = null;
         try {
-            final File compiledXSpec = getCompiledXSpecPath(getReportDir(), xspec);
+            final File compiledXSpec = getCompiledXSpecPath(getReportDir(), sourceFile);
             getLog().info("Compiling XSpec to XSLT: " + compiledXSpec);
 
-            isXSpec = new FileInputStream(xspec);
+            isXSpec = new FileInputStream(sourceFile);
 
             final SAXParser parser = PARSER_FACTORY.newSAXParser();
             final XMLReader reader = parser.getXMLReader();
-            final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(reader, xspec.getAbsolutePath(), xsltCompiler.getURIResolver(), this, getLog().isDebugEnabled());
+            final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(
+                    reader, 
+                    sourceFile.getAbsolutePath(), 
+                    xmlStuff.getXsltCompiler().getURIResolver(), 
+                    this, 
+                    getLog().isDebugEnabled());
 
             final InputSource inXSpec = new InputSource(isXSpec);
-            inXSpec.setSystemId(xspec.getAbsolutePath());
+            inXSpec.setSystemId(sourceFile.getAbsolutePath());
 
             compiler.setSource(new SAXSource(xspecTestFilter, inXSpec));
 
-            final Serializer serializer = PROCESSOR.newSerializer();
+            final Serializer serializer = xmlStuff.getProcessor().newSerializer();
             serializer.setOutputFile(compiledXSpec);
             compiler.setDestination(serializer);
 
@@ -515,7 +662,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             xspecReportDir.mkdirs();
         }
         Path relativeSource = testDir.toPath().relativize(xspec.toPath());
-//        Path relativeSource = xspec.getParentFile().toPath().relativize(testDir.toPath());
         File executionReportDir = (
                 execution!=null && execution.getExecutionId()!=null && !"default".equals(execution.getExecutionId()) ? 
                 new File(xspecReportDir,execution.getExecutionId()) :
@@ -618,8 +764,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return skipTests;
     }
 
-    protected String getXspecCompiler() {
-        return xspecCompiler;
+    protected String getXspecXslCompiler() {
+        return xspecXslCompiler;
+    }
+
+    protected String getXspecXQueryCompiler() {
+        return xspecXQueryCompiler;
     }
 
     protected String getXspecReporter() {
@@ -643,7 +793,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         String marker = createMarker();
         getLog().debug("marker="+marker);
         for(String s:getClassPathElements()) {
-//            getLog().debug("\t"+s);
             if(s.contains(marker)) {
                 thisJar = s;
                 break;
@@ -676,7 +825,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             xmlWriter.writeEndElement();
             xmlWriter.writeEndDocument();
             osw.flush();
-//            System.setProperty("xml.catalog.files", tmpCatalog.getAbsolutePath());
         }
         if(!keepGeneratedCatalog) tmpCatalog.deleteOnExit();
         else getLog().info("keeping generated catalog: "+tmpCatalog.toURI().toURL().toExternalForm());
@@ -714,6 +862,35 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         Configuration ret = Configuration.newConfiguration();
         ret.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
         return ret;
+    }
+    
+    protected XSpecType getXSpecType(XdmNode doc) throws SaxonApiException {
+        XPathSelector xps = xmlStuff.getXpExecGetXSpecType().load();
+        xps.setContextItem(doc);
+        XdmValue values = xps.evaluate();
+        for(XdmSequenceIterator it=values.iterator();it.hasNext();) {
+            XdmNode item=(XdmNode)(it.next());
+            if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
+                String nodeName = item.getNodeName().getLocalName();
+                switch(nodeName) {
+                    case "query": 
+                    case "query-at": {
+                        return XSpecType.XQ;
+                    }
+                    case "schematron": {
+                        return XSpecType.SCH;
+                    }
+                    case "stylesheet": {
+                        return XSpecType.XSL;
+                    }
+                }
+            }
+        }
+        throw new SaxonApiException("This file does not seem to be a valid XSpec file: "+doc.getBaseURI().toString());
+    }
+    
+    public enum XSpecType {
+        XSL, SCH, XQ;
     }
     
 }
