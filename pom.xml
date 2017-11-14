@@ -3,7 +3,7 @@
 
     <groupId>io.xspec.maven</groupId>
     <artifactId>xspec-maven-plugin</artifactId>
-    <version>1.5.2-SNAPSHOT</version>
+    <version>1.6.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
 
@@ -48,6 +48,10 @@
         <xspec.artifactId>xspec</xspec.artifactId>
         <xspec.version>0.5.0</xspec.version>
         <xspec.packaging>zip</xspec.packaging>
+        <schematron.groupId>io.xspec</schematron.groupId>
+        <schematron.artifactId>schematron</schematron.artifactId>
+        <schematron.version>2017-02-09</schematron.version>
+        <schematron.packaging>zip</schematron.packaging>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.plugin-plugin.version>3.4</maven.plugin-plugin.version>
     </properties>
@@ -195,6 +199,14 @@
                             <packaging>${xspec.packaging}</packaging>
                             <downloadUrl>http://github.com/xspec/{artifactId}/archive/v{version}.{packaging}</downloadUrl>
                         </artifactItem>
+                        <!-- temporary, while waiting for schematron integration in XSpec -->
+                        <artifactItem>
+                            <groupId>${schematron.groupId}</groupId>
+                            <artifactId>${schematron.artifactId}</artifactId>
+                            <version>${schematron.version}</version>
+                            <packaging>${schematron.packaging}</packaging>
+                            <downloadUrl>http://github.com/Schematron/{artifactId}/releases/download/{version}/iso-schematron-xslt2.{packaging}</downloadUrl>
+                        </artifactItem>
                     </artifactItems>
                 </configuration>
                 <executions>
@@ -234,6 +246,13 @@
                                     <type>${xspec.packaging}</type>
                                     <overWrite>true</overWrite>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>${schematron.groupId}</groupId>
+                                    <artifactId>${schematron.artifactId}</artifactId>
+                                    <version>${schematron.version}</version>
+                                    <type>${schematron.packaging}</type>
+                                    <overWrite>true</overWrite>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
@@ -255,6 +274,13 @@
                                     <fileset dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}/src" includes="reporter/**" />
                                     <filelist dir="${project.build.directory}/dependency/${xspec.artifactId}-${xspec.version}">
                                         <file name="README.md" />
+                                    </filelist>
+                                </copy>
+                                <!-- temporary, while waiting for schematron integration in XSpec -->
+                                <copy todir="${project.build.directory}/classes/schematron/iso-schematron" verbose="true">
+                                    <fileset dir="${project.build.directory}/dependency/" includes="*.xsl" />
+                                    <filelist dir="${project.build.directory}/dependency">
+                                        <file name="readme.txt"/>
                                     </filelist>
                                 </copy>
                             </target>

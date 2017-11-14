@@ -27,10 +27,12 @@
 package io.xspec.maven.xspecMavenPlugin.utils;
 
 import java.io.OutputStream;
+import javax.xml.transform.Source;
 import javax.xml.transform.URIResolver;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.QName;
+import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XPathCompiler;
 import net.sf.saxon.s9api.XPathExecutable;
@@ -39,6 +41,11 @@ import net.sf.saxon.s9api.XdmAtomicValue;
 import net.sf.saxon.s9api.XsltCompiler;
 import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
+import net.sf.saxon.trans.XPathException;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import top.marchand.maven.saxon.utils.SaxonOptions;
+import top.marchand.maven.saxon.utils.SaxonUtils;
 
 /**
  * This class holds all utility variables need to process XSPec (XsltCompiler, XPathCompiler, compiled Xslt, and so on...)
@@ -55,18 +62,35 @@ public class XmlStuff {
     private XsltExecutable xspec4xqueryCompiler;
     private XsltExecutable reporter;
     private XsltExecutable xeSurefire;
+    private XsltExecutable schDsdl;
+    private XsltExecutable schExpand;
+    private XsltExecutable schSvrl;
     private XPathExecutable xpExecGetXSpecType;
 
     public final static QName QN_REPORT_CSS = new QName("report-css-uri");
     public static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
+    private XPathExecutable xpSchGetXSpec;
+//    private XPathExecutable xpSchGetParams;
+    private XsltExecutable schSchut;
+    private final Log log;
     
-    public XmlStuff(Processor processor) {
+    public XmlStuff(Processor processor, Log log) {
         super();
         this.processor=processor;
         documentBuilder = processor.newDocumentBuilder();
         xsltCompiler = processor.newXsltCompiler();
         xpathCompiler = processor.newXPathCompiler();
         xqueryCompiler = processor.newXQueryCompiler();
+        this.log=log;
+    }
+    
+    public XsltExecutable compileXsl(Source source) throws SaxonApiException {
+        try {
+            return getXsltCompiler().compile(source);
+        } catch(NullPointerException ex) {
+            log.error("while compiling XSL "+source.getSystemId());
+            return null;
+        }
     }
 
     public Processor getProcessor() {
@@ -77,7 +101,7 @@ public class XmlStuff {
         return documentBuilder;
     }
 
-    public XsltCompiler getXsltCompiler() {
+    private XsltCompiler getXsltCompiler() {
         return xsltCompiler;
     }
 
@@ -128,6 +152,7 @@ public class XmlStuff {
     }
     
     public URIResolver getUriResolver() { return xsltCompiler.getURIResolver(); }
+    public void setUriResolver(URIResolver urr) { this.xsltCompiler.setURIResolver(urr); }
 
     public XsltExecutable getXeSurefire() {
         return xeSurefire;
@@ -142,5 +167,24 @@ public class XmlStuff {
     public XQueryCompiler getXqueryCompiler() {
         return xqueryCompiler;
     }
+    
+    public void doAdditionalConfiguration(SaxonOptions saxonOptions) throws XPathException {
+        if(saxonOptions!=null) {
+            SaxonUtils.configureXsltCompiler(getXsltCompiler(), saxonOptions);
+        }
+    }
+    
+    public void setSchematronDsdl(XsltExecutable xe) { schDsdl = xe; }
+    public void setSchematronExpand(XsltExecutable xe) { schExpand = xe; }
+    public void setSchematronSvrl(XsltExecutable xe) { schSvrl = xe; }
+    public XsltExecutable getSchematronDsdl() { return schDsdl; }
+    public XsltExecutable getSchematronExpand() { return schExpand; }
+    public XsltExecutable getSchematronSvrl() { return schSvrl; }
+    public void setXpSchGetXSpecFile(XPathExecutable xe) { xpSchGetXSpec = xe; }
+    public XPathExecutable getXpSchGetXSpecFile() { return xpSchGetXSpec; }
+//    public void setXpSchGetSchParams(XPathExecutable xe) { xpSchGetParams = xe; }
+//    public XPathExecutable getXpSchGetSchParams() { return xpSchGetParams; }
+    public void setSchematronSchut(XsltExecutable xe) { schSchut = xe; }
+    public XsltExecutable getSchematronSchut() { return schSchut; }
 
 }
