@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<project>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.xspec.maven</groupId>
+                <artifactId>xspec-maven-plugin</artifactId>
+                <configuration>
+                    <generateSurefireReport>true</generateSurefireReport>
+                    <projectArtifact implementation="org.apache.maven.plugins.testing.stubs.StubArtifact"/>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>run-xspec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

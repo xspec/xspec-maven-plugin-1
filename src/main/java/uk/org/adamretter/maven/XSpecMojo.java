@@ -159,10 +159,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
             }
         }
+        xsltCompiler = PROCESSOR.newXsltCompiler();
         if(initialUriResolver==null) {
             initialUriResolver = xsltCompiler.getURIResolver();
         }
-        xsltCompiler = PROCESSOR.newXsltCompiler();
         if(saxonOptions!=null) {
             try {
                 SaxonUtils.configureXsltCompiler(xsltCompiler, saxonOptions);
@@ -176,6 +176,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 xsltCompiler.setURIResolver(buildUriResolver(initialUriResolver));
                 uriResolverSet = true;
             } catch(DependencyResolutionRequiredException | IOException | XMLStreamException ex) {
+                getLog().error("while building URIResolver: ",ex);
                 throw new MojoExecutionException("while creating URI resolver", ex);
             }
         }
@@ -206,9 +207,23 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 throw new MojoExecutionException("Could not find XSpec Reporter stylesheets in: " + reporterPath);
             }
 
-            final XsltExecutable xeCompiler = xsltCompiler.compile(srcCompiler);
+            getLog().debug("Compiling "+srcCompiler.getSystemId());
+            XsltExecutable xeCompiler = null;
+            try {
+                xeCompiler = xsltCompiler.compile(srcCompiler);
+            } catch(Throwable t) {
+                getLog().error("Failed to compile "+srcCompiler.getSystemId(), t);
+            }
+            getLog().debug("\tCompiled");
 
-            final XsltExecutable xeReporter = xsltCompiler.compile(srcReporter);
+            getLog().debug("Compiling "+srcReporter.getSystemId());
+            XsltExecutable xeReporter = null;
+            try {
+                xeReporter = xsltCompiler.compile(srcReporter);
+            } catch(Throwable t) {
+                getLog().error("Failed to compile "+srcReporter.getSystemId(), t);
+            }
+            getLog().debug("\tCompiled");
             final XsltTransformer xtReporter = xeReporter.load();
             xtReporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(RESOURCES_TEST_REPORT_CSS));
 
@@ -254,8 +269,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             if (failed) {
                 throw new MojoFailureException("Some XSpec tests failed or were missed!");
             }
-        } catch (final SaxonApiException | TransformerException | MalformedURLException sae) {
-            getLog().error("Unable to compile the XSpec Compiler: " + compilerPath);
+        } catch (SaxonApiException | TransformerException | MalformedURLException sae) {
+            getLog().info("In catch");
+            getLog().error("Unable to compile the XSpec Compiler: " + compilerPath,sae);
             throw new MojoExecutionException(sae.getMessage(), sae);
         } finally {
             PROCESS_FILES.addAll(processedFiles);
