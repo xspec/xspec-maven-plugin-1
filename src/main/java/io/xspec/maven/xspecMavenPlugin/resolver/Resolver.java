@@ -61,23 +61,23 @@ public class Resolver implements javax.xml.transform.URIResolver {
 
     @Override
     public Source resolve(String href, String base) throws TransformerException {
-        getLog().debug(String.format("resolve(%s,%s)", href, base));
-        getLog().debug("catalogList="+cr.getCatalog().catalogList());
-        getLog().debug("Trying catalog");
+//        getLog().debug(String.format("resolve(%s,%s)", href, base));
+//        getLog().debug("catalogList="+cr.getCatalog().catalogList());
+//        getLog().debug("Trying catalog");
         try {
             Source source = cr.resolve(href, base);
-            getLog().debug("source is "+(source==null ? "" : "not ")+"null");
+//            getLog().debug("source is "+(source==null ? "" : "not ")+"null");
             if(source!=null && source.getSystemId()!=null) {
-                getLog().debug(String.format("resolved from catalog to %s", source.getSystemId()));
+//                getLog().debug(String.format("resolved from catalog to %s", source.getSystemId()));
                 return source;
             } else {
-                getLog().debug("Trying saxon");
+//                getLog().debug("Trying saxon");
                 source = saxonResolver.resolve(href, base);
                 if(source!=null && source.getSystemId()!=null) {
-                    getLog().debug(String.format("resolved from saxon to %s", source.getSystemId()));
+//                    getLog().debug(String.format("resolved from saxon to %s", source.getSystemId()));
                     return source;
                 } else {
-                    getLog().error(String.format("fail to resolve (%s, %s)", href, base));
+//                    getLog().error(String.format("fail to resolve (%s, %s)", href, base));
                     return null;
                 }
             }

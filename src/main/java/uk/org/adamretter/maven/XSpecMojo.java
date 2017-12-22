@@ -407,7 +407,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return false;
     }
 
-    final boolean processXSpec(final File xspec) throws SaxonApiException, IOException {
+    final boolean processXSpec(final File xspec) throws SaxonApiException, TransformerException, IOException {
         getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
 
         XdmNode xspecDocument = xmlStuff.getDocumentBuilder().build(xspec);
@@ -684,7 +684,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                     sourceFile.getAbsolutePath(), 
                     xmlStuff.getUriResolver(), 
                     this, 
-                    getLog().isDebugEnabled());
+                    false);
 
             final InputSource inXSpec = new InputSource(isXSpec);
             inXSpec.setSystemId(sourceFile.getAbsolutePath());
@@ -720,7 +720,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return null;
     }
 
-    protected XdmNode prepareSchematronDocument(XdmNode xspecDocument) throws SaxonApiException, FileNotFoundException {
+    protected XdmNode prepareSchematronDocument(XdmNode xspecDocument) throws SaxonApiException, TransformerException, FileNotFoundException {
 //        XPathSelector xp = xmlStuff.getXpSchGetXSpecFile().load();
 //        xp.setContextItem(xspecDocument);
 //        String schematronFilePath = xp.evaluateSingle().getStringValue();
@@ -750,18 +750,27 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         File compiledSchematronDest = getCompiledSchematronPath(getReportDir(), sourceFile);
         Serializer serializer = xmlStuff.newSerializer(new FileOutputStream(compiledSchematronDest));
         step3.setDestination(serializer);
-        step1.setInitialContextNode(xspecDocument);
+        
+        // getting from XSpec the schematron location
+        XPathSelector xpSchemaPath = xmlStuff.getXPathCompiler().compile("/*/@schematron").load();
+        xpSchemaPath.setContextItem(xspecDocument);
+        String schematronPath = xpSchemaPath.evaluateSingle().getStringValue();
+        Source source = xmlStuff.getUriResolver().resolve(schematronPath, xspecDocument.getBaseURI().toString());
+        step1.setInitialContextNode(xmlStuff.getDocumentBuilder().build(source));
         step1.transform();
+        getLog().debug("Scematron compiled !");
         // modifying xspec to point to compiled schematron
         XsltTransformer schut = xmlStuff.getSchematronSchut().load();
         schut.setParameter(QN_STYLESHEET, new XdmAtomicValue(compiledSchematronDest.toURI().toString()));
         // TODO
         schut.setParameter(QN_TEST_DIR, new XdmAtomicValue(testDir.toURI().toString()));
         schut.setInitialContextNode(xspecDocument);
-        File resultFile = getCompiledXspecSchematronPath(testDir);
+        File resultFile = getCompiledXspecSchematronPath(getReportDir(), sourceFile);
+        getLog().debug("schematron compiled XSpec: "+resultFile.getAbsolutePath());
         schut.setDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)));
         schut.transform();
         XdmNode result = xmlStuff.getDocumentBuilder().build(resultFile);
+        getLog().info("XSpec for schematron is now "+resultFile.getAbsolutePath());
         return result;
     }
     /**
@@ -784,12 +793,15 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * @return A filepath to place the compiled Schematron (a XSLT) in
      */
     final File getCompiledSchematronPath(final File xspecReportDir, final File schematron) {
-        return getCompiledPath(xspecReportDir, schematron, "schematron", ".xslt");
+        File ret = getCompiledPath(xspecReportDir, schematron, "schematron", ".xslt");
+        getLog().debug("compiled schematron: "+ret.getAbsolutePath());
+        return ret;
     }
-    final File getCompiledXspecSchematronPath(final File xspec) {
-        File dir = xspec.getParentFile();
-        String fileName = FilenameUtils.getBaseName(xspec.getName())+"-compiled.xspec";
-        File ret = new File(dir, fileName);
+    final File getCompiledXspecSchematronPath(final File xspecReportDir, final File xspec) {
+//        File dir = xspec.getParentFile();
+//        String fileName = FilenameUtils.getBaseName(xspec.getName())+"-compiled.xspec";
+//        File ret = new File(dir, fileName);
+        File ret = getCompiledPath(xspecReportDir, xspec, FilenameUtils.getBaseName(xspec.getName()),"-compiled.xspec");
         filesToDelete.add(ret);
         return ret;
     }
