@@ -159,10 +159,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
             }
         }
+        xsltCompiler = PROCESSOR.newXsltCompiler();
         if(initialUriResolver==null) {
             initialUriResolver = xsltCompiler.getURIResolver();
         }
-        xsltCompiler = PROCESSOR.newXsltCompiler();
         if(saxonOptions!=null) {
             try {
                 SaxonUtils.configureXsltCompiler(xsltCompiler, saxonOptions);
@@ -280,8 +280,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             fos.write("\"></head>\n");
             fos.write("<body><h1>XSpec results</h1>");
             fos.write("<table>\n");
-            fos.write("<colgroup><col/><col class=\"successful\"/><col class=\"pending\"/><col class=\"failed\"/><col class=\"missed\"/><col/></colgroup>\n")
-            fos.write("<thead><tr><th>XSpec file</th><th>Passed</th><th>Pending</th><th>Failed</th><th>Missed</th><th>Total</th></tr></thead>\n")
+            fos.write("<colgroup><col/><col class=\"successful\"/><col class=\"pending\"/><col class=\"failed\"/><col class=\"missed\"/><col/></colgroup>\n");
+            fos.write("<thead><tr><th>XSpec file</th><th>Passed</th><th>Pending</th><th>Failed</th><th>Missed</th><th>Total</th></tr></thead>\n");
             fos.write("<tbody>");
             String lastRootDir="";
             for(ProcessedFile pf:PROCESS_FILES) {
@@ -296,18 +296,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 fos.write(pf.getReportFile().toUri().toString());
                 fos.write("\">"+pf.getRelativeSourcePath()+"</a></td>");
                 fos.write("<td");
-                if(pf.getPassed()==0) fos.write("class=\"zero\"");
+                if(pf.getPassed()==0) fos.write(" class=\"zero\"");
                 fos.write(">"+pf.getPassed()+"</td>");
                 fos.write("<td");
-                if(pf.getPending()==0) fos.write("class=\"zero\"");
-                fos.write(pf.getPending()+"</td>");
+                if(pf.getPending()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getPending()+"</td>");
                 fos.write("<td");
-                if(pf.getFailed()==0) fos.write("class=\"zero\"");
-                fos.write(pf.getFailed()+"</td>");
+                if(pf.getFailed()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getFailed()+"</td>");
                 fos.write("<td");
-                if(pf.getMissed()==0) fos.write("class=\"zero\"");
-                fos.write(pf.getMissed()+"</td>");
-                fos.write("<td"+pf.getTotal()+"</td>");
+                if(pf.getMissed()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getMissed()+"</td>");
+                fos.write("<td>"+pf.getTotal()+"</td>");
                 fos.write("</tr>\n");
             }
             fos.write("</tbody></table>");
