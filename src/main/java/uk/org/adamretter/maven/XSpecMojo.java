@@ -159,10 +159,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 throw new MojoExecutionException("Illegal value in Saxon configuration property", ex);
             }
         }
+        xsltCompiler = PROCESSOR.newXsltCompiler();
         if(initialUriResolver==null) {
             initialUriResolver = xsltCompiler.getURIResolver();
         }
-        xsltCompiler = PROCESSOR.newXsltCompiler();
         if(saxonOptions!=null) {
             try {
                 SaxonUtils.configureXsltCompiler(xsltCompiler, saxonOptions);
@@ -340,6 +340,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     final boolean processXSpec(final File xspec, final XsltExecutable executable, final XsltTransformer reporter, final XsltExecutable xeSurefire, final URIResolver uriResolver) {
         getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
+        
+        boolean processedFileAdded = false;
 
         /* compile the test stylesheet */
         final CompiledXSpec compiledXSpec = compileXSpec(executable, xspec);
@@ -392,6 +394,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 }
                 ProcessedFile pf = new ProcessedFile(testDir, xspec, reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
+                processedFileAdded = true;
                 String relativeCssPath = 
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + RESOURCES_TEST_REPORT_CSS;
                 reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
@@ -415,6 +418,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             } catch (final SaxonApiException te) {
                 getLog().error(te.getMessage());
                 getLog().debug(te);
+                if(!processedFileAdded) {
+                    ProcessedFile pf = new ProcessedFile(testDir, xspec, reportDir, getXSpecHtmlResultPath(getReportDir(), xspec));
+                    processedFiles.add(pf);
+                    processedFileAdded = true;
+                }
             }
             
             //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
