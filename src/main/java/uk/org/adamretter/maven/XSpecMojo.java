@@ -286,21 +286,24 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             fos.write("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n");
             fos.write("<html>");
             fos.write("<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n");
-            fos.write("<style>\n\ttable {border: solid black 1px; border-collapse: collapse; }\n");
-            fos.write("\ttd,th {border: solid black 1px; }\n");
-            fos.write("\ttd:not(:first-child) {text-align: right; }\n");
+            fos.write("<link rel=\"stylesheet\" type=\"text/css\" href=\"" + RESOURCES_TEST_REPORT_CSS + "\"/>");
+            fos.write("<style>\n\ttable {border:1px solid black; border-collapse:collapse; text-align:center;}\n");
+            fos.write("\ttd,th {border:1px solid black; padding:2px;}\n");
+            fos.write("\tth, td.zero{background-color:white;}\n");
             fos.write("</style>\n");
             fos.write("<title>XSpec results</title><meta name=\"date\" content=\"");
             fos.write(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
             fos.write("\"></head>\n");
-            fos.write("<body><h3>XSpec results</h3>");
-            fos.write("<table><thead><tr><th>XSpec file</th><th>Passed</th><th>Pending</th><th>Failed</th><th>Missed</th><th>Total</th></tr></thead>\n");
+            fos.write("<body><h1>XSpec results</h1>");
+            fos.write("<table>\n");
+            fos.write("<colgroup><col/><col class=\"successful\"/><col class=\"pending\"/><col class=\"failed\"/><col class=\"missed\"/><col/></colgroup>\n");
+            fos.write("<thead><tr><th>XSpec file</th><th>Passed</th><th>Pending</th><th>Failed</th><th>Missed</th><th>Total</th></tr></thead>\n");
             fos.write("<tbody>");
             String lastRootDir="";
             for(ProcessedFile pf:PROCESS_FILES) {
                 String rootDir = pf.getRootSourceDir().toString();
                 if(!lastRootDir.equals(rootDir)) {
-                    fos.write("<tr><td colspan=\"6\">");
+                    fos.write("<tr><td colspan=\"6\" style=\"text-align:left;\">");
                     fos.write(rootDir);
                     fos.write("</td></tr>\n");
                     lastRootDir = rootDir;
@@ -308,10 +311,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 fos.write("<tr><td><a href=\"");
                 fos.write(pf.getReportFile().toUri().toString());
                 fos.write("\">"+pf.getRelativeSourcePath()+"</a></td>");
-                fos.write("<td>"+pf.getPassed()+"</td>");
-                fos.write("<td>"+pf.getPending()+"</td>");
-                fos.write("<td>"+pf.getFailed()+"</td>");
-                fos.write("<td>"+pf.getMissed()+"</td>");
+                fos.write("<td");
+                if(pf.getPassed()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getPassed()+"</td>");
+                fos.write("<td");
+                if(pf.getPending()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getPending()+"</td>");
+                fos.write("<td");
+                if(pf.getFailed()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getFailed()+"</td>");
+                fos.write("<td");
+                if(pf.getMissed()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getMissed()+"</td>");
                 fos.write("<td>"+pf.getTotal()+"</td>");
                 fos.write("</tr>\n");
             }
