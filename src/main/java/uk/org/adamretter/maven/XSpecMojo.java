@@ -60,6 +60,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import javanet.staxutils.IndentingXMLStreamWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -80,8 +81,9 @@ import top.marchand.maven.saxon.utils.SaxonUtils;
  */
 @Mojo(name = "run-xspec", defaultPhase = LifecyclePhase.VERIFY, requiresDependencyResolution = ResolutionScope.TEST)
 public class XSpecMojo extends AbstractMojo implements LogProvider {
-    public static final transient String XSPEC_PREFIX = "xspec:/";
+    public static final transient String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
     public static final transient String CATALOG_NS = "urn:oasis:names:tc:entity:xmlns:xml:catalog";
+    public static final transient String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
 
     @Parameter( defaultValue = "${project}", readonly = true, required = true )
     private MavenProject project;
@@ -729,19 +731,13 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         XsltTransformer step2 = xmlStuff.getSchematronExpand().load();
         XsltTransformer step3 = xmlStuff.getSchematronSvrl().load();
 
-        XPathSelector xp = xmlStuff.getXPathCompiler().compile("/*/*[local-name() = 'param']").load();
+        XPathSelector xp = xmlStuff.getXPathCompiler().compile("/x:description/x:param[@name=‘phase’][1]/text()").load();
         xp.setContextItem(xspecDocument);
-        for(XdmSequenceIterator it = xp.evaluate().iterator();it.hasNext();) {
-            XdmNode param = (XdmNode)it.next();
-            QName paramName = new QName(param.getAttributeValue(QN_NAME),param);
-            String select = param.getAttributeValue(QN_SELECT);
-            if(select!=null) {
-                // we have to execute the XPath to get the value
-                step3.setParameter(paramName, xmlStuff.getXPathCompiler().compile(select).load().evaluate());
-            } else {
-                step3.setParameter(paramName, new XdmAtomicValue(param.getStringValue()));
-            }
+        String phase = xp.evaluateSingle().getStringValue();
+        if(phase!=null && !phase.isEmpty()) {
+            step3.setParameter(new QName("phase"), new XdmAtomicValue(phase));
         }
+        step3.setParameter(new QName("allow-foreign"), new XdmAtomicValue(true));
         
         File sourceFile = new File(xspecDocument.getBaseURI());
         // compiling schematron
@@ -758,7 +754,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         Source source = xmlStuff.getUriResolver().resolve(schematronPath, xspecDocument.getBaseURI().toString());
         step1.setInitialContextNode(xmlStuff.getDocumentBuilder().build(source));
         step1.transform();
-        getLog().debug("Scematron compiled !");
+        getLog().debug("Schematron compiled !");
+        
         // modifying xspec to point to compiled schematron
         XsltTransformer schut = xmlStuff.getSchematronSchut().load();
         schut.setParameter(QN_STYLESHEET, new XdmAtomicValue(compiledSchematronDest.toURI().toString()));
@@ -767,9 +764,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         schut.setInitialContextNode(xspecDocument);
         File resultFile = getCompiledXspecSchematronPath(getReportDir(), sourceFile);
         getLog().debug("schematron compiled XSpec: "+resultFile.getAbsolutePath());
-        schut.setDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)));
+        XdmDestination xdmDest = new XdmDestination();
+        TeeDestination tee = new TeeDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)), xdmDest);
+        schut.setDestination(tee);
         schut.transform();
-        XdmNode result = xmlStuff.getDocumentBuilder().build(resultFile);
+        XdmNode result = xdmDest.getXdmNode();
         getLog().info("XSpec for schematron is now "+resultFile.getAbsolutePath());
         return result;
     }
@@ -963,28 +962,26 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             }
         }
         if(thisJar==null) {
-            throw new MojoFailureException("Unable to locate plugin jar file from classpath-");
+            throw new MojoFailureException("Unable to locate xspec jar file from classpath-");
         }
         String jarUri = makeJarUri(thisJar);
         File tmpCatalog = File.createTempFile("tmp", "-catalog.xml");
         try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(tmpCatalog), Charset.forName("UTF-8"))) {
             XMLStreamWriter xmlWriter = XMLOutputFactory.newFactory().createXMLStreamWriter(osw);
+            xmlWriter = new IndentingXMLStreamWriter(xmlWriter);
             xmlWriter.writeStartDocument("UTF-8", "1.0");
             xmlWriter.writeStartElement("catalog");
             xmlWriter.setDefaultNamespace(CATALOG_NS);
             xmlWriter.writeNamespace("", CATALOG_NS);
-            xmlWriter.writeStartElement("rewriteURI");
+            xmlWriter.writeEmptyElement("rewriteURI");
             xmlWriter.writeAttribute("uriStartString", XSPEC_PREFIX);
             xmlWriter.writeAttribute("rewritePrefix", jarUri);
-            xmlWriter.writeEndElement();
-            xmlWriter.writeStartElement("rewriteSystem");
+            xmlWriter.writeEmptyElement("rewriteSystem");
             xmlWriter.writeAttribute("uriStartString", XSPEC_PREFIX);
             xmlWriter.writeAttribute("rewritePrefix", jarUri);
-            xmlWriter.writeEndElement();
             if(catalogFile!=null) {
-                xmlWriter.writeStartElement("nextCatalog");
+                xmlWriter.writeEmptyElement("nextCatalog");
                 xmlWriter.writeAttribute("catalog", catalogFile.toURI().toURL().toExternalForm());
-                xmlWriter.writeEndElement();
             }
             xmlWriter.writeEndElement();
             xmlWriter.writeEndDocument();
@@ -1016,8 +1013,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     
     private String createMarker() throws IOException {
         Properties props = new Properties();
-        props.load(getClass().getResourceAsStream("/xspec-maven-plugin.properties"));
-        return String.format("%s-%s", props.getProperty("plugin.artifactId"), props.getProperty("plugin.version"));
+        props.load(getClass().getResourceAsStream("/META-INF/maven/io.xspec/xspec/pom.properties"));
+        return String.format("%s-%s", props.getProperty("artifactId"), props.getProperty("version"));
     }
 
     static final String XSPEC_MOJO_PFX = "[xspec-mojo] ";

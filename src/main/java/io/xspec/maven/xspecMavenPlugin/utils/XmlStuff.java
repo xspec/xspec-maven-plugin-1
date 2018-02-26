@@ -46,6 +46,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 import top.marchand.maven.saxon.utils.SaxonUtils;
+import uk.org.adamretter.maven.XSpecMojo;
 
 /**
  * This class holds all utility variables need to process XSPec (XsltCompiler, XPathCompiler, compiled Xslt, and so on...)
@@ -80,6 +81,7 @@ public class XmlStuff {
         documentBuilder = processor.newDocumentBuilder();
         xsltCompiler = processor.newXsltCompiler();
         xpathCompiler = processor.newXPathCompiler();
+        xpathCompiler.declareNamespace("x", XSpecMojo.XSPEC_NS);
         xqueryCompiler = processor.newXQueryCompiler();
         this.log=log;
     }

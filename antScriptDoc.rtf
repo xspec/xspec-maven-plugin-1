@@ -1,0 +1,40 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf200
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww21960\viewh8780\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf0 xspec.xml				fichier XSpec source\
+xspec.base.dir			r\'e9pertoire o\'f9 se trouve le fichier XSpec\
+xspec.xml.base			Nom du fichier XSpec (sans une \'e9ventuelle extension .xml)\
+xspec.base				Nom du fichier XSpec (sans une \'e9ventuelle extension .xspec)\
+\
+xspec.dir					R\'e9pertoire o\'f9 on va travailler. xspec.base.dir + /xspec\
+xspec.xsl				R\'e9sultat de la compilation du XSpec $\{xspec.dir\}/$\{xspec.base\}.xsl\
+xspec.result.xml			Fichier du r\'e9sultat XML\
+xspec.result.html			Fichier du r\'e9sultat HTML\
+\
+format.xspec.report		XSL format-xspec-report.xsl\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 xspec.compiled.xml		$\{xspec.xml\}-compiled.xspec si SCH, $\{xspec.xml\} sinon\
+xspec.schematron.uri		URI (r\'e9solue avec le catalogue) point\'e9e par le XSpec (donc fichier \'e0 tester). Attention, peut avoir des file:C: qu\'92il faut alors corriger.\
+xsepc.schematron.path	La m\'eame, mais en chemin absolu\
+xspec.phase				Phase du Schematron. /x:description/x:param[@name=\'91phase\'92][1] dans le fichier $\{xspec.xml\}\
+\
+STEP 1\
+XSLT in=xspec.schematron.path out=xspec.dir/xspec.bnase_dsdl_included.sch style=iso_dsdl_include.xsl\
+\
+STEP 2\
+XSLT in=xspec.dir/xspec.base_dsdl_included.sch out=xspec.dir/xspec.base.sch style=iso_abstract_expand.xsl\
+\
+STEP 3\
+XSLT in=xspec.dir/xspec.base.sch out=xspec.compiled style=iso_svrl_for_xslt2.xsl\
+	Param (allow-foreign=true)\
+	Param (phase=xspec.phase)\
+\
+STEP 4\
+XSLT in=xspec.xml out=xspec.compiled.xml style=schut-to-xspec.xsl\
+	Param(stylesheet=xspec.compiled.xsl (URL))\
+	Param(test_dir=xspec.dir (URL))}
