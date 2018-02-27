@@ -50,6 +50,8 @@ import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
@@ -176,7 +178,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public MojoExecution execution;
 
     public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
-    private static final Configuration SAXON_CONFIGURATION = getSaxonConfiguration();
+    public static final Configuration SAXON_CONFIGURATION = getSaxonConfiguration();
 
     // package private for tests
     XmlStuff xmlStuff;
@@ -224,7 +226,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             File cssFile = new File(getReportDir(),XmlStuff.RESOURCES_TEST_REPORT_CSS);
             cssFile.getParentFile().mkdirs();
             try {
-                Source cssSource = xmlStuff.getUriResolver().resolve(XSPEC_PREFIX+"xspec/reporter/test-report.css", project.getBasedir().toURI().toURL().toExternalForm());
+                Source cssSource = xmlStuff.getUriResolver().resolve(XSPEC_PREFIX+"reporter/test-report.css", project.getBasedir().toURI().toURL().toExternalForm());
                 BufferedInputStream is = new BufferedInputStream(new URL(cssSource.getSystemId()).openStream());
                 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(cssFile));
                 byte[] buffer = new byte[1024];
@@ -761,12 +763,15 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         schut.setParameter(QN_TEST_DIR, new XdmAtomicValue(testDir.toURI().toString()));
         schut.setInitialContextNode(xspecDocument);
         File resultFile = getCompiledXspecSchematronPath(getReportDir(), sourceFile);
-        getLog().debug("XSpec for schematron compiled: "+resultFile.getAbsolutePath());
         // WARNING : we can't use a XdmDestination, the XdmNode generated does not have 
         // an absolute systemId, which is used in processXsltXSpec(XdmNode xspec)
         schut.setDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)));
         schut.transform();
+        getLog().debug("XSpec for schematron compiled: "+resultFile.getAbsolutePath());
         XdmNode result = xmlStuff.getDocumentBuilder().build(resultFile);
+        if(!resultFile.exists()) {
+            getLog().error(resultFile.getAbsolutePath()+" has not be written");
+        }
         
         // copy resources referenced from XSpec
         getLog().info("Copying resource files referenced from XSpec for Schematron");
@@ -781,16 +786,21 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         for(int i=0;i<ret.size();i++) {
             XdmNode node = (XdmNode)(ret.itemAt(i));
             String uri = node.getAttributeValue(QN_URI);
+            try {
             copyFile(xspecDocument.getUnderlyingNode().getSystemId(), uri, resultFile);
+            } catch(URISyntaxException ex) {
+                // it can not happens, it is always correct as provided by saxon
+                throw new SaxonApiException("Saxon has generated an invalid URI : ",ex);
+            }
         }
         return result;
     }
     
-    protected void copyFile(String baseUri, String referencedFile, File resultBase) throws IOException {
-        getLog().debug("copyFile("+baseUri+","+referencedFile+","+resultBase.getAbsolutePath()+")");
-        Path basePath = new File(baseUri).getParentFile().toPath();
+    protected void copyFile(String baseUri, String referencedFile, File resultBase) throws IOException, URISyntaxException {
+        getLog().debug("copyFile("+baseUri+", "+referencedFile+", "+resultBase.getAbsolutePath()+")");
+        Path basePath = new File(new URI(baseUri)).getParentFile().toPath();
         File source = basePath.resolve(referencedFile).toFile();
-        File dest = resultBase.toPath().resolve(referencedFile).toFile();
+        File dest = resultBase.getParentFile().toPath().resolve(referencedFile).toFile();
         getLog().debug("Copying "+source.getAbsolutePath()+" to "+dest.getAbsolutePath());
         FileUtils.copyFile(source, dest);
     }

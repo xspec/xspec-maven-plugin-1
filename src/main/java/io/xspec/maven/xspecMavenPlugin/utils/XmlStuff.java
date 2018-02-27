@@ -26,9 +26,15 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Enumeration;
 import javax.xml.transform.Source;
 import javax.xml.transform.URIResolver;
+import javax.xml.transform.stream.StreamSource;
+import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.QName;
@@ -36,8 +42,11 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
 import net.sf.saxon.s9api.XPathCompiler;
 import net.sf.saxon.s9api.XPathExecutable;
+import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XdmAtomicValue;
+import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.s9api.XsltCompiler;
 import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
@@ -85,6 +94,37 @@ public class XmlStuff {
         xpathCompiler.declareNamespace("x", XSpecMojo.XSPEC_NS);
         xqueryCompiler = processor.newXQueryCompiler();
         this.log=log;
+        ClassLoader cl = getClass().getClassLoader();
+        if(cl instanceof URLClassLoader) {
+            URLClassLoader ucl = (URLClassLoader)cl;
+            try {
+                for(Enumeration<URL> enumer = ucl.findResources("META-INF/services/top.marchand.xml.gaulois.xml"); enumer.hasMoreElements();) {
+                    URL url = enumer.nextElement();
+                    log.debug("loading service "+url.toExternalForm());
+                    XdmNode document = documentBuilder.build(new StreamSource(url.openStream()));
+                    XPathSelector selector = xpathCompiler.compile("/gaulois-services/saxon/extensions/function").load();
+                    selector.setContextItem(document);
+                    XdmSequenceIterator it = selector.evaluate().iterator();
+                    while(it.hasNext()) {
+                        String className = it.next().getStringValue();
+                        try {
+                            Class clazz = Class.forName(className);
+                            if(extendsClass(clazz, ExtensionFunctionDefinition.class)) {
+                                Class<ExtensionFunctionDefinition> cle = (Class<ExtensionFunctionDefinition>)clazz;
+                                XSpecMojo.SAXON_CONFIGURATION.registerExtensionFunction(cle.newInstance());
+                                log.debug(className+"registered as Saxon extension function");
+                            } else {
+                                log.warn(className+" does not extends "+ExtensionFunctionDefinition.class.getName());
+                            }
+                        } catch(ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+                            log.warn("unable to load extension function "+className);
+                        }
+                    }
+                }
+            } catch(IOException | SaxonApiException ex) {
+                log.error("while looking for resources in /META-INF/services/top.marchand.xml.gaulois/", ex);
+            }
+        }
     }
     
     public XsltExecutable compileXsl(Source source) throws SaxonApiException {
@@ -196,5 +236,10 @@ public class XmlStuff {
     public XPathExecutable getXpFileSearcher() { return xpFileSearcher; }
     public void setXpFileSearcher(XPathExecutable xpFileSearcher) { this.xpFileSearcher = xpFileSearcher; }
     
+    private boolean extendsClass(Class toCheck, Class inheritor) {
+        if(toCheck.equals(inheritor)) return true;
+        if(toCheck.equals(Object.class)) return false;
+        return extendsClass(toCheck.getSuperclass(), inheritor);
+    }
 
 }
