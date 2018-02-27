@@ -55,9 +55,8 @@ public class Resolver implements javax.xml.transform.URIResolver {
         this.saxonResolver=saxonResolver;
         this.log=log;
         // issue #11 : Resolver() initializes and uses a static Catalog. We must not do this
-        cr = new org.xmlresolver.Resolver(new Catalog("",catalog.getAbsolutePath()));
-//        cr.getCatalog().
-//        cr.getCatalog().addSource(new CatalogSource.UriCatalogSource(catalog.toURI().toString()));
+        cr = new org.xmlresolver.Resolver(new Catalog());
+        cr.getCatalog().addSource(new CatalogSource.UriCatalogSource(catalog.toURI().toString()));
     }
 
     @Override

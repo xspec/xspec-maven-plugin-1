@@ -94,14 +94,14 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * Location of the XSpec-for-XSLT Compiler XSLT i.e. generate-xspec-tests.xsl
      */
-    @Parameter(defaultValue = XSPEC_PREFIX+"xspec/compiler/generate-xspec-tests.xsl", required = true)
+    @Parameter(defaultValue = XSPEC_PREFIX+"compiler/generate-xspec-tests.xsl", required = true)
     private String xspecXslCompiler;
 
     // issue #12
     /**
      * Location of the XSpec-for-XQ Compiler XSLT i.e. generate-xspec-tests.xsl
      */
-    @Parameter(defaultValue = XSPEC_PREFIX+"xspec/compiler/generate-query-tests.xsl", required = true)
+    @Parameter(defaultValue = XSPEC_PREFIX+"compiler/generate-query-tests.xsl", required = true)
     private String xspecXQueryCompiler;
     
     /**
@@ -130,7 +130,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * Location of the XSpec Reporter XSLT i.e. format-xspec-report.xsl
      */
-    @Parameter(defaultValue = XSPEC_PREFIX+"xspec/reporter/format-xspec-report.xsl", required = true)
+    @Parameter(defaultValue = XSPEC_PREFIX+"reporter/format-xspec-report.xsl", required = true)
     private String xspecReporter;
 
     /**
