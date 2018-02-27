@@ -42,7 +42,6 @@ import net.sf.saxon.s9api.XsltCompiler;
 import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
 import net.sf.saxon.trans.XPathException;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 import top.marchand.maven.saxon.utils.SaxonUtils;
@@ -66,7 +65,9 @@ public class XmlStuff {
     private XsltExecutable schDsdl;
     private XsltExecutable schExpand;
     private XsltExecutable schSvrl;
+    private XsltExecutable xmlDependencyScanner;
     private XPathExecutable xpExecGetXSpecType;
+    private XPathExecutable xpFileSearcher;
 
     public final static QName QN_REPORT_CSS = new QName("report-css-uri");
     public static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
@@ -188,5 +189,12 @@ public class XmlStuff {
 //    public XPathExecutable getXpSchGetSchParams() { return xpSchGetParams; }
     public void setSchematronSchut(XsltExecutable xe) { schSchut = xe; }
     public XsltExecutable getSchematronSchut() { return schSchut; }
+
+    public XsltExecutable getXmlDependencyScanner() { return xmlDependencyScanner; }
+    public void setXmlDependencyScanner(XsltExecutable xmlDependencyScanner) { this.xmlDependencyScanner = xmlDependencyScanner; }
+
+    public XPathExecutable getXpFileSearcher() { return xpFileSearcher; }
+    public void setXpFileSearcher(XPathExecutable xpFileSearcher) { this.xpFileSearcher = xpFileSearcher; }
+    
 
 }
