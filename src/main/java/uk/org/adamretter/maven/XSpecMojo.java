@@ -88,6 +88,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public static final transient String XML_UTILITIES_PREFIX = "dependency://org.mricaud+xml-utilities/";
     public static final transient String CATALOG_NS = "urn:oasis:names:tc:entity:xmlns:xml:catalog";
     public static final transient String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
+    public static final transient String LOCAL_PREFIX = "dependency://io.xspec.maven+xspec-maven-plugin/";
 
     @Parameter( defaultValue = "${project}", readonly = true, required = true )
     public MavenProject project;
@@ -129,7 +130,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * Location of the XSL that transforms the xspec for schematron in a real xspec
      */
-    @Parameter(defaultValue = XSPEC_PREFIX+"schematron/schut-to-xspec.xsl", required = true)
+    @Parameter(defaultValue = LOCAL_PREFIX+"schematron/schut-to-xspec.xsl", required = true)
     public String schSchut;
     /**
      * Location of the XSpec Reporter XSLT i.e. format-xspec-report.xsl
@@ -245,8 +246,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         } catch (final SaxonApiException | TransformerException | IOException sae) {
             throw new MojoExecutionException(sae.getMessage(), sae);
         } finally {
-            getLog().debug("PROCESS_FILES is "+(PROCESS_FILES==null?"":"not ")+" null");
-            getLog().debug("processedFiles is "+(processedFiles==null?"":"not ")+" null");
+//            getLog().debug("PROCESS_FILES is "+(PROCESS_FILES==null?"":"not ")+" null");
+//            getLog().debug("processedFiles is "+(processedFiles==null?"":"not ")+" null");
             if(processedFiles==null) {
                 // C'est qu'on a eu un gros problème, mais on ne sais pas lequel !
                 processedFiles = new ArrayList<>();
@@ -254,7 +255,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             PROCESS_FILES.addAll(processedFiles);
             // if there are many executions, index file is generated each time, but results are appended...
             generateIndex();
-            for(File file:filesToDelete) file.delete();
+//            for(File file:filesToDelete) file.delete();
         }
     }
     
@@ -433,9 +434,25 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * @return true if all tests in XSpec pass, false otherwise
      */
     final boolean processXsltXSpec(XdmNode xspec) throws SaxonApiException {
-        File sourceFile = new File(xspec.getBaseURI());
+        File actualSourceFile = new File(xspec.getBaseURI());
+        // Try to determine where was the original XSpec file, in case of XSpec on schematron
+        File sourceFile = actualSourceFile;
+        XPathSelector xps = xmlStuff.getXPathCompiler().compile("/x:description/@xspec-original-location").load();
+        xps.setContextItem(xspec);
+        XdmItem item = xps.evaluateSingle();
+        if(item!=null) {
+            String value = item.getStringValue();
+            if(!value.isEmpty()) {
+                try {
+                    sourceFile = new File(new URI(value));
+                } catch (URISyntaxException ex) {
+                    getLog().error("This should never be possible ! Check /x:description/@xspec-original-localtion", ex);
+                }
+            }
+        }
+        getLog().debug("sourceFile is "+sourceFile.getAbsolutePath());
         /* compile the test stylesheet */
-        final CompiledXSpec compiledXSpec = compileXSpecForXslt(sourceFile);
+        final CompiledXSpec compiledXSpec = compileXSpecForXslt(actualSourceFile);
         if (compiledXSpec == null) {
             return false;
         } else {
@@ -1018,6 +1035,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             // TODO : change this when Matthieu will publish https://github.com/mricaud/xml-utilities as an artifact
             jarUri = getJarUri("io.xspec.maven", "xspec-maven-plugin");
             writeCatalogEntry(xmlWriter, jarUri, XML_UTILITIES_PREFIX);
+            // io.xspec.maven / xspec-maven-plugin
+            jarUri = getJarUri("io.xspec.maven", "xspec-maven-plugin");
+            writeCatalogEntry(xmlWriter, jarUri, LOCAL_PREFIX);
             if(catalogFile!=null) {
                 xmlWriter.writeEmptyElement("nextCatalog");
                 xmlWriter.writeAttribute("catalog", catalogFile.toURI().toURL().toExternalForm());
