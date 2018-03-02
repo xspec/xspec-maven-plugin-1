@@ -156,6 +156,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     @Parameter(alias = "excludes")
     public List<String> excludes;
+    
+    @Parameter(defaultValue = "${maven.test.failure.skip}")
+    public boolean testFailureIgnore;
 
     /**
      * Location of the XSpec reports
@@ -240,14 +243,17 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 getLog().error("while extracting CSS: ",ex);
             }
 
+            // issue #16
             if (failed) {
-                throw new MojoFailureException("Some XSpec tests failed or were missed!");
+                if(!testFailureIgnore) {
+                    throw new MojoFailureException("Some XSpec tests failed or were missed!");
+                } else {
+                    getLog().warn("Some XSpec tests failed or were missed, but build will not fail!");
+                }
             }
         } catch (final SaxonApiException | TransformerException | IOException sae) {
             throw new MojoExecutionException(sae.getMessage(), sae);
         } finally {
-//            getLog().debug("PROCESS_FILES is "+(PROCESS_FILES==null?"":"not ")+" null");
-//            getLog().debug("processedFiles is "+(processedFiles==null?"":"not ")+" null");
             if(processedFiles==null) {
                 // C'est qu'on a eu un gros problème, mais on ne sais pas lequel !
                 processedFiles = new ArrayList<>();
@@ -255,7 +261,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             PROCESS_FILES.addAll(processedFiles);
             // if there are many executions, index file is generated each time, but results are appended...
             generateIndex();
-//            for(File file:filesToDelete) file.delete();
         }
     }
     
@@ -401,8 +406,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         final List<String> excludePatterns = getExcludes();
         if (excludePatterns != null) {
             for (final String excludePattern : excludePatterns) {
-                // FIXME : getAbsolutePath can return some \ in Windows...
-                if (xspec.getAbsolutePath().endsWith(excludePattern)) {
+                if (xspec.getAbsolutePath().replaceAll("\\\\","/").endsWith(excludePattern)) {
                     return true;
                 }
             }
