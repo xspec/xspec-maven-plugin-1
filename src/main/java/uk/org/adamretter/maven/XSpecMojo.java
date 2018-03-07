@@ -574,15 +574,17 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         /* compile the test stylesheet */
         final CompiledXSpec compiledXSpec = compileXSpecForXQuery(sourceFile);
         if (compiledXSpec == null) {
+            getLog().error("unable to compile "+sourceFile.getAbsolutePath());
             return false;
         } else {
+            getLog().debug("XQuery compiled XSpec is at "+compiledXSpec.getCompiledStylesheet().getAbsolutePath());
             /* execute the test stylesheet */
             final XSpecResultsHandler resultsHandler = new XSpecResultsHandler(this);
             try {
                 final XQueryExecutable xeXSpec = xmlStuff.getXqueryCompiler().compile(new FileInputStream(compiledXSpec.getCompiledStylesheet()));
                 final XQueryEvaluator xtXSpec = xeXSpec.load();
 
-                getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
+                getLog().info("Executing XQuery XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
 
                 //setup xml report output
                 final File xspecXmlResult = getXSpecXmlResultPath(getReportDir(), sourceFile);
@@ -626,6 +628,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
                 reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
                 //execute
+                
+                // Serializer nullOutput1 = xmlStuff.newSerializer(new NullOutputStream());
                 final Destination destination = 
                         new TeeDestination(
                                 new TeeDestination(
@@ -633,15 +637,21 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                                         new TeeDestination(
                                                 xmlSerializer,
                                                 xtSurefire)
-                                        ), 
+                                        ),
                                 reporter);
-                xtXSpec.setDestination(destination);
+                // xtXSpec.setDestination(destination);
                 // ??? par quoi remplacer cela ???
 //                xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
                 Source xspecSource = new StreamSource(sourceFile);
                 xtXSpec.setSource(xspecSource);
                 xtXSpec.setURIResolver(xmlStuff.getUriResolver());
-                xtXSpec.evaluate();
+                XdmValue result = xtXSpec.evaluate();
+                if(result==null) {
+                    getLog().debug("processXQueryXSpec result is null");
+                } else {
+                    getLog().debug("processXQueryXSpec result : "+result.toString());
+                    xmlStuff.getProcessor().writeXdmValue(result, destination);
+                }
             } catch (final SaxonApiException te) {
                 getLog().error(te.getMessage());
                 getLog().debug(te);

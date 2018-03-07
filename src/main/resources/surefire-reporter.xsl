@@ -42,7 +42,8 @@
     <xsl:variable name="classname" select="replace($reportFileName,'.xml','.xspec')"/>
     
     <xsl:template match="/">
-            <xsl:variable name="xslUrl" select="/x:report/@stylesheet" as="xs:string"/>
+            <!-- fro XQuery, use @query-at -->
+            <xsl:variable name="xslUrl" select="/x:report/(@stylesheet,@query-at)[1]" as="xs:string"/>
             <xsl:comment>xslUrl=<xsl:value-of select="$xslUrl"/></xsl:comment>
             <xsl:variable name="relativeUri" select="substring-after($xslUrl, $baseDir)" as="xs:string"/>
             <xsl:comment>relativeUrl=<xsl:value-of select="$relativeUri"/></xsl:comment>
