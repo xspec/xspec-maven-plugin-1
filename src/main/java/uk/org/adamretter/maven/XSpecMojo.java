@@ -138,6 +138,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = XSPEC_PREFIX+"reporter/format-xspec-report.xsl", required = true)
     public String xspecReporter;
     
+    @Parameter(defaultValue = XSPEC_PREFIX+"reporter/junit-report.xsl", required = true)
+    public String junitReporter;
+    
     @Parameter(defaultValue = XML_UTILITIES_PREFIX+"org/mricaud/xml-utilities/get-xml-file-static-dependency-tree.xsl")
     public String dependencyScanner;
 
@@ -302,6 +305,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         getLog().debug("Using XSpec Xslt Compiler: " + getXspecXslCompiler());
         getLog().debug("Using XSpec Xquery Compiler: " + getXspecXQueryCompiler());
         getLog().debug("Using XSpec Reporter: " + getXspecReporter());
+        getLog().debug("Using JUnit Reporter: "+ getJUnitReporter());
         getLog().debug("Using Schematron Dsdl include: "+getSchematronIsoDsdl());
         getLog().debug("Using Schematron expander: "+getSchematronExpand());
         getLog().debug("Using Schematrong Svrl: "+getSchematronSvrForXslt());
@@ -316,6 +320,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         getLog().debug(getXspecXQueryCompiler()+" -> "+srcXqueryCompiler.getSystemId());
         Source srcReporter = resolveSrc(getXspecReporter(), baseUri, "XSpec Reporter");
         getLog().debug(getXspecReporter()+" -> "+srcReporter.getSystemId());
+        Source srcJUnitReporter = resolveSrc(getJUnitReporter(), baseUri, "JUnit Reporter");
+        getLog().debug(getJUnitReporter()+" -> "+srcJUnitReporter.getSystemId());
         Source srcSchIsoDsdl = resolveSrc(getSchematronIsoDsdl(), baseUri, "Schematron Dsdl");
         getLog().debug(getSchematronIsoDsdl()+" -> "+srcSchIsoDsdl.getSystemId());
         Source srcSchExpand = resolveSrc(getSchematronExpand(), baseUri, "Schematron expander");
@@ -330,6 +336,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         xmlStuff.setXspec4xsltCompiler(xmlStuff.compileXsl(srcXsltCompiler));
         xmlStuff.setXspec4xqueryCompiler(xmlStuff.compileXsl(srcXqueryCompiler));
         xmlStuff.setReporter(xmlStuff.compileXsl(srcReporter));
+        xmlStuff.setJUnitReporter(xmlStuff.compileXsl(srcJUnitReporter));
         xmlStuff.setSchematronDsdl(xmlStuff.compileXsl(srcSchIsoDsdl));
         xmlStuff.setSchematronExpand(xmlStuff.compileXsl(srcSchExpand));
         xmlStuff.setSchematronSvrl(xmlStuff.compileXsl(srcSchSvrl));
@@ -356,6 +363,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             fos.write("<html>");
             fos.write("<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n");
             fos.write("<style>\n\ttable {border: solid black 1px; border-collapse: collapse; }\n");
+            fos.write("\ttr.error {background-color: red; color: white; }\n");
+            fos.write("\ttr.error td a { color: white;}\n");
+            fos.write("\ttr.title {background-color: lightgrey; }\n");
             fos.write("\ttd,th {border: solid black 1px; }\n");
             fos.write("\ttd:not(:first-child) {text-align: right; }\n");
             fos.write("</style>\n");
@@ -369,12 +379,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             for(ProcessedFile pf:PROCESS_FILES) {
                 String rootDir = pf.getRootSourceDir().toString();
                 if(!lastRootDir.equals(rootDir)) {
-                    fos.write("<tr><td colspan=\"6\">");
+                    fos.write("<tr class=\"title\"><td colspan=\"6\">");
                     fos.write(rootDir);
                     fos.write("</td></tr>\n");
                     lastRootDir = rootDir;
                 }
-                fos.write("<tr><td><a href=\"");
+                int errorCount = pf.getFailed()+pf.getMissed();
+                if(errorCount==0) {
+                    fos.write("<tr>");
+                } else {
+                    fos.write("<tr class=\"error\">");
+                }
+                fos.write("<td><a href=\"");
                 fos.write(pf.getReportFile().toUri().toString());
                 fos.write("\">"+pf.getRelativeSourcePath()+"</a></td>");
                 fos.write("<td>"+pf.getPassed()+"</td>");
@@ -437,7 +453,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      *
      * @return true if all tests in XSpec pass, false otherwise
      */
-    final boolean processXsltXSpec(XdmNode xspec) throws SaxonApiException {
+    final boolean processXsltXSpec(XdmNode xspec) throws SaxonApiException, FileNotFoundException {
         File actualSourceFile = new File(xspec.getBaseURI());
         // Try to determine where was the original XSpec file, in case of XSpec on schematron
         File sourceFile = actualSourceFile;
@@ -450,7 +466,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 try {
                     sourceFile = new File(new URI(value));
                 } catch (URISyntaxException ex) {
-                    getLog().error("This should never be possible ! Check /x:description/@xspec-original-localtion", ex);
+                    getLog().error("This should never be possible ! Check /x:description/@xspec-original-location", ex);
                 }
             }
         }
@@ -506,6 +522,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 } else {
                     xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
                 }
+                // JUnit report
+                XsltTransformer juReporter = xmlStuff.getJUnitReporter().load();
+                Destination junitDest = xmlStuff.newSerializer(new FileOutputStream(getJUnitReportPath(getReportDir(), sourceFile)));
+                juReporter.setDestination(junitDest);
                 ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
                 String relativeCssPath = 
@@ -520,7 +540,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                                                 xmlSerializer,
                                                 xtSurefire)
                                         ), 
-                                reporter);
+                                new TeeDestination(reporter, juReporter));
                 xtXSpec.setDestination(destination);
                 xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
                 Source xspecSource = new StreamSource(sourceFile);
@@ -628,6 +648,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
                 reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
                 //execute
+                // JUnit report
+                XsltTransformer juReporter = xmlStuff.getJUnitReporter().load();
+                Destination junitDest = xmlStuff.newSerializer(new FileOutputStream(getJUnitReportPath(getReportDir(), sourceFile)));
+                juReporter.setDestination(junitDest);
                 
                 // Serializer nullOutput1 = xmlStuff.newSerializer(new NullOutputStream());
                 final Destination destination = 
@@ -638,7 +662,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                                                 xmlSerializer,
                                                 xtSurefire)
                                         ),
-                                reporter);
+                                new TeeDestination(reporter, juReporter));
                 // xtXSpec.setDestination(destination);
                 // ??? par quoi remplacer cela ???
 //                xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
@@ -934,6 +958,19 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         getLog().debug("outputDir="+outputDir.getAbsolutePath());
         return new File(outputDir, xspec.getName().replace(".xspec", "") + "." + extension);
     }
+    final File getJUnitReportPath(final File xspecReportDir, final File xspec) {
+        if (!xspecReportDir.exists()) {
+            xspecReportDir.mkdirs();
+        }
+        Path relativeSource = testDir.toPath().relativize(xspec.toPath());
+        File executionReportDir = (
+                execution!=null && execution.getExecutionId()!=null && !"default".equals(execution.getExecutionId()) ? 
+                new File(xspecReportDir,execution.getExecutionId()) :
+                xspecReportDir);
+        executionReportDir.mkdirs();
+        File outputDir = executionReportDir.toPath().resolve(relativeSource).toFile();
+        return new File(outputDir, "junit-"+xspec.getName().replace(".xspec", "") + ".xml");
+    }
 
     /**
      * Recursively find any files whoose name ends '.xspec' under the directory
@@ -983,6 +1020,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     protected String getXspecReporter() {
         return xspecReporter;
+    }
+    
+    protected String getJUnitReporter() {
+        return junitReporter;
     }
     
     protected String getSchematronIsoDsdl() {

@@ -70,6 +70,7 @@ public class XmlStuff {
     private XsltExecutable xspec4xsltCompiler;
     private XsltExecutable xspec4xqueryCompiler;
     private XsltExecutable reporter;
+    private XsltExecutable junitReporter;
     private XsltExecutable xeSurefire;
     private XsltExecutable schDsdl;
     private XsltExecutable schExpand;
@@ -241,5 +242,6 @@ public class XmlStuff {
         if(toCheck.equals(Object.class)) return false;
         return extendsClass(toCheck.getSuperclass(), inheritor);
     }
-
+    public void setJUnitReporter(XsltExecutable xe) { junitReporter = xe ; }
+    public XsltExecutable getJUnitReporter() { return junitReporter; }
 }

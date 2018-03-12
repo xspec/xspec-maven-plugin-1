@@ -42,8 +42,6 @@ import org.xml.sax.helpers.XMLFilterImpl;
  */
 public class XSpecTestFilter extends XMLFilterImpl implements ContentHandler {
 
-    private final static String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
-
     final XSpecCounterCH innerCH;
 
     public XSpecTestFilter(
