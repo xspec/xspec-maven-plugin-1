@@ -27,6 +27,7 @@
 package uk.org.adamretter.maven;
 
 import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
+import io.xspec.maven.xspecMavenPlugin.utils.AnyURIDatatype;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
 import net.sf.saxon.s9api.*;
@@ -68,8 +69,10 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.trans.XPathException;
+import net.sf.saxon.type.BuiltInAtomicType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.project.MavenProject;
@@ -141,6 +144,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = XSPEC_PREFIX+"reporter/junit-report.xsl", required = true)
     public String junitReporter;
     
+    @Parameter(defaultValue = LOCAL_PREFIX+"io/xspec/maven/xspec-maven-plugin/junit-aggregator.xsl")
+    public String junitAggregator;
+    
     @Parameter(defaultValue = XML_UTILITIES_PREFIX+"org/mricaud/xml-utilities/get-xml-file-static-dependency-tree.xsl")
     public String dependencyScanner;
 
@@ -168,6 +174,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     @Parameter(defaultValue = "${project.build.directory}/xspec-reports", required = true)
     public File reportDir;
+    
+    @Parameter(defaultValue = "${project.build.directory}/surefire-reports", required = true)
+    public File junitReportDir;
 
     @Parameter(defaultValue = "${catalog.filename}")
     public File catalogFile;
@@ -201,7 +210,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public static final QName QN_STYLESHEET = new QName("stylesheet");
     public static final QName QN_TEST_DIR = new QName("test_dir");
     public static final QName QN_URI = new QName("uri");
-    private List<File> filesToDelete;
+    private List<File> filesToDelete, junitFiles;
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -211,6 +220,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             return;
         }
         filesToDelete = new ArrayList<>();
+        junitFiles = new ArrayList<>();
         try {
             prepareXmlUtilities();
             getLog().debug("Looking for XSpecs in: " + getTestDir());
@@ -245,6 +255,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             } catch(TransformerException ex) {
                 getLog().error("while extracting CSS: ",ex);
             }
+
+            createJunitReport();
 
             // issue #16
             if (failed) {
@@ -524,8 +536,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 }
                 // JUnit report
                 XsltTransformer juReporter = xmlStuff.getJUnitReporter().load();
-                Destination junitDest = xmlStuff.newSerializer(new FileOutputStream(getJUnitReportPath(getReportDir(), sourceFile)));
+                File junitFile = getJUnitReportPath(getReportDir(), sourceFile);
+                Serializer junitDest = xmlStuff.newSerializer(new FileOutputStream(junitFile));
+                junitDest.setOutputProperty(Serializer.Property.INDENT, "yes");
                 juReporter.setDestination(junitDest);
+                junitFiles.add(junitFile);
                 ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
                 String relativeCssPath = 
@@ -650,8 +665,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 //execute
                 // JUnit report
                 XsltTransformer juReporter = xmlStuff.getJUnitReporter().load();
-                Destination junitDest = xmlStuff.newSerializer(new FileOutputStream(getJUnitReportPath(getReportDir(), sourceFile)));
+                File junitFile = getJUnitReportPath(getReportDir(), sourceFile);
+                Serializer junitDest = xmlStuff.newSerializer(new FileOutputStream(junitFile));
+                junitDest.setOutputProperty(Serializer.Property.INDENT, "yes");
                 juReporter.setDestination(junitDest);
+                junitFiles.add(junitFile);
                 
                 // Serializer nullOutput1 = xmlStuff.newSerializer(new NullOutputStream());
                 final Destination destination = 
@@ -1141,6 +1159,29 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     }
 
     static final String XSPEC_MOJO_PFX = "[xspec-mojo] ";
+    
+    private void createJunitReport() throws MalformedURLException, TransformerException, SaxonApiException {
+        String baseUri = project!=null ? project.getBasedir().toURI().toURL().toExternalForm() : null;
+        XsltTransformer xsl = xmlStuff.compileXsl(xmlStuff.getUriResolver().resolve(junitAggregator, baseUri)).load();
+        xsl.setParameter(new QName("baseDir"), new XdmAtomicValue(testDir.toURI().toString()));
+        StringBuilder sb = new StringBuilder("<files>");
+        for(File f: junitFiles) {
+            sb.append("<file>").append(f.toURI().toString()).append("</file>");
+        }
+        sb.append("</files>");
+        xsl.setSource(new StreamSource(new ReaderInputStream(new StringReader(sb.toString()))));
+        String fileName = execution!=null && execution.getExecutionId()!=null ? "TEST-xspec-"+execution.getExecutionId()+".xml" : "TEST-xspec.xml";
+        Serializer ser = xmlStuff.getProcessor().newSerializer(new File(junitReportDir, fileName));
+        ser.setOutputProperty(Serializer.Property.INDENT, "yes");
+        xsl.setDestination(ser);
+        xsl.setMessageListener(new MessageListener() {
+            @Override
+            public void message(XdmNode xn, boolean bln, SourceLocator sl) {
+                getLog().debug(xn.getStringValue());
+            }
+        });
+        xsl.transform();
+    }
         
     private static Configuration getSaxonConfiguration() {
         Configuration ret = Configuration.newConfiguration();
