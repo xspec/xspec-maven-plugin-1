@@ -27,7 +27,6 @@
 package uk.org.adamretter.maven;
 
 import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
-import io.xspec.maven.xspecMavenPlugin.utils.AnyURIDatatype;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
 import net.sf.saxon.s9api.*;
@@ -69,7 +68,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.trans.XPathException;
-import net.sf.saxon.type.BuiltInAtomicType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
@@ -756,7 +754,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             final XMLReader reader = parser.getXMLReader();
             final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(
                     reader, 
-                    sourceFile.getAbsolutePath(), 
+                    // Bug under Windows
+                    sourceFile.toURI().toString(),
                     xmlStuff.getUriResolver(), 
                     this, 
                     false);
