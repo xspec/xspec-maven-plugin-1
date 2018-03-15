@@ -83,7 +83,7 @@ import top.marchand.maven.saxon.utils.SaxonUtils;
  * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  * @author <a href="mailto:christophe@marchand.top">Christophe Marchand</a>
  */
-@Mojo(name = "run-xspec", defaultPhase = LifecyclePhase.VERIFY, requiresDependencyResolution = ResolutionScope.TEST)
+@Mojo(name = "run-xspec", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.TEST)
 public class XSpecMojo extends AbstractMojo implements LogProvider {
     public static final transient String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
     public static final transient String XML_UTILITIES_PREFIX = "dependency://org.mricaud+xml-utilities/";
@@ -100,14 +100,16 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * Location of the XSpec-for-XSLT Compiler XSLT i.e. generate-xspec-tests.xsl
      */
-    @Parameter(defaultValue = XSPEC_PREFIX+"compiler/generate-xspec-tests.xsl", required = true)
+//    @Parameter(defaultValue = XSPEC_PREFIX+"compiler/generate-xspec-tests.xsl", required = true)
+    @Parameter(defaultValue = LOCAL_PREFIX+"io/xspec/maven/xspec-maven-plugin/compiler/generate-xspec-tests.xsl", required = true)
     public String xspecXslCompiler;
 
     // issue #12
     /**
      * Location of the XSpec-for-XQ Compiler XSLT i.e. generate-xspec-tests.xsl
      */
-    @Parameter(defaultValue = XSPEC_PREFIX+"compiler/generate-query-tests.xsl", required = true)
+//    @Parameter(defaultValue = XSPEC_PREFIX+"compiler/generate-query-tests.xsl", required = true)
+    @Parameter(defaultValue = LOCAL_PREFIX+"io/xspec/maven/xspec-maven-plugin/compiler/generate-query-tests.xsl", required = true)
     public String xspecXQueryCompiler;
     
     /**
@@ -164,7 +166,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(alias = "excludes")
     public List<String> excludes;
     
-    @Parameter(defaultValue = "${maven.test.failure.skip}")
+    @Parameter(defaultValue = "${maven.test.failure.ignore}")
     public boolean testFailureIgnore;
 
     /**
