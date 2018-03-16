@@ -94,11 +94,16 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter( defaultValue = "${project}", readonly = true, required = true )
     public MavenProject project;
 
+    /**
+     * Defines if XSpec unit tests should be run or skipped.
+     * It's a bad practise to set this option, and this NEVER be done.
+     */
     @Parameter(property = "skipTests", defaultValue = "false")
     public boolean skipTests;
 
     /**
-     * Location of the XSpec-for-XSLT Compiler XSLT i.e. generate-xspec-tests.xsl
+     * Path to compiler/generate-xspec-tests.xsl XSpec implementation file.
+     * This parameter is only available for developement purposes, and should never be overriden.
      */
 //    @Parameter(defaultValue = XSPEC_PREFIX+"compiler/generate-xspec-tests.xsl", required = true)
     @Parameter(defaultValue = LOCAL_PREFIX+"io/xspec/maven/xspec-maven-plugin/compiler/generate-xspec-tests.xsl", required = true)
@@ -106,87 +111,157 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     // issue #12
     /**
-     * Location of the XSpec-for-XQ Compiler XSLT i.e. generate-xspec-tests.xsl
+     * Path to compiler/generate-query-tests.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
      */
 //    @Parameter(defaultValue = XSPEC_PREFIX+"compiler/generate-query-tests.xsl", required = true)
     @Parameter(defaultValue = LOCAL_PREFIX+"io/xspec/maven/xspec-maven-plugin/compiler/generate-query-tests.xsl", required = true)
     public String xspecXQueryCompiler;
     
     /**
-     * Location of the Schematron iso_dsdl_include
+     * Path to schematron/iso-schematron/iso_dsdl_include.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
      */
     @Parameter(defaultValue = XSPEC_PREFIX+"schematron/iso-schematron/iso_dsdl_include.xsl", required = true)
     public String schIsoDsdlInclude;
     
     /**
-     * Location of the Schematron iso abstract expand
+     * Path to schematron/iso-schematron/iso_abstract_expand.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
      */
     @Parameter(defaultValue = XSPEC_PREFIX+"schematron/iso-schematron/iso_abstract_expand.xsl", required = true)
     public String schIsoAbstractExpand;
     
     /**
-     * Location of the Schematron iso svrl for xslt2
+     * Path to schematron/iso-schematron/iso_svrl_for_xslt2.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
      */
     @Parameter(defaultValue = XSPEC_PREFIX+"schematron/iso-schematron/iso_svrl_for_xslt2.xsl", required = true)
     public String schIsoSvrlForXslt2;
 
     /**
-     * Location of the XSL that transforms the xspec for schematron in a real xspec
+     * Path to schematron/schut-to-xspec.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
      */
     @Parameter(defaultValue = LOCAL_PREFIX+"schematron/schut-to-xspec.xsl", required = true)
     public String schSchut;
     /**
-     * Location of the XSpec Reporter XSLT i.e. format-xspec-report.xsl
+     * Path to reporter/format-xspec-report.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
      */
     @Parameter(defaultValue = XSPEC_PREFIX+"reporter/format-xspec-report.xsl", required = true)
     public String xspecReporter;
     
+    /**
+     * Path to reporter/junit-report.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
+     */
     @Parameter(defaultValue = XSPEC_PREFIX+"reporter/junit-report.xsl", required = true)
     public String junitReporter;
     
+    /**
+     * Path to io/xspec/maven/xspec-maven-plugin/junit-aggregator.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
+     */
     @Parameter(defaultValue = LOCAL_PREFIX+"io/xspec/maven/xspec-maven-plugin/junit-aggregator.xsl")
     public String junitAggregator;
     
+    /**
+     * Path to org/mricaud/xml-utilities/get-xml-file-static-dependency-tree.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
+     */
     @Parameter(defaultValue = XML_UTILITIES_PREFIX+"org/mricaud/xml-utilities/get-xml-file-static-dependency-tree.xsl")
     public String dependencyScanner;
 
     /**
-     * Location of the XSpec tests
+     * Directory where XSpec files are search
      */
     @Parameter(defaultValue = "${project.basedir}/src/test/xspec", required = true)
     public File testDir;
     
+    /**
+     * The global Saxon options. 
+     * See https://github.com/cmarchand/saxonOptions-mvn-plug-utils/wiki for full documentation.
+     * It allows to configure Saxon as it'll be used by plugin to run XSpecs. 
+     * The main option that might be configured is xi, to activate or not XInclude.
+     * <pre>
+     * &lt;configuration>
+     *   &lt;saxonOptions>
+     *     &lt;xi>on&lt;/xi>
+     *   &lt;/saxonOptions>
+     * &lt;/configuration>
+     * </pre>
+     */
     @Parameter(name = "saxonOptions")
     public SaxonOptions saxonOptions;
 
     /**
-     * *
-     * Exclude various XSpec tests
+     * Patterns fo files to exclude
+     * Each found file that ends with an excluded value will be skipped.
+     * <pre>
+     *  &lt;configuration>
+     *    &lt;excludes>
+     *      &lt;exclude>-TI.xspec&lt;/exclude>
+     *    &lt;/excludes>
+     *  &lt;/configuration>
+     * </pre>
+     * Each file that ends with -TI.xspec will be skipped.
      */
     @Parameter(alias = "excludes")
     public List<String> excludes;
     
+    /**
+     * Defines if a test failure should fail the build, or not.
+     * This option should NEVER be used.
+     */
     @Parameter(defaultValue = "${maven.test.failure.ignore}")
     public boolean testFailureIgnore;
 
     /**
-     * Location of the XSpec reports
+     * The directory where report files will be created
      */
     @Parameter(defaultValue = "${project.build.directory}/xspec-reports", required = true)
     public File reportDir;
     
+    /**
+     * The directory where JUnit final report will be created.
+     * xspec-maven-plugin produces on junit report file per XSpec file, in 
+     * <tt>reportDir</tt> directory, and creates a merged report, in <tt>junitReportDir</tt>, 
+     * named <tt>TEST-xspec&lt;suffix>.xml</tt>.
+     * suffix depends on execution id
+     */
     @Parameter(defaultValue = "${project.build.directory}/surefire-reports", required = true)
     public File junitReportDir;
 
+    /**
+     * The catalog file to use.
+     * It must conform to OASIS catalog specification. 
+     * See https://www.oasis-open.org/committees/entity/spec-2001-08-06.html. 
+     * If defined, this catalog must be provided, or generated before xspec-maven-plugin execution.
+     * It can be an absolute or relative path. All relative pathes are relative to ${project.basedir}.
+     */
     @Parameter(defaultValue = "${catalog.filename}")
     public File catalogFile;
 
+    /**
+     * The directory where surefire report will be created
+     */
     @Parameter(defaultValue = "${project.build.directory}/surefire-reports", required = true)
     public File surefireReportDir;
 
+    /**
+     * Defines if a surefire report must be generated
+     */
     @Parameter(defaultValue = "false")
     public Boolean generateSurefireReport;
     
+    /**
+     * Defines if generated catalog should be kept or not.
+     * xspec-maven-plugin generates its own catalog to access its own resources, 
+     * and if <tt>catalogFile</tt> is defined, adds a <tt>&lt;next-catalog /></tt>
+     * entry in this generated catalog.
+     * Only usefull to debug plugin.
+     */
     @Parameter(defaultValue = "false")
     public Boolean keepGeneratedCatalog;
     

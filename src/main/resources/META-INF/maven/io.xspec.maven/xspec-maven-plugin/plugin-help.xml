@@ -102,13 +102,13 @@ All extension functions found will create a log in console when installed in Sax
                     <name>excludes</name>
                     <description>Patterns fo files to exclude
 Each found file that ends with an excluded value will be skipped.
-
+  
 &lt;configuration>
     &lt;excludes>
       &lt;exclude>-TI.xspec&lt;/exclude>
     &lt;/excludes>
   &lt;/configuration>
-
+  
 Each file that ends with -TI.xspec will be skipped.</description>
                     <required>false</required>
                 </parameter>
