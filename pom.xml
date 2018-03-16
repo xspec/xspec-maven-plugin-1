@@ -91,21 +91,27 @@
             <version>0.12.5</version>
         </dependency>
         <dependency>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+          <version>1.7.24</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-          <version>1.7.24</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.maven.plugin-testing</groupId>
             <artifactId>maven-plugin-testing-harness</artifactId>
             <version>3.3.0</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+	    <version>3.7</version>
+	    <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.java.dev.stax-utils</groupId>
@@ -372,10 +378,14 @@
             <id>sonatype-releases</id>
             <url>http://oss.sonatype.org/content/repositories/releases</url>
         </pluginRepository>
-        <pluginRepository>
+        <!--pluginRepository>
             <id>clojars.org</id>
             <url>http://clojars.org/repo</url>
-        </pluginRepository>
+	</pluginRepository-->
+	<pluginRepository>
+            <id>sonatype-snapshots</id>
+	    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+	</pluginRepository>
     </pluginRepositories>
 
     <profiles>
