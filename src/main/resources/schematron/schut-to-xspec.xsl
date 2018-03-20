@@ -13,6 +13,10 @@
     <xsl:variable name="warn" select="('warn', 'warning')"/>
     <xsl:variable name="info" select="('info', 'information')"/>
 
+    <!-- Fix 'file:C:/...' (https://issues.apache.org/jira/browse/XMLCOMMONS-24) -->
+    <xsl:variable name="base-uri" as="xs:string" select="replace(base-uri(), '^(file:)([^/])', '$1/$2')"/>
+
+    <xsl:output method="xml" indent="yes"/>
 
     <xsl:template match="@* | node()" priority="-2">
         <xsl:copy>
@@ -39,15 +43,17 @@
     </xsl:template>
 
     <xsl:template match="@schematron">
+        <xsl:copy/>
+        <xsl:attribute name="xspec-original-location" select="$base-uri"/>
         <xsl:attribute name="stylesheet" select="$stylesheet"/>
-        <xsl:variable name="path" select="iri-to-uri(concat(replace(document-uri(/), '(.*)/.*$', '$1'), '/', string()))"/>
+        <xsl:variable name="path" select="resolve-uri(string(), base-uri())"/>
         <xsl:for-each select="doc($path)/sch:schema/sch:ns" xmlns:sch="http://purl.oclc.org/dsdl/schematron">
             <xsl:namespace name="{./@prefix}" select="./@uri"/>
         </xsl:for-each>
     </xsl:template>
 
     <xsl:template match="x:import">
-        <xsl:variable name="href" select="iri-to-uri(concat(replace(document-uri(/), '(.*)/.*$', '$1'), '/', @href))"/>
+        <xsl:variable name="href" select="resolve-uri(@href, base-uri())"/>
         <xsl:choose>
             <xsl:when test="doc($href)//*[ 
                 self::x:expect-assert | self::x:expect-not-assert | 
@@ -80,9 +86,11 @@
         <xsl:element name="x:expect">
             <xsl:call-template name="make-label"/>
             <xsl:attribute name="test">
-                <xsl:sequence select="'exists(svrl:schematron-output/svrl:failed-assert'"/>
+                <xsl:sequence select="if (@count) then 'count' else 'exists'"/>
+                <xsl:sequence select="'(svrl:schematron-output/svrl:failed-assert'"/>
                 <xsl:apply-templates select="@*" mode="make-predicate"/>
                 <xsl:sequence select="')'"/>
+                <xsl:sequence select="current()[@count]/concat(' eq ', @count)"/>
             </xsl:attribute>
         </xsl:element>
     </xsl:template>
@@ -102,9 +110,11 @@
         <xsl:element name="x:expect">
             <xsl:call-template name="make-label"/>
             <xsl:attribute name="test">
-                <xsl:sequence select="'exists(svrl:schematron-output/svrl:successful-report'"/>
+                <xsl:sequence select="if (@count) then 'count' else 'exists'"/>
+                <xsl:sequence select="'(svrl:schematron-output/svrl:successful-report'"/>
                 <xsl:apply-templates select="@*" mode="make-predicate"/>
                 <xsl:sequence select="')'"/>
+                <xsl:sequence select="current()[@count]/concat(' eq ', @count)"/>
             </xsl:attribute>
         </xsl:element>
     </xsl:template>
@@ -131,11 +141,19 @@
     <xsl:template match="@id | @role" mode="make-predicate">
         <xsl:sequence select="concat('[(@', local-name(.), 
             ', preceding-sibling::svrl:fired-rule[1]/@',local-name(.), 
+            ', preceding-sibling::svrl:active-pattern[1]/@',local-name(.), 
             ')[1] = ', codepoints-to-string(39), ., codepoints-to-string(39), ']')"/>
     </xsl:template>
     
+    <xsl:template match="@id[parent::x:expect-rule] | @context[parent::x:expect-rule]" mode="make-predicate">
+        <xsl:sequence select="concat('[@', local-name(.), 
+            ' = ', codepoints-to-string(39), ., codepoints-to-string(39), ']')"/>
+    </xsl:template>
+    
+    <xsl:template match="@count | @label" mode="make-predicate"/>
+    
     <xsl:template name="make-label">
-        <xsl:attribute name="label" select="string-join((tokenize(local-name(),'-')[.=('report','assert','not')], @id, @role, @location), ' ')"/>
+        <xsl:attribute name="label" select="string-join((@label, tokenize(local-name(),'-')[.=('report','assert','not','rule')], @id, @role, @location, @context, current()[@count]/string('count:'), @count), ' ')"/>
     </xsl:template>
 
     <xsl:template match="x:expect-valid">
@@ -148,6 +166,19 @@
                 string-join(for $e in $error return concat(codepoints-to-string(39), $e, codepoints-to-string(39)), ','),
                 ')]))'
                 )"/>
+        </xsl:element>
+    </xsl:template>
+    
+    <xsl:template match="x:expect-rule">
+        <xsl:element name="x:expect">
+            <xsl:call-template name="make-label"/>
+            <xsl:attribute name="test">
+                <xsl:sequence select="if (@count) then 'count' else 'exists'"/>
+                <xsl:sequence select="'(svrl:schematron-output/svrl:fired-rule'"/>
+                <xsl:apply-templates select="@*" mode="make-predicate"/>
+                <xsl:sequence select="')'"/>
+                <xsl:sequence select="current()[@count]/concat(' eq ', @count)"/>
+            </xsl:attribute>
         </xsl:element>
     </xsl:template>
     

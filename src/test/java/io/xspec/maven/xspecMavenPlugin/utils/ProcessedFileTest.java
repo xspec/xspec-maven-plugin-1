@@ -29,6 +29,7 @@ package io.xspec.maven.xspecMavenPlugin.utils;
 import java.io.File;
 import java.io.IOException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.*;
@@ -80,9 +81,17 @@ public class ProcessedFileTest {
     @Test
     public void testSourceRelativePath() {
         ProcessedFile pf = new ProcessedFile(sourceDir, sourceFile, reportDir, reportFile);
-        assertEquals(pf.getRelativeSourcePath(),"1/1.xspec");
+        if(SystemUtils.IS_OS_WINDOWS) {
+        assertEquals(pf.getRelativeSourcePath(),"1\\1.xspec");
+        } else {
+            assertEquals(pf.getRelativeSourcePath(),"1/1.xspec");
+        }
         assertEquals(pf.getRelativeCssPath(),"..");
-        assertEquals(pf.getRelativeReportPath(), "1/1.html");
+        if(SystemUtils.IS_OS_WINDOWS) {
+            assertEquals(pf.getRelativeReportPath(), "1\\1.html");
+        } else {
+            assertEquals(pf.getRelativeReportPath(), "1/1.html");
+        }
     }
     
     private static void checkDirectory(final File f) throws IOException {

@@ -1,0 +1,228 @@
+<?xml version="1.0"?>
+<plugin>
+    <name>xspec-maven-plugin</name>
+    <version>${project.version}</version>
+    <groupId>io.xspec.maven</groupId>
+    <artifactId>xspec-maven-plugin</artifactId>
+    <description>This plugin runs all XSpec unit tests</description>
+    <goalPrefix/>
+    <mojos>
+        <mojo>
+            <goal>run-xspec</goal>
+            <configuration>
+                <testDir default-value="${project.basedir}/src/test/xspec"/>
+                <reportDir default-value="${project.build.directory}/xspec-reports"/>
+                <junitReportDir default-value="${project.build.directory}/surefire-reports"/>
+                <surefireReportDir default-value="${project.build.directory}/surefire-reports"/>
+                <generateSurefireReport default-value="false"/>
+                <catalogFile>catalog.filename</catalogFile>
+                <keepGeneratedCatalog default-value="false"/>
+                <skipTests default-value="false">skipTests</skipTests>
+                <testFailureIgnore default-value="false">maven.test.failure.ignore</testFailureIgnore>
+                <xspecXslCompiler default-value="dependency://io.xspec+xspec/compiler/generate-xspec-tests.xsl"/>
+                <xspecXQueryCompiler default-value="dependency://io.xspec+xspec/compiler/generate-query-tests.xsl"/>
+                <schIsoDsdlInclude default-value="dependency://io.xspec+xspec/schematron/iso-schematron/iso_dsdl_include.xsl"/>
+                <schIsoAbstractExpand default-value="dependency://io.xspec+xspec/schematron/iso-schematron/iso_abstract_expand.xsl"/>
+                <schIsoSvrlForXslt2 default-value="dependency://io.xspec+xspec/schematron/iso-schematron/iso_svrl_for_xslt2.xsl"/>
+                <schSchut default-value="dependency://io.xspec+xspec/schematron/schut-to-xspec.xsl"/>
+                <xspecReporter default-value="dependency://io.xspec+xspec/reporter/format-xspec-report.xsl"/>
+                <junitReporter default-value="dependency://io.xspec+xspec/reporter/junit-report.xsl"/>
+                <junitAggregator default-value="dependency://io.xspec.maven+xspec-maven-plugin/io/xspec/maven/xspec-maven-plugin/junit-aggregator.xsl"/>
+                <dependencyScanner default-value="dependency://org.mricaud+xml-utilities/org/mricaud/xml-utilities/get-xml-file-static-dependency-tree.xsl"/>
+            </configuration>
+            <description>xspec-maven-plugin is a plugin that run all xspec unit tests at test phase, and produces reports.
+
+It relies on XSpec 1.0, available at http://github.com/xspec/xspec
+
+If one unit test fails, the plugin execution fails, and the build fails.
+
+You must define the Saxon implementation (http://www.saxonica.com), as plugin do not embed any Saxon implementation. Just declare a dependency in plugin :
+
+  &lt;plugin>
+    &lt;groupId>io.xspec.maven&lt;/groupId>
+    &lt;artifactId>xspec-maven-plugin&lt;/artifactId>
+    &lt;dependencies>
+      &lt;dependency>
+        &lt;groupId>net.sf.saxon&lt;/groupId>
+        &lt;artifactId>Saxon-HE&lt;/artifactId>
+        &lt;version>9.8.0-5&lt;/version>
+      &lt;/dependency>
+    &lt;/dependencies>
+  &lt;/plugin>
+                
+Saxon version must be at least 9.8.0-5. Saxon-PE or Saxon-EE can be used, but you'll have to deploy them to your local or enterprise repository, as they are not available in Maven Central. Don't forget to add a dependency to your Saxon license. The license file may be packaged in a .jar file and deployed to your local or enterprise repository.
+
+xspec-maven-plugin expects XSpec files in src/test/xspec/
+xspec-maven-plugin produces XSpec reports in target/xspec-reports/
+xspec-maven-plugin produces Junit reports in target/surefire-reports/
+
+xspec-maven-plugin respects Maven unit tests convention and supports skipTests system property. See http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#skipTests
+xspec-maven-plugin supports testFailureIgnore configuration parameter. See http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#testFailureIgnore
+            
+XPath extension functions
+
+Saxon allows to create XPath extension functions in Java. See https://www.saxonica.com/documentation/index.html#!extensibility/functions. gaulois-pipe has defined a common way to automatically install extension functions in Saxon. xspec-maven-plugin supports the same mecanism.
+It looks in classpath for META-INF/services/top.marchand.xml.gaulois.xml resources.
+Each file declares extension functions in this format :
+            
+  &lt;gaulois-services>
+    &lt;saxon>
+      &lt;extensions>
+        &lt;function>top.marchand.xml.extfunctions.basex.BaseXQuery&lt;/function>
+      &lt;/extensions>
+    &lt;/saxon>
+  &lt;/gaulois-services>
+            
+At least two function libraries are available in xspec-maven-plugin : 
+- https://github.com/cmarchand/xpath-basex-ext/
+- https://github.com/AxelCourt/saxon-marklogic-ext
+
+If you want want to add your own extension functions to XSpec engine, create a maven project with function implementation, a service file, and add it as a dependency to xspec-maven-plugin delaration :
+            
+  &lt;plugin>
+    &lt;groupId>io.xspec.maven&lt;/groupId>
+    &lt;artifactId>xspec-maven-plugin&lt;/artifactId>
+    &lt;dependencies>
+      &lt;dependency>
+        &lt;groupId>your.enterprise.groupId&lt;/groupId>
+        &lt;artifactId>XPath-extension-functions&lt;/artifactId>
+      &lt;/dependency>
+    &lt;/dependencies>
+  &lt;/plugin>
+            
+All extension functions found will create a log in console when installed in Saxon.
+            </description>            
+            <parameters>
+                <parameter>
+                    <name>testDir</name>
+                    <description>Directory where XSpec files are search</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>excludes</name>
+                    <description>Patterns fo files to exclude
+Each found file that ends with an excluded value will be skipped.
+  
+&lt;configuration>
+    &lt;excludes>
+      &lt;exclude>-TI.xspec&lt;/exclude>
+    &lt;/excludes>
+  &lt;/configuration>
+  
+Each file that ends with -TI.xspec will be skipped.</description>
+                    <required>false</required>
+                </parameter>
+                <parameter>
+                    <name>reportDir</name>
+                    <description>The directory where report files will be created</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>junitReportDir</name>
+                    <description>The directory where JUnit final report will be created
+xspec-maven-plugin produces on junit report file per XSpec file, in reportDir directory, and creates a merged report, in junitReportDir, named TEST-xspec&lt;suffix>.xml. 
+suffix depends on execution id</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>surefireReportDir</name>
+                    <description>The directory where surefire report will be created</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>generateSurefireReport</name>
+                    <description>Defines if a surefire report must be generated</description>
+                </parameter>
+                <parameter>
+                    <name>catalogFile</name>
+                    <description>It must conform to OASIS catalog specification. See https://www.oasis-open.org/committees/entity/spec-2001-08-06.html. This catalog must be provided, or generated before xspec-maven-plugin execution.
+It can be an absolute or relative path. All relative pathes are relative to ${project.basedir}.</description>
+                </parameter>
+                <parameter>
+                    <name>keepGeneratedCatalog</name>
+                    <description>Defines if generated catalog should be kept or not.
+xspec-maven-plugin generates its own catalog to access its own resources, and if catalogFile is defined, adds a &lt;next-catalog /> entry in this generated catalog.
+Only usefull to debug plugin.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>saxonOptions</name>
+                    <description>The global Saxon options. See https://github.com/cmarchand/saxonOptions-mvn-plug-utils/wiki for full documentation.
+It allows to configure Saxon as it'll be used by plugin to run XSpecs. The main option that might be configured is xi, to activate or not XInclude.
+  &lt;/configuration>
+</description>
+                </parameter>
+                <parameter>
+                    <name>skipTests</name>
+                    <description>Defines if XSpec unit tests should be run or skipped.
+This option should NEVER be used.</description>
+                </parameter>
+                <parameter>
+                    <name>testFailureIgnore</name>
+                    <description>Defines if a test failure should fail the build, or not.
+This option should NEVER be used.</description>
+                </parameter>
+                <parameter>
+                    <name>xspecXslCompiler</name>
+                    <description>Path to compiler/generate-xspec-tests.xsl XSpec implementation file.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>xspecXQueryCompiler</name>
+                    <description>Path to compiler/generate-query-tests.xsl.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>schIsoDsdlInclude</name>
+                    <description>Path to schematron/iso-schematron/iso_dsdl_include.xsl.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>schIsoAbstractExpand</name>
+                    <description>Path to schematron/iso-schematron/iso_abstract_expand.xsl.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>schIsoSvrlForXslt2</name>
+                    <description>Path to schematron/iso-schematron/iso_svrl_for_xslt2.xsl.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>schSchut</name>
+                    <description>Path to schematron/schut-to-xspec.xsl.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>xspecReporter</name>
+                    <description>Path to reporter/format-xspec-report.xsl.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>junitReporter</name>
+                    <description>Path to reporter/junit-report.xsl.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>junitAggregator</name>
+                    <description>Path to io/xspec/maven/xspec-maven-plugin/junit-aggregator.xsl.
+This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+                <parameter>
+                    <name>dependencyScanner</name>
+                    <description>Path to org/mricaud/xml-utilities/get-xml-file-static-dependency-tree.xsl.
+                        This parameter is only available for developement purposes, and should never be overriden.</description>
+                    <required>true</required>
+                </parameter>
+            </parameters>
+        </mojo>
+    </mojos>
+</plugin>
