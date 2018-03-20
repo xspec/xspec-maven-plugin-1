@@ -569,6 +569,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 final XsltExecutable xeXSpec = xmlStuff.compileXsl(
                         new StreamSource(compiledXSpec.getCompiledStylesheet()));
                 final XsltTransformer xtXSpec = xeXSpec.load();
+                if(isCoverageRequired()) {
+                    File tempCoverageFile = getCoverageTempPath(getReportDir(), sourceFile);
+                    xtXSpec.setTraceListener(new XSLTCoverageListener(new PrintStream(tempCoverageFile)));
+                }
                 xtXSpec.setInitialTemplate(INITIAL_TEMPLATE_NAME);
 
                 getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
@@ -1064,6 +1068,32 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         executionReportDir.mkdirs();
         File outputDir = executionReportDir.toPath().resolve(relativeSource).toFile();
         return new File(outputDir, "junit-"+xspec.getName().replace(".xspec", "") + ".xml");
+    }
+    final File getCoverageTempPath(final File xspecReportDir, final File xspec) {
+        if (!xspecReportDir.exists()) {
+            xspecReportDir.mkdirs();
+        }
+        Path relativeSource = testDir.toPath().relativize(xspec.toPath());
+        File executionReportDir = (
+                execution!=null && execution.getExecutionId()!=null && !"default".equals(execution.getExecutionId()) ? 
+                new File(xspecReportDir,execution.getExecutionId()) :
+                xspecReportDir);
+        executionReportDir.mkdirs();
+        File outputDir = executionReportDir.toPath().resolve(relativeSource).toFile();
+        return new File(outputDir, "coverage-"+xspec.getName().replace(".xspec","") + ".xml");
+    }
+    final File getCoverageFinalPath(final File xspecReportDir, final File xspec) {
+        if (!xspecReportDir.exists()) {
+            xspecReportDir.mkdirs();
+        }
+        Path relativeSource = testDir.toPath().relativize(xspec.toPath());
+        File executionReportDir = (
+                execution!=null && execution.getExecutionId()!=null && !"default".equals(execution.getExecutionId()) ? 
+                new File(xspecReportDir,execution.getExecutionId()) :
+                xspecReportDir);
+        executionReportDir.mkdirs();
+        File outputDir = executionReportDir.toPath().resolve(relativeSource).toFile();
+        return new File(outputDir, xspec.getName().replace(".xspec","-coverage") + ".xml");
     }
 
     /**
