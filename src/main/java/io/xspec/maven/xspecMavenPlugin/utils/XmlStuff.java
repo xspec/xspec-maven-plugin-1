@@ -71,6 +71,7 @@ public class XmlStuff {
     private XsltExecutable xspec4xqueryCompiler;
     private XsltExecutable reporter;
     private XsltExecutable junitReporter;
+    private XsltExecutable coverageReporter;
     private XsltExecutable xeSurefire;
     private XsltExecutable schDsdl;
     private XsltExecutable schExpand;
@@ -145,7 +146,7 @@ public class XmlStuff {
         return documentBuilder;
     }
 
-    private XsltCompiler getXsltCompiler() {
+    public XsltCompiler getXsltCompiler() {
         return xsltCompiler;
     }
 
@@ -244,4 +245,6 @@ public class XmlStuff {
     }
     public void setJUnitReporter(XsltExecutable xe) { junitReporter = xe ; }
     public XsltExecutable getJUnitReporter() { return junitReporter; }
+    public void setCoverageReporter(XsltExecutable xe) { coverageReporter = xe; }
+    public XsltExecutable getCoverageReporter() { return coverageReporter; }
 }

@@ -30,6 +30,7 @@ import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
 import net.sf.saxon.s9api.*;
+import com.jenitennison.xslt.tests.XSLTCoverageTraceListener;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -78,7 +79,79 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
 import top.marchand.maven.saxon.utils.SaxonUtils;
 
 /**
- * Goal which runs any XSpec tests in src/test/xspec
+ * xspec-maven-plugin is a plugin that run all xspec unit tests at test phase, and produces reports.
+ *
+ * It relies on XSpec 1.0, available at http://github.com/xspec/xspec
+ * 
+ * If one unit test fails, the plugin execution fails, and the build fails.
+ * 
+ * <strong>Saxon implementation</strong>
+ * You must define the Saxon implementation (http://www.saxonica.com), as plugin do not embed any Saxon implementation. Just declare a dependency in plugin :
+ * 
+ * <pre>
+ *   &lt;plugin>
+ *     &lt;groupId>io.xspec.maven&lt;/groupId>
+ *     &lt;artifactId>xspec-maven-plugin&lt;/artifactId>
+ *     &lt;dependencies>
+ *       &lt;dependency>
+ *         &lt;groupId>net.sf.saxon&lt;/groupId>
+ *         &lt;artifactId>Saxon-HE&lt;/artifactId>
+ *         &lt;version>9.8.0-5&lt;/version>
+ *       &lt;/dependency>
+ *     &lt;/dependencies>
+ *   &lt<;/plugin>
+ * </pre>
+ *                 
+ * Saxon version must be at least 9.8.0-5. Saxon-PE or Saxon-EE can be used, but you'll have to deploy them to your local or enterprise repository, as they are not available in Maven Central. Don't forget to add a dependency to your Saxon license. The license file may be packaged in a .jar file and deployed to your local or enterprise repository.
+ * 
+ * <ul>
+ * <li>xspec-maven-plugin expects XSpec files in src/test/xspec/</li>
+ * <li>xspec-maven-plugin produces XSpec reports in target/xspec-reports/</li>
+ * <li>xspec-maven-plugin produces Junit reports in target/surefire-reports/</li>
+ * </ul>
+ * 
+ * xspec-maven-plugin respects Maven unit tests convention and supports skipTests system property. See http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#skipTests
+ * 
+ * xspec-maven-plugin supports testFailureIgnore configuration parameter. See http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#testFailureIgnore
+ *             
+ * <strong>XPath extension functions</strong>
+ * 
+ * Saxon allows to create XPath extension functions in Java. See https://www.saxonica.com/documentation/index.html#!extensibility/functions. gaulois-pipe has defined a common way to automatically install extension functions in Saxon. xspec-maven-plugin supports the same mecanism.
+ * It looks in classpath for META-INF/services/top.marchand.xml.gaulois.xml resources.
+ * Each file declares extension functions in this format :
+ * 
+ * <pre>       
+ *   &lt;gaulois-services>
+ *     &lt;saxon>
+ *       &lt;extensions>
+ *         &lt;function>top.marchand.xml.extfunctions.basex.BaseXQuery&lt;/function>
+ *       &lt;/extensions>
+ *     &lt;/saxon>
+ *   &lt;/gaulois-services>
+ * </pre>
+ *             
+ * At least two function libraries are available in xspec-maven-plugin : 
+ * <ul>
+ * <li>https://github.com/cmarchand/xpath-basex-ext/</li>
+ * <li>https://github.com/AxelCourt/saxon-marklogic-ext</li>
+ * </ul>
+ * 
+ * If you want want to add your own extension functions to XSpec engine, create a maven project with function implementation, a service file, and add it as a dependency to xspec-maven-plugin delaration :
+ * 
+ * <pre>
+ *   &lt;plugin>
+ *     &lt;groupId>io.xspec.maven&lt;/groupId>
+ *     &lt;artifactId>xspec-maven-plugin&lt;/artifactId>
+ *     &lt;dependencies>
+ *       &lt;dependency>
+ *         &lt;groupId>your.enterprise.groupId&lt;/groupId>
+ *         &lt;artifactId>XPath-extension-functions&lt;/artifactId>
+ *       &lt;/dependency>
+ *     &lt;/dependencies>
+ *   &lt;/plugin>
+ * </pre>
+ *             
+ * All extension functions found will create a log in console when installed in Saxon.
  *
  * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  * @author <a href="mailto:christophe@marchand.top">Christophe Marchand</a>
@@ -159,6 +232,13 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = XSPEC_PREFIX+"reporter/junit-report.xsl", required = true)
     public String junitReporter;
     
+    /**
+     * Path to reporter/coverage-report.xsl.
+     * This parameter is only available for developement purposes, and should never be overriden.
+     */
+    @Parameter(defaultValue = XSPEC_PREFIX+"reporter/coverage-report.xsl", required = true)
+    public String coverageReporter;
+
     /**
      * Path to io/xspec/maven/xspec-maven-plugin/junit-aggregator.xsl.
      * This parameter is only available for developement purposes, and should never be overriden.
@@ -265,8 +345,16 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = "false")
     public Boolean keepGeneratedCatalog;
     
+    /**
+     * Defines if code coverage reporting should be generated or not.
+     */
+    @Parameter(defaultValue = "false")
+    public Boolean generateCoverage;
+    
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
     public MojoExecution execution;
+    
+    private String generateXspecUtilsUri = null;
 
     public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
     public static final Configuration SAXON_CONFIGURATION = getSaxonConfiguration();
@@ -285,7 +373,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public static final QName QN_STYLESHEET = new QName("stylesheet");
     public static final QName QN_TEST_DIR = new QName("test_dir");
     public static final QName QN_URI = new QName("uri");
+    private static final QName QN_REPORT_CSS_URI = new QName("report-css-uri");
     private List<File> filesToDelete, junitFiles;
+    private static final String COVERAGE_ERROR_MESSAGE = "Coverage report is only available with Saxon-PE or Saxon-EE";
+    private String schLocationCompareUri;
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -354,6 +445,15 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         }
     }
     
+    /**
+     * Prepares all XML stuff : XPathCompiler, XsltCompiler, compiled stylesheets,
+     * Saxon configuration, and so on...
+     * @throws MojoExecutionException
+     * @throws MojoFailureException
+     * @throws SaxonApiException
+     * @throws MalformedURLException
+     * @throws TransformerException 
+     */
     protected void prepareXmlUtilities() throws MojoExecutionException, MojoFailureException, SaxonApiException, MalformedURLException, TransformerException {
         xmlStuff = new XmlStuff(new Processor(SAXON_CONFIGURATION), getLog());
         if(saxonOptions!=null) {
@@ -381,6 +481,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 throw new MojoExecutionException("while creating URI resolver", ex);
             }
         }
+        // trace activation
+        xmlStuff.getXsltCompiler().setCompileWithTracing(true);
+        xmlStuff.getXqueryCompiler().setCompileWithTracing(true);
         xmlStuff.setXpExecGetXSpecType(xmlStuff.getXPathCompiler().compile("/*/@*"));
         xmlStuff.setXpSchGetXSpecFile(xmlStuff.getXPathCompiler().compile(
                 "iri-to-uri("
@@ -393,6 +496,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         getLog().debug("Using XSpec Xquery Compiler: " + getXspecXQueryCompiler());
         getLog().debug("Using XSpec Reporter: " + getXspecReporter());
         getLog().debug("Using JUnit Reporter: "+ getJUnitReporter());
+        getLog().debug("Using Coverage Reporter: "+ getCoverageReporter());
         getLog().debug("Using Schematron Dsdl include: "+getSchematronIsoDsdl());
         getLog().debug("Using Schematron expander: "+getSchematronExpand());
         getLog().debug("Using Schematrong Svrl: "+getSchematronSvrForXslt());
@@ -409,6 +513,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         getLog().debug(getXspecReporter()+" -> "+srcReporter.getSystemId());
         Source srcJUnitReporter = resolveSrc(getJUnitReporter(), baseUri, "JUnit Reporter");
         getLog().debug(getJUnitReporter()+" -> "+srcJUnitReporter.getSystemId());
+        Source srcCoverageReporter = resolveSrc(getCoverageReporter(), baseUri, "Coverage Reporter");
+        getLog().debug(getCoverageReporter()+" -> "+srcCoverageReporter.getSystemId());
         Source srcSchIsoDsdl = resolveSrc(getSchematronIsoDsdl(), baseUri, "Schematron Dsdl");
         getLog().debug(getSchematronIsoDsdl()+" -> "+srcSchIsoDsdl.getSystemId());
         Source srcSchExpand = resolveSrc(getSchematronExpand(), baseUri, "Schematron expander");
@@ -419,11 +525,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         getLog().debug(getSchematronSchut()+" -> "+srcSchSchut.getSystemId());
         Source xmlDependencyScanner = resolveSrc(getXmlDependencyScanner(), baseUri, "Xml dependency scanner");
         getLog().debug(getXmlDependencyScanner()+" -> "+xmlDependencyScanner.getSystemId());
+        
+        // for code coverage
+        generateXspecUtilsUri = resolveSrc("generate-tests-utils.xsl", srcXsltCompiler.getSystemId(), "generate-tests-utils.xsl").getSystemId();
+        schLocationCompareUri = resolveSrc("../schematron/sch-location-compare.xsl", srcXsltCompiler.getSystemId(), "../schematron/sch-location-compare.xsl").getSystemId();
 
         xmlStuff.setXspec4xsltCompiler(xmlStuff.compileXsl(srcXsltCompiler));
         xmlStuff.setXspec4xqueryCompiler(xmlStuff.compileXsl(srcXqueryCompiler));
         xmlStuff.setReporter(xmlStuff.compileXsl(srcReporter));
         xmlStuff.setJUnitReporter(xmlStuff.compileXsl(srcJUnitReporter));
+        if(isSaxonPEorEE()) {
+            xmlStuff.setCoverageReporter(xmlStuff.compileXsl(srcCoverageReporter));
+        }
         xmlStuff.setSchematronDsdl(xmlStuff.compileXsl(srcSchIsoDsdl));
         xmlStuff.setSchematronExpand(xmlStuff.compileXsl(srcSchExpand));
         xmlStuff.setSchematronSvrl(xmlStuff.compileXsl(srcSchSvrl));
@@ -435,6 +548,17 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         }
 
     }
+    /**
+     * Utility method to resolve a URI, using URIResolver. If resource can not be
+     * located, uses <tt>desc</tt> to construct an error message, thrown in
+     * <tt>MojoExecutionExcecution</tt>
+     * @param source
+     * @param baseUri
+     * @param desc
+     * @return
+     * @throws MojoExecutionException
+     * @throws TransformerException 
+     */
     private Source resolveSrc(String source, String baseUri, String desc) throws MojoExecutionException, TransformerException {
         Source ret = xmlStuff.getUriResolver().resolve(source, baseUri);
         if(ret == null) {
@@ -442,7 +566,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         }
         return ret;
     }
-    private void generateIndex() {
+    /**
+     * Generates the index.html file that point all XSpec reports.
+     * All required infos are in {@link #PROCESS_FILES}
+     */
+    protected void generateIndex() {
         File index = new File(reportDir, "index.html");
         if(!reportDir.exists()) reportDir.mkdirs();
         try (BufferedWriter fos = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(index), Charset.forName("UTF-8")))) {
@@ -498,11 +626,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     /**
      * Checks whether an XSpec should be excluded from processing
-     *
      * The comparison is performed on the filename of the xspec
-     *
      * @param xspec The filepath of the XSpec
-     *
      * @return true if the XSpec should be excluded, false otherwise
      */
     private boolean shouldExclude(final File xspec) {
@@ -517,6 +642,14 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return false;
     }
 
+    /**
+     * Process a XSpec file
+     * @param xspec
+     * @return <tt>true</tt> if XSpec succeed, <tt>false</tt> otherwise.
+     * @throws SaxonApiException
+     * @throws TransformerException
+     * @throws IOException 
+     */
     final boolean processXSpec(final File xspec) throws SaxonApiException, TransformerException, IOException {
         getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
 
@@ -535,9 +668,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     }
     /**
      * Process an XSpec on XSLT Test
-     *
      * @param xspec The path to the XSpec test file
-     *
      * @return true if all tests in XSpec pass, false otherwise
      */
     final boolean processXsltXSpec(XdmNode xspec) throws SaxonApiException, FileNotFoundException {
@@ -562,125 +693,164 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         final CompiledXSpec compiledXSpec = compileXSpecForXslt(actualSourceFile);
         if (compiledXSpec == null) {
             return false;
-        } else {
-            /* execute the test stylesheet */
-            final XSpecResultsHandler resultsHandler = new XSpecResultsHandler(this);
-            try {
-                final XsltExecutable xeXSpec = xmlStuff.compileXsl(
-                        new StreamSource(compiledXSpec.getCompiledStylesheet()));
-                final XsltTransformer xtXSpec = xeXSpec.load();
-                if(isCoverageRequired()) {
-                    File tempCoverageFile = getCoverageTempPath(getReportDir(), sourceFile);
-                    xtXSpec.setTraceListener(new XSLTCoverageListener(new PrintStream(tempCoverageFile)));
-                }
-                xtXSpec.setInitialTemplate(INITIAL_TEMPLATE_NAME);
-
-                getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
-
-                //setup xml report output
-                final File xspecXmlResult = getXSpecXmlResultPath(getReportDir(), sourceFile);
-                final Serializer xmlSerializer = xmlStuff.getProcessor().newSerializer();
-                xmlSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
-                xmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
-                xmlSerializer.setOutputFile(xspecXmlResult);
-
-                //setup html report output
-                final File xspecHtmlResult = getXSpecHtmlResultPath(getReportDir(), sourceFile);
-                final Serializer htmlSerializer = xmlStuff.getProcessor().newSerializer();
-                htmlSerializer.setOutputProperty(Serializer.Property.METHOD, "html");
-                htmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
-                htmlSerializer.setOutputFile(xspecHtmlResult);
-                XsltTransformer reporter = xmlStuff.getReporter().load();
-                reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
-                reporter.setDestination(htmlSerializer);
-
-
-                // setup surefire report output
-                Destination xtSurefire = null;
-                if(xmlStuff.getXeSurefire()!=null) {
-                    XsltTransformer xt = xmlStuff.getXeSurefire().load();
-                    try {
-                        xt.setParameter(new QName("baseDir"), new XdmAtomicValue(project.getBasedir().toURI().toURL().toExternalForm()));
-                        xt.setParameter(new QName("outputDir"), new XdmAtomicValue(surefireReportDir.toURI().toURL().toExternalForm()));
-                        xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
-                        xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
-                        // setBaseOutputURI not required, surefire-reporter.xsl 
-                        // does xsl:result-document with absolute @href
-                        xtSurefire = xt;
-                    } catch(MalformedURLException ex) {
-                        getLog().warn("Unable to generate surefire report", ex);
+        }
+        /* execute the test stylesheet */
+        final XSpecResultsHandler resultsHandler = new XSpecResultsHandler(this);
+        try {
+            final XsltExecutable xeXSpec = xmlStuff.compileXsl(
+                    new StreamSource(compiledXSpec.getCompiledStylesheet()));
+            final XsltTransformer xtXSpec = xeXSpec.load();
+            File tempCoverageFile=null;
+            if(isCoverageRequired()) {
+                tempCoverageFile = getCoverageTempPath(getReportDir(), sourceFile);
+                tempCoverageFile.deleteOnExit();
+                final String xspecStylesheetUri = compiledXSpec.getCompiledStylesheet().toURI().toString();
+                XSLTCoverageTraceListener listener = new XSLTCoverageTraceListener(new PrintStream(tempCoverageFile)) {
+                    @Override
+                    public boolean isUtilsStylesheet(String systemId) {
+                        // we probably need this : https://github.com/xspec/xspec/issues/191
+                        return generateXspecUtilsUri.equals(systemId) || schLocationCompareUri.equals(systemId);
                     }
-                } else {
-                    xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
-                }
-                // JUnit report
-                XsltTransformer juReporter = xmlStuff.getJUnitReporter().load();
-                File junitFile = getJUnitReportPath(getReportDir(), sourceFile);
-                Serializer junitDest = xmlStuff.newSerializer(new FileOutputStream(junitFile));
-                junitDest.setOutputProperty(Serializer.Property.INDENT, "yes");
-                juReporter.setDestination(junitDest);
-                junitFiles.add(junitFile);
-                ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
-                processedFiles.add(pf);
-                String relativeCssPath = 
-                        (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
-                reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
-                //execute
-                final Destination destination = 
-                        new TeeDestination(
-                                new TeeDestination(
-                                        new SAXDestination(resultsHandler), 
-                                        new TeeDestination(
-                                                xmlSerializer,
-                                                xtSurefire)
-                                        ), 
-                                new TeeDestination(reporter, juReporter));
-                xtXSpec.setDestination(destination);
-                xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
-                Source xspecSource = new StreamSource(sourceFile);
-                xtXSpec.setSource(xspecSource);
-                xtXSpec.setURIResolver(xmlStuff.getUriResolver());
-                xtXSpec.transform();
-
-            } catch (final SaxonApiException te) {
-                getLog().error(te.getMessage());
-                getLog().debug(te);
+                    @Override
+                    public boolean isXSpecStylesheet(String systemId) {
+                        return xspecStylesheetUri.equals(systemId);
+                    }
+                };
+                listener.setGenerateTestsUtilsName(generateXspecUtilsUri);
+                getLog().info("Trace listener is active");
+                xtXSpec.setTraceListener(listener);
             }
-            
-            //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
-            final int missed = compiledXSpec.getTests() - resultsHandler.getTests();
+            xtXSpec.setInitialTemplate(INITIAL_TEMPLATE_NAME);
 
-            //report results
-            final String msg = String.format("%s results [Passed/Pending/Failed/Missed/Total] = [%d/%d/%d/%d/%d]", 
-                    sourceFile.getName(), 
+            getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
+
+            //setup xml report output
+            final File xspecXmlResult = getXSpecXmlResultPath(getReportDir(), sourceFile);
+            final Serializer xmlSerializer = xmlStuff.getProcessor().newSerializer();
+            xmlSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
+            xmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
+            xmlSerializer.setOutputFile(xspecXmlResult);
+
+            //setup html report output
+            final File xspecHtmlResult = getXSpecHtmlResultPath(getReportDir(), sourceFile);
+            final Serializer htmlSerializer = xmlStuff.getProcessor().newSerializer();
+            htmlSerializer.setOutputProperty(Serializer.Property.METHOD, "html");
+            htmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
+            htmlSerializer.setOutputFile(xspecHtmlResult);
+            XsltTransformer reporter = xmlStuff.getReporter().load();
+            reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
+            reporter.setDestination(htmlSerializer);
+
+
+            // setup surefire report output
+            Destination xtSurefire = null;
+            if(xmlStuff.getXeSurefire()!=null) {
+                XsltTransformer xt = xmlStuff.getXeSurefire().load();
+                try {
+                    xt.setParameter(new QName("baseDir"), new XdmAtomicValue(project.getBasedir().toURI().toURL().toExternalForm()));
+                    xt.setParameter(new QName("outputDir"), new XdmAtomicValue(surefireReportDir.toURI().toURL().toExternalForm()));
+                    xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
+                    xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
+                    // setBaseOutputURI not required, surefire-reporter.xsl 
+                    // does xsl:result-document with absolute @href
+                    xtSurefire = xt;
+                } catch(MalformedURLException ex) {
+                    getLog().warn("Unable to generate surefire report", ex);
+                }
+            } else {
+                xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
+            }
+            // JUnit report
+            XsltTransformer juReporter = xmlStuff.getJUnitReporter().load();
+            File junitFile = getJUnitReportPath(getReportDir(), sourceFile);
+            Serializer junitDest = xmlStuff.newSerializer(new FileOutputStream(junitFile));
+            junitDest.setOutputProperty(Serializer.Property.INDENT, "yes");
+            juReporter.setDestination(junitDest);
+            junitFiles.add(junitFile);
+            ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
+            processedFiles.add(pf);
+            String relativeCssPath = 
+                    (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
+            reporter.setParameter(QN_REPORT_CSS_URI, new XdmAtomicValue(relativeCssPath));
+            //execute
+            final Destination destination = 
+                    new TeeDestination(
+                            new TeeDestination(
+                                    new SAXDestination(resultsHandler), 
+                                    new TeeDestination(
+                                            xmlSerializer,
+                                            xtSurefire)
+                                    ), 
+                            new TeeDestination(reporter, juReporter));
+            xtXSpec.setDestination(destination);
+            xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
+            Source xspecSource = new StreamSource(sourceFile);
+            xtXSpec.setSource(xspecSource);
+            xtXSpec.setURIResolver(xmlStuff.getUriResolver());
+            xtXSpec.transform();
+
+            // limit to pure XSLT, exclude schematron
+            // https://github.com/xspec/xspec/issues/191
+            if(isCoverageRequired() && (sourceFile.equals(actualSourceFile))) {
+                if(xmlStuff.getCoverageReporter()!=null) {
+                    XsltTransformer coverage = xmlStuff.getCoverageReporter().load();
+                    File coverageReportFile = getCoverageFinalPath(reportDir, sourceFile);
+                    coverage.setDestination(xmlStuff.getProcessor().newSerializer(coverageReportFile));
+                    coverage.setSource(new StreamSource(tempCoverageFile));
+                    getLog().info("coverage pwd: "+testDir.toURI().toString());
+                    coverage.setParameter(new QName("pwd"),XdmAtomicValue.makeAtomicValue(testDir.toURI().toString()));
+                    Path relative = testDir.toPath().relativize(sourceFile.toPath());
+//                    Path relative = testDir.toPath().relativize(actualSourceFile.toPath());
+                    getLog().info("coverage tests: "+relative.toString());
+                    coverage.setParameter(new QName("tests"), XdmAtomicValue.makeAtomicValue(relative.toString()));
+                    coverage.setParameter(QN_REPORT_CSS_URI, new XdmAtomicValue(relativeCssPath));
+                    coverage.transform();
+                } else {
+                    getLog().warn(COVERAGE_ERROR_MESSAGE);
+                }
+            }
+        } catch (final Exception te) {
+            getLog().error(te.getMessage());
+            getLog().debug(te);
+        }
+
+        //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
+        final int missed = compiledXSpec.getTests() - resultsHandler.getTests();
+
+        //report results
+        final String msg = String.format("%s results [Passed/Pending/Failed/Missed/Total] = [%d/%d/%d/%d/%d]", 
+                sourceFile.getName(), 
+                resultsHandler.getPassed(), 
+                resultsHandler.getPending(),
+                resultsHandler.getFailed(), 
+                missed, 
+                compiledXSpec.getTests());
+        if(processedFiles.size()>0) {
+            processedFiles.get(processedFiles.size()-1).setResults(
                     resultsHandler.getPassed(), 
-		    resultsHandler.getPending(),
+                    resultsHandler.getPending(), 
                     resultsHandler.getFailed(), 
                     missed, 
                     compiledXSpec.getTests());
-            if(processedFiles.size()>0) {
-                processedFiles.get(processedFiles.size()-1).setResults(
-                        resultsHandler.getPassed(), 
-                        resultsHandler.getPending(), 
-                        resultsHandler.getFailed(), 
-                        missed, 
-                        compiledXSpec.getTests());
-            }
-            if (resultsHandler.getFailed() + missed > 0) {
-                getLog().error(msg);
-                return false;
-            } else {
-                getLog().info(msg);
-                return true;
-            }
         }
+        if (resultsHandler.getFailed() + missed > 0) {
+            getLog().error(msg);
+            return false;
+        } else {
+            getLog().info(msg);
+            return true;
+        }
+    }
+    
+    private boolean isSaxonPEorEE() {
+        String configurationClassName = SAXON_CONFIGURATION.getClass().getName();
+        return "com.saxonica.config.ProfessionalConfiguration".equals(configurationClassName) ||
+                "com.saxonica.config.EnterpriseConfiguration".equals(configurationClassName);
     }
 
     /**
      * Process an XSpec on XQuery Test
-     *
      * @param xspec The path to the XSpec test file
-     *
      * @return true if all tests in XSpec pass, false otherwise
      */
     final boolean processXQueryXSpec(XdmNode xspec) throws SaxonApiException, FileNotFoundException, IOException {
@@ -806,19 +976,27 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             }
         }
     }
+    /**
+     * Compiles a XSpec file that test a XQuery
+     * @param sourceFile The XSpec file to compile
+     * @return The compiled XSpec informations
+     */
     final CompiledXSpec compileXSpecForXQuery(final File sourceFile) {
         return compileXSpec(sourceFile, xmlStuff.getXspec4xqueryCompiler());
     }
+    /**
+     * Compiles a XSpec file that test a XSLT
+     * @param sourceFile The XSpec file to compile
+     * @return The compiled XSpec informations
+     */
     final CompiledXSpec compileXSpecForXslt(final File sourceFile) {
         return compileXSpec(sourceFile, xmlStuff.getXspec4xsltCompiler());
     }
 
     /**
      * Compiles an XSpec using the provided XSLT XSpec compiler
-     *
      * @param compiler The XSpec XSLT compiler
      * @param xspec The XSpec test to compile
-     *
      * @return Details of the Compiled XSpec or null if the XSpec could not be
      * compiled
      */
@@ -875,6 +1053,21 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return null;
     }
 
+    /**
+     * Prepare a Schematron XSpec test.
+     * There two phases : 
+     * <ul>
+     * <li>compile schematron to a XSLT</li>
+     * <li>compile the XSpec (that points to the schematron) into a XSpec that 
+     * points to the XSLT (the compiled at phase 1)</li>
+     * </ul>
+     * 
+     * @param xspecDocument
+     * @return
+     * @throws SaxonApiException
+     * @throws TransformerException
+     * @throws IOException 
+     */
     protected XdmNode prepareSchematronDocument(XdmNode xspecDocument) throws SaxonApiException, TransformerException, IOException {
 
         XsltTransformer step1 = xmlStuff.getSchematronDsdl().load();
@@ -949,6 +1142,15 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return result;
     }
     
+    /**
+     * Copies <tt>referencedFile</tt> located relative to <tt>baseUri</tt> to
+     * <tt>resutBase</tt>/<tt>referencedFile</tt>.
+     * @param baseUri
+     * @param referencedFile
+     * @param resultBase
+     * @throws IOException
+     * @throws URISyntaxException 
+     */
     protected void copyFile(String baseUri, String referencedFile, File resultBase) throws IOException, URISyntaxException {
         getLog().debug("copyFile("+baseUri+", "+referencedFile+", "+resultBase.getAbsolutePath()+")");
         Path basePath = new File(new URI(baseUri)).getParentFile().toPath();
@@ -959,10 +1161,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     }
     /**
      * Get location for Compiled XSpecs
-     *
      * @param xspecReportDir The directory to place XSpec reports in
      * @param xspec The XSpec that will be compiled eventually
-     *
      * @return A filepath to place the compiled XSpec in
      */
     final File getCompiledXSpecPath(final File xspecReportDir, final File xspec) {
@@ -970,7 +1170,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     }
     /**
      * Get location for Compiled XSpecs
-     *
      * @param xspecReportDir The directory to place XSpec reports in
      * @param schematron The Schematron that will be compiled eventually
      *
@@ -981,13 +1180,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return ret;
     }
     final File getCompiledXspecSchematronPath(final File xspecReportDir, final File xspec) {
-//        File dir = xspec.getParentFile();
-//        String fileName = FilenameUtils.getBaseName(xspec.getName())+"-compiled.xspec";
-//        File ret = new File(dir, fileName);
         File ret = getCompiledPath(xspecReportDir, xspec, FilenameUtils.getBaseName(xspec.getName()),"-compiled.xspec");
         filesToDelete.add(ret);
         return ret;
     }
+    /**
+     * Computes the compiled XSpec location
+     * @param xspecReportDir
+     * @param xspec
+     * @param name
+     * @param extension
+     * @return 
+     */
     private File getCompiledPath(final File xspecReportDir, final File xspec, final String name, final String extension) {
         if (!xspecReportDir.exists()) {
             xspecReportDir.mkdirs();
@@ -1056,6 +1260,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         getLog().debug("outputDir="+outputDir.getAbsolutePath());
         return new File(outputDir, xspec.getName().replace(".xspec", "") + "." + extension);
     }
+    /**
+     * Computes Junit report location
+     * @param xspecReportDir
+     * @param xspec
+     * @return 
+     */
     final File getJUnitReportPath(final File xspecReportDir, final File xspec) {
         if (!xspecReportDir.exists()) {
             xspecReportDir.mkdirs();
@@ -1093,7 +1303,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 xspecReportDir);
         executionReportDir.mkdirs();
         File outputDir = executionReportDir.toPath().resolve(relativeSource).toFile();
-        return new File(outputDir, xspec.getName().replace(".xspec","-coverage") + ".xml");
+        return new File(outputDir, xspec.getName().replace(".xspec","-coverage") + ".html");
     }
 
     /**
@@ -1150,6 +1360,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return junitReporter;
     }
     
+    protected String getCoverageReporter() {
+        return coverageReporter;
+    }
+    
     protected String getSchematronIsoDsdl() {
         return schIsoDsdlInclude;
     }
@@ -1181,6 +1395,19 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return excludes;
     }
     
+    protected Boolean isCoverageRequired() {
+        return generateCoverage;
+    }
+    
+    /**
+     * Computes the location of the jar identified by <tt>(groupId, artifactId)</tt>.
+     * A dependency on this artifact must have been decalred in plugin.
+     * @param groupId
+     * @param artifactId
+     * @return The jar URI
+     * @throws IOException
+     * @throws MojoFailureException 
+     */
     private String getJarUri(final String groupId, final String artifactId) throws IOException, MojoFailureException {
         String thisJar = null;
         String marker = createMarker(groupId, artifactId);
@@ -1198,6 +1425,16 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return jarUri;
     }
 
+    /**
+     * Creates the URI Resolver. It also generates the catalog with all
+     * dependencies
+     * @param saxonUriResolver
+     * @return
+     * @throws DependencyResolutionRequiredException
+     * @throws IOException
+     * @throws XMLStreamException
+     * @throws MojoFailureException 
+     */
     private URIResolver buildUriResolver(final URIResolver saxonUriResolver) throws DependencyResolutionRequiredException, IOException, XMLStreamException, MojoFailureException {
         File tmpCatalog = File.createTempFile("tmp", "-catalog.xml");
         try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(tmpCatalog), Charset.forName("UTF-8"))) {
@@ -1230,6 +1467,13 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return new Resolver(saxonUriResolver, tmpCatalog, getLog());
     }
     
+    /**
+     * Writes a catalog entries for a jar and a URI prefix
+     * @param xmlWriter
+     * @param jarUri
+     * @param prefix
+     * @throws XMLStreamException 
+     */
     private void writeCatalogEntry(final XMLStreamWriter xmlWriter, final String jarUri, String prefix) throws XMLStreamException {
         xmlWriter.writeEmptyElement("rewriteURI");
         xmlWriter.writeAttribute("uriStartString", prefix);
@@ -1239,11 +1483,21 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         xmlWriter.writeAttribute("rewritePrefix", jarUri);
     }
     
+    /**
+     * Transform a jar file to a URI, as to must be declared in catalog entries
+     * @param jarFile
+     * @return
+     * @throws MalformedURLException 
+     */
     private String makeJarUri(String jarFile) throws MalformedURLException {
         getLog().debug(String.format("makeJarUri(%s)", jarFile));
         return "jar:" + jarFile +"!/";
     }
-    
+    /**
+     * Returns classpath entries
+     * @return
+     * @throws MojoFailureException 
+     */
     private List<String> getClassPathElements() throws MojoFailureException {
         ClassLoader cl = getClass().getClassLoader();
         if(cl instanceof URLClassLoader) {
@@ -1257,7 +1511,14 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             throw new MojoFailureException("classloader is not a URL classloader : "+cl.getClass().getName());
         }
     }
-    
+    /**
+     * Creates a marker of a jar file. This marker is used to identify the jar
+     * associated to a <tt>(groupId, artifactId)</tt>
+     * @param groupId
+     * @param artifactId
+     * @return
+     * @throws IOException 
+     */
     private String createMarker(String groupId, String artifactId) throws IOException {
         Properties props = new Properties();
         props.load(getClass().getResourceAsStream("/META-INF/maven/"+groupId+"/"+artifactId+"/pom.properties"));
@@ -1266,6 +1527,13 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     static final String XSPEC_MOJO_PFX = "[xspec-mojo] ";
     
+    /**
+     * Creates the unified JUnit report, which groups all JUnit reports from
+     * each XSpec file into a common one
+     * @throws MalformedURLException
+     * @throws TransformerException
+     * @throws SaxonApiException 
+     */
     private void createJunitReport() throws MalformedURLException, TransformerException, SaxonApiException {
         String baseUri = project!=null ? project.getBasedir().toURI().toURL().toExternalForm() : null;
         XsltTransformer xsl = xmlStuff.compileXsl(xmlStuff.getUriResolver().resolve(junitAggregator, baseUri)).load();
@@ -1294,7 +1562,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         ret.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
         return ret;
     }
-    
+    /**
+     * Returns the nature of the XSpec tested file
+     * @param doc
+     * @return
+     * @throws SaxonApiException 
+     */
     XSpecType getXSpecType(XdmNode doc) throws SaxonApiException {
         XPathSelector xps = xmlStuff.getXpExecGetXSpecType().load();
         xps.setContextItem(doc);
