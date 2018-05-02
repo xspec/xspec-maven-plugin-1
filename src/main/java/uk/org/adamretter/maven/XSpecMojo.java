@@ -26,6 +26,7 @@
  */
 package uk.org.adamretter.maven;
 
+import com.jenitennison.xslt.tests.XSLTCoverageTraceListener;
 import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
@@ -67,6 +68,7 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import net.sf.saxon.Configuration;
+import net.sf.saxon.lib.TraceListener;
 import net.sf.saxon.trans.XPathException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -264,6 +266,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     @Parameter(defaultValue = "false")
     public Boolean keepGeneratedCatalog;
+    
+    @Parameter(defaultValue = "false")
+    private boolean coverage;
     
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
     public MojoExecution execution;
@@ -544,6 +549,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         File actualSourceFile = new File(xspec.getBaseURI());
         // Try to determine where was the original XSpec file, in case of XSpec on schematron
         File sourceFile = actualSourceFile;
+        boolean processedFileAdded = false;
         XPathSelector xps = xmlStuff.getXPathCompiler().compile("/x:description/@xspec-original-location").load();
         xps.setContextItem(xspec);
         XdmItem item = xps.evaluateSingle();
@@ -571,7 +577,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 final XsltTransformer xtXSpec = xeXSpec.load();
                 if(isCoverageRequired()) {
                     File tempCoverageFile = getCoverageTempPath(getReportDir(), sourceFile);
-                    xtXSpec.setTraceListener(new XSLTCoverageListener(new PrintStream(tempCoverageFile)));
+                    try {
+                        TraceListener tl =  new XSLTCoverageTraceListener(new PrintStream(tempCoverageFile));
+                        xtXSpec.setTraceListener(tl);
+                    } catch(Exception ex) {
+                        getLog().error("while instanciating XSLTCoverageTraceListener", ex);
+                    }
                 }
                 xtXSpec.setInitialTemplate(INITIAL_TEMPLATE_NAME);
 
@@ -622,6 +633,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 junitFiles.add(junitFile);
                 ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
+                processedFileAdded = true;
                 String relativeCssPath = 
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
                 reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
@@ -645,6 +657,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             } catch (final SaxonApiException te) {
                 getLog().error(te.getMessage());
                 getLog().debug(te);
+                if(!processedFileAdded) {
+                    ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, getXSpecHtmlResultPath(getReportDir(), sourceFile));
+                    processedFiles.add(pf);
+                    processedFileAdded = true;
+                }
             }
             
             //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
@@ -685,6 +702,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     final boolean processXQueryXSpec(XdmNode xspec) throws SaxonApiException, FileNotFoundException, IOException {
         File sourceFile = new File(xspec.getBaseURI());
+        boolean processedFileAdded = false;
         /* compile the test stylesheet */
         final CompiledXSpec compiledXSpec = compileXSpecForXQuery(sourceFile);
         if (compiledXSpec == null) {
@@ -738,6 +756,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 }
                 ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
+                processedFileAdded  =true;
                 String relativeCssPath = 
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
                 reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
@@ -776,6 +795,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             } catch (final SaxonApiException te) {
                 getLog().error(te.getMessage());
                 getLog().debug(te);
+                if(!processedFileAdded) {
+                    ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, getXSpecHtmlResultPath(getReportDir(), sourceFile));
+                    processedFiles.add(pf);
+                    processedFileAdded = true;
+                }
             }
             
             //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
@@ -1318,6 +1342,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             }
         }
         throw new SaxonApiException("This file does not seem to be a valid XSpec file: "+doc.getBaseURI().toString());
+    }
+
+    private boolean isCoverageRequired() {
+        return coverage;
     }
 
     public enum XSpecType {
