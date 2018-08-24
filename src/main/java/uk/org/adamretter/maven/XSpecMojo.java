@@ -587,8 +587,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             fos.write("<title>XSpec results</title><meta name=\"date\" content=\"");
             fos.write(new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
             fos.write("\"></head>\n");
-            fos.write("<body><h3>XSpec results</h3>");
-            fos.write("<table><thead><tr><th>XSpec file</th><th>Passed</th><th>Pending</th><th>Failed</th><th>Missed</th><th>Total</th></tr></thead>\n");
+            fos.write("<body><h1>XSpec results</h1>");
+            fos.write("<table>\n");
+            fos.write("<colgroup><col/><col class=\"successful\"/><col class=\"pending\"/><col class=\"failed\"/><col class=\"missed\"/><col/></colgroup>\n");
+            fos.write("<thead><tr><th>XSpec file</th><th>Passed</th><th>Pending</th><th>Failed</th><th>Missed</th><th>Total</th></tr></thead>\n");
             fos.write("<tbody>");
             String lastRootDir="";
             for(ProcessedFile pf:PROCESS_FILES) {
@@ -608,10 +610,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 fos.write("<td><a href=\"");
                 fos.write(pf.getReportFile().toUri().toString());
                 fos.write("\">"+pf.getRelativeSourcePath()+"</a></td>");
-                fos.write("<td>"+pf.getPassed()+"</td>");
-                fos.write("<td>"+pf.getPending()+"</td>");
-                fos.write("<td>"+pf.getFailed()+"</td>");
-                fos.write("<td>"+pf.getMissed()+"</td>");
+                fos.write("<td");
+                if(pf.getPassed()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getPassed()+"</td>");
+                fos.write("<td");
+                if(pf.getPending()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getPending()+"</td>");
+                fos.write("<td");
+                if(pf.getFailed()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getFailed()+"</td>");
+                fos.write("<td");
+                if(pf.getMissed()==0) fos.write(" class=\"zero\"");
+                fos.write(">"+pf.getMissed()+"</td>");
                 fos.write("<td>"+pf.getTotal()+"</td>");
                 fos.write("</tr>\n");
             }
@@ -703,7 +713,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             File tempCoverageFile=null;
             if(isCoverageRequired()) {
                 tempCoverageFile = getCoverageTempPath(getReportDir(), sourceFile);
-                tempCoverageFile.deleteOnExit();
+                if(!keepGeneratedCatalog) {
+                    tempCoverageFile.deleteOnExit();
+                }
                 final String xspecStylesheetUri = compiledXSpec.getCompiledStylesheet().toURI().toString();
                 XSLTCoverageTraceListener listener = new XSLTCoverageTraceListener(new PrintStream(tempCoverageFile)) {
                     @Override
@@ -864,6 +876,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             getLog().debug("XQuery compiled XSpec is at "+compiledXSpec.getCompiledStylesheet().getAbsolutePath());
             /* execute the test stylesheet */
             final XSpecResultsHandler resultsHandler = new XSpecResultsHandler(this);
+            boolean processedFileAdded = false;
             try {
                 final XQueryExecutable xeXSpec = xmlStuff.getXqueryCompiler().compile(new FileInputStream(compiledXSpec.getCompiledStylesheet()));
                 final XQueryEvaluator xtXSpec = xeXSpec.load();
@@ -908,6 +921,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 }
                 ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
+                processedFileAdded = true;
                 String relativeCssPath = 
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
                 reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
@@ -946,6 +960,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             } catch (final SaxonApiException te) {
                 getLog().error(te.getMessage());
                 getLog().debug(te);
+                if(!processedFileAdded) {
+                    ProcessedFile pf = new ProcessedFile(testDir, sourceFile, reportDir, getXSpecHtmlResultPath(getReportDir(), sourceFile));
+                    processedFiles.add(pf);
+                    processedFileAdded = true;
+                }
             }
             
             //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
