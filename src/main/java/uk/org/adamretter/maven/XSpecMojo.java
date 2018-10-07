@@ -74,7 +74,12 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.interpolation.util.StringUtils;
+import org.xml.sax.EntityResolver;
+import org.xmlresolver.helpers.URIUtils;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 import top.marchand.maven.saxon.utils.SaxonUtils;
 
@@ -164,6 +169,9 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public static final transient String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
     public static final transient String LOCAL_PREFIX = "dependency://io.xspec.maven+xspec-maven-plugin/";
 
+    @Component
+    private MavenSession session;
+    
     @Parameter( defaultValue = "${project}", readonly = true, required = true )
     public MavenProject project;
 
@@ -321,7 +329,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * It can be an absolute or relative path. All relative pathes are relative to ${project.basedir}.
      */
     @Parameter(defaultValue = "${catalog.filename}")
-    public File catalogFile;
+    public String catalogFile;
 
     /**
      * The directory where surefire report will be created
@@ -796,7 +804,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                             new TeeDestination(reporter, juReporter));
             xtXSpec.setDestination(destination);
             xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
-            Source xspecSource = new StreamSource(sourceFile);
+//            Source xspecSource = new StreamSource(sourceFile);
+// utilisation du resolver dans le document source
+            XMLReader reader = PARSER_FACTORY.newSAXParser().getXMLReader();
+            reader.setEntityResolver((EntityResolver)xmlStuff.getUriResolver());
+            Source xspecSource = new SAXSource(reader, new InputSource(new FileInputStream(sourceFile)));
+            xspecSource.setSystemId(sourceFile.toURI().toString());
             xtXSpec.setSource(xspecSource);
             xtXSpec.setURIResolver(xmlStuff.getUriResolver());
             xtXSpec.transform();
@@ -1475,7 +1488,20 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             writeCatalogEntry(xmlWriter, jarUri, LOCAL_PREFIX);
             if(catalogFile!=null) {
                 xmlWriter.writeEmptyElement("nextCatalog");
-                xmlWriter.writeAttribute("catalog", catalogFile.toURI().toURL().toExternalForm());
+                Properties props = new Properties();
+                props.putAll(session.getUserProperties());
+                props.putAll(session.getSystemProperties());
+                String catalogFilename = org.codehaus.plexus.util.StringUtils.interpolate(catalogFile, props);
+                try {
+                    URI uri = new URI(catalogFilename);
+                    if(uri.isAbsolute()) {
+                        xmlWriter.writeAttribute("catalog", uri.toString());
+                    } else {
+                        xmlWriter.writeAttribute("catalog", new File(catalogFilename).toURI().toURL().toExternalForm());
+                    }
+                } catch(Exception ex) {
+                    xmlWriter.writeAttribute("catalog", new File(catalogFilename).toURI().toURL().toExternalForm());
+                }
             }
             xmlWriter.writeEndElement();
             xmlWriter.writeEndDocument();
