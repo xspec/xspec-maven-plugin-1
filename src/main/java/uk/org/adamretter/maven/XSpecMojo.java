@@ -1116,7 +1116,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 step3.setParameter(new QName("phase"), new XdmAtomicValue(phase));
             }
         }
-        step3.setParameter(new QName("allow-foreign"), new XdmAtomicValue(true));
+        step3.setParameter(new QName("allow-foreign"), new XdmAtomicValue("true"));
         
         File sourceFile = new File(xspecDocument.getBaseURI());
         // compiling schematron
