@@ -27,10 +27,14 @@
 package io.xspec.maven.xspecMavenPlugin.resolver;
 
 import java.io.File;
+import java.io.IOException;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import org.apache.maven.plugin.logging.Log;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xmlresolver.Catalog;
 import org.xmlresolver.CatalogSource;
 
@@ -39,7 +43,7 @@ import org.xmlresolver.CatalogSource;
  * Saxon URI Resolver should never be used.
  * @author cmarchand
  */
-public class Resolver implements javax.xml.transform.URIResolver {
+public class Resolver implements javax.xml.transform.URIResolver, EntityResolver {
     private final URIResolver saxonResolver;
     private final Log log;
     org.xmlresolver.Resolver cr;
@@ -89,6 +93,11 @@ public class Resolver implements javax.xml.transform.URIResolver {
     
     private Log getLog() {
         return log;
+    }
+
+    @Override
+    public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+        return cr.resolveEntity(publicId, systemId);
     }
     
 }
