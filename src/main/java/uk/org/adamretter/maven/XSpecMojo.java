@@ -843,6 +843,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 xspecSource.setSystemId(sourceFile.toURI().toString());
                 xtXSpec.setSource(xspecSource);
                 xtXSpec.setURIResolver(xmlStuff.getUriResolver());
+                xtXSpec.setDestination(destination);
+                xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
                 xtXSpec.transform();
 
                 // limit to pure XSLT, exclude schematron
