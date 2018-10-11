@@ -166,6 +166,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public static final transient String XML_UTILITIES_PREFIX = "dependency://org.mricaud+xml-utilities/";
     public static final transient String CATALOG_NS = "urn:oasis:names:tc:entity:xmlns:xml:catalog";
     public static final transient String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
+    public static final transient String XSLT_NS = "http://www.w3.org/1999/XSL/Transform";
     public static final transient String LOCAL_PREFIX = "dependency://io.xspec.maven+xspec-maven-plugin/";
 
     @Component
@@ -672,7 +673,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         switch(type) {
             case XQ: return processXQueryXSpec(xspecDocument);
             case SCH: {
-                XdmNode compiledSchXSpec = prepareSchematronDocument(xspecDocument);
+            	XdmNode compiledSchXSpec = prepareSchematronDocument(xspecDocument);
                 // it will have a problem in report with filename.
                 return processXsltXSpec(compiledSchXSpec);
             }
@@ -705,7 +706,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         }
         getLog().debug("sourceFile is "+sourceFile.getAbsolutePath());
         /* compile the test stylesheet */
-        final CompiledXSpec compiledXSpec = compileXSpecForXslt(actualSourceFile);
+        final CompiledXSpec compiledXSpec = compileXSpecForXslt(actualSourceFile, sourceFile);
         if (compiledXSpec == null) {
             return false;
         } else {
@@ -1061,43 +1062,67 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     final CompiledXSpec compileXSpecForXQuery(final File sourceFile) {
         return compileXSpec(sourceFile, xmlStuff.getXspec4xqueryCompiler());
     }
+    
     /**
      * Compiles a XSpec file that test a XSLT
      * @param sourceFile The XSpec file to compile
      * @return The compiled XSpec informations
      */
     final CompiledXSpec compileXSpecForXslt(final File sourceFile) {
-        return compileXSpec(sourceFile, xmlStuff.getXspec4xsltCompiler());
+        return compileXSpecForXslt(sourceFile,sourceFile);
+    }
+    /**
+     * Compiles a XSpec file that test a XSLT
+     * @param sourceFile The XSpec file to compile (that may be a compiled schematron)
+     * @param initialSourceFile The initial XSpec file (in the case of Schematron
+     * @return The compiled XSpec informations
+     */
+    final CompiledXSpec compileXSpecForXslt(final File sourceFile, File initialSourceFile) {
+        return compileXSpec(sourceFile, initialSourceFile,  xmlStuff.getXspec4xsltCompiler());
+    }
+    
+    /**
+     * Compiles an XSpec using the provided XSLT XSpec compiler
+     * @param xspec The XSpec test to compile (Should not be used whith the result of a schematron compilation)
+     * @param compilerExec The XSpec XSLT compiler
+     *
+     * @return Details of the Compiled XSpec or null if the XSpec could not be
+     * compiled
+     */
+    final CompiledXSpec compileXSpec(final File xspec, XsltExecutable compilerExec) {
+    	return compileXSpec(xspec,xspec,compilerExec);
     }
 
     /**
      * Compiles an XSpec using the provided XSLT XSpec compiler
-     * @param compiler The XSpec XSLT compiler
-     * @param xspec The XSpec test to compile
+     * @param xspec The XSpec test to compile (That may result from a schematron compilation)
+     * @param initialXspecFile The actual Xpec file
+     * @param compilerExec The XSpec XSLT compiler
+     *
      * @return Details of the Compiled XSpec or null if the XSpec could not be
      * compiled
      */
-    final CompiledXSpec compileXSpec(final File sourceFile, XsltExecutable compilerExec) {
+    final CompiledXSpec compileXSpec(final File xspec, File initialXspecFile, XsltExecutable compilerExec) {
         XsltTransformer compiler = compilerExec.load();
         InputStream isXSpec = null;
         try {
-            final File compiledXSpec = getCompiledXSpecPath(getReportDir(), sourceFile);
+            final File compiledXSpec = getCompiledXSpecPath(getReportDir(), initialXspecFile);
             getLog().info("Compiling XSpec to XSLT: " + compiledXSpec);
 
-            isXSpec = new FileInputStream(sourceFile);
+            isXSpec = new FileInputStream(xspec);
 
             final SAXParser parser = PARSER_FACTORY.newSAXParser();
             final XMLReader reader = parser.getXMLReader();
             final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(
                     reader, 
                     // Bug under Windows
-                    sourceFile.toURI().toString(),
+                    xspec.toURI().toString(),
                     xmlStuff.getUriResolver(), 
                     this, 
                     false);
 
             final InputSource inXSpec = new InputSource(isXSpec);
-            inXSpec.setSystemId(sourceFile.getAbsolutePath());
+            inXSpec.setSystemId(xspec.getAbsolutePath());
 
             compiler.setSource(new SAXSource(xspecTestFilter, inXSpec));
 
@@ -1150,6 +1175,10 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         XsltTransformer step1 = xmlStuff.getSchematronDsdl().load();
         XsltTransformer step2 = xmlStuff.getSchematronExpand().load();
         XsltTransformer step3 = xmlStuff.getSchematronSvrl().load();
+        
+        
+        XsltExecutable makeAbsolute = xmlStuff.getMakeAbsolute();
+        XsltTransformer step3BisMakeAbsolute = makeAbsolute.load();
 
         XPathSelector xp = xmlStuff.getXPathCompiler().compile("/x:description/x:param[@name='phase'][1]/text()").load();
         xp.setContextItem(xspecDocument);
@@ -1169,13 +1198,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         step2.setDestination(step3);
         File compiledSchematronDest = getCompiledSchematronPath(getReportDir(), sourceFile);
         Serializer serializer = xmlStuff.newSerializer(new FileOutputStream(compiledSchematronDest));
-        step3.setDestination(serializer);
         
+        step3.setDestination(step3BisMakeAbsolute);
+        step3BisMakeAbsolute.setDestination(serializer);
+                
         // getting from XSpec the schematron location
         XPathSelector xpSchemaPath = xmlStuff.getXPathCompiler().compile("/*/@schematron").load();
         xpSchemaPath.setContextItem(xspecDocument);
         String schematronPath = xpSchemaPath.evaluateSingle().getStringValue();
         Source source = xmlStuff.getUriResolver().resolve(schematronPath, xspecDocument.getBaseURI().toString());
+        
+        xmlStuff.setMakeAbsoluteParams(step3BisMakeAbsolute, source.getSystemId(), XSLT_NS);
+
         step1.setInitialContextNode(xmlStuff.getDocumentBuilder().build(source));
         step1.transform();
         getLog().debug("Schematron compiled ! "+compiledSchematronDest.getAbsolutePath());
@@ -1188,36 +1222,24 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         File resultFile = getCompiledXspecSchematronPath(getReportDir(), sourceFile);
         // WARNING : we can't use a XdmDestination, the XdmNode generated does not have 
         // an absolute systemId, which is used in processXsltXSpec(XdmNode xspec)
-        schut.setDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)));
+        
+        XsltTransformer compiledXSpecMakeAbsolute = makeAbsolute.load();
+        xmlStuff.setMakeAbsoluteParams(compiledXSpecMakeAbsolute, xspecDocument.getBaseURI().toString(), XSPEC_NS);
+        
+        schut.setDestination(compiledXSpecMakeAbsolute);
+        compiledXSpecMakeAbsolute.setDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)));
+        
         schut.transform();
+        
         getLog().debug("XSpec for schematron compiled: "+resultFile.getAbsolutePath());
         XdmNode result = xmlStuff.getDocumentBuilder().build(resultFile);
         if(!resultFile.exists()) {
             getLog().error(resultFile.getAbsolutePath()+" has not be written");
         }
-        
-        // copy resources referenced from XSpec
-        getLog().info("Copying resource files referenced from XSpec for Schematron");
-        XsltTransformer xslDependencyScanner = xmlStuff.getXmlDependencyScanner().load();
-        XdmDestination xdmDest = new XdmDestination();
-        xslDependencyScanner.setDestination(xdmDest);
-        xslDependencyScanner.setInitialContextNode(xspecDocument);
-        xslDependencyScanner.transform();
-        XPathSelector xpFile = xmlStuff.getXpFileSearcher().load();
-        xpFile.setContextItem(xdmDest.getXdmNode());
-        XdmValue ret = xpFile.evaluate();
-        for(int i=0;i<ret.size();i++) {
-            XdmNode node = (XdmNode)(ret.itemAt(i));
-            String uri = node.getAttributeValue(QN_URI);
-            try {
-            copyFile(xspecDocument.getUnderlyingNode().getSystemId(), uri, resultFile);
-            } catch(URISyntaxException ex) {
-                // it can not happens, it is always correct as provided by saxon
-                throw new SaxonApiException("Saxon has generated an invalid URI : ",ex);
-            }
-        }
+       
         return result;
     }
+    
     
     /**
      * Copies <tt>referencedFile</tt> located relative to <tt>baseUri</tt> to
@@ -1233,7 +1255,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         Path basePath = new File(new URI(baseUri)).getParentFile().toPath();
         File source = basePath.resolve(referencedFile).toFile();
         File dest = resultBase.getParentFile().toPath().resolve(referencedFile).toFile();
-        getLog().debug("Copying "+source.getAbsolutePath()+" to "+dest.getAbsolutePath());
+        getLog().info("Copying "+source.getAbsolutePath()+" to "+dest.getAbsolutePath());
         FileUtils.copyFile(source, dest);
     }
     /**

@@ -82,6 +82,7 @@ public class XmlStuff {
 
     public final static QName QN_REPORT_CSS = new QName("report-css-uri");
     public static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
+	private static final String MAKE_ABSOLUTE_XSL = "make-absolute.xsl";
     private XPathExecutable xpSchGetXSpec;
 //    private XPathExecutable xpSchGetParams;
     private XsltExecutable schSchut;
@@ -217,6 +218,18 @@ public class XmlStuff {
         if(saxonOptions!=null) {
             SaxonUtils.configureXsltCompiler(getXsltCompiler(), saxonOptions);
         }
+    }
+    
+    public XsltExecutable getMakeAbsolute() throws SaxonApiException{
+    	return this.compileXsl(new StreamSource(XmlStuff.class.getClassLoader().getResourceAsStream(MAKE_ABSOLUTE_XSL)));
+    }
+    
+    public void setMakeAbsoluteParams(XsltTransformer makeAbsolute, String baseUri, String hrefParentNS){
+    	QName baseParameter = new QName("base");
+        QName parentNSParameter = new QName("href-parent-namespace");
+        
+        makeAbsolute.setParameter(baseParameter, new XdmAtomicValue(baseUri));
+        makeAbsolute.setParameter(parentNSParameter, new XdmAtomicValue(hrefParentNS));
     }
     
     public void setSchematronDsdl(XsltExecutable xe) { schDsdl = xe; }
