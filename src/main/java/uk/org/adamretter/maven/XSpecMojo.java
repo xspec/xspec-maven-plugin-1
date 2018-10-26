@@ -1097,7 +1097,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                     false);
 
             final InputSource inXSpec = new InputSource(isXSpec);
-            inXSpec.setSystemId(sourceFile.getAbsolutePath());
+            inXSpec.setSystemId(sourceFile.toURI().toString());
 
             compiler.setSource(new SAXSource(xspecTestFilter, inXSpec));
 
