@@ -10,7 +10,7 @@
     <name>XSpec plugin for Maven</name>
     <description>Maven plugin that executes XSpec tests. Forked from Adam Retter xspec-maven-plugin</description>
     <inceptionYear>2017</inceptionYear>
-    <url>https://github.com/xspec/xspec-maven-plugin</url>
+    <url>https://github.com/xspec/xspec-maven-plugin-1</url>
 
 
     <licenses>
@@ -102,37 +102,47 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven.plugin-testing</groupId>
-            <artifactId>maven-plugin-testing-harness</artifactId>
-            <version>3.3.0</version>
-            <scope>test</scope>
+          <groupId>org.apache.maven.plugin-testing</groupId>
+          <artifactId>maven-plugin-testing-harness</artifactId>
+          <version>3.3.0</version>
+          <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-	    <version>3.7</version>
-	    <scope>test</scope>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+	  <version>3.7</version>
+	  <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>net.java.dev.stax-utils</groupId>
-            <artifactId>stax-utils</artifactId>
-            <version>20070216</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.bea.xml</groupId>
-                    <artifactId>jsr173-ri</artifactId>
-                </exclusion>
-            </exclusions>
+          <groupId>net.java.dev.stax-utils</groupId>
+          <artifactId>stax-utils</artifactId>
+          <version>20070216</version>
+          <exclusions>
+            <exclusion>
+              <groupId>com.bea.xml</groupId>
+              <artifactId>jsr173-ri</artifactId>
+            </exclusion>
+          </exclusions>
         </dependency>
         <dependency>
-            <groupId>top.marchand.xml.maven</groupId>
-            <artifactId>saxon.options.mvn.utils</artifactId>
-            <version>1.1.0</version>
+          <groupId>top.marchand.xml.maven</groupId>
+          <artifactId>saxon.options.mvn.utils</artifactId>
+          <version>1.1.0</version>
+        </dependency>
+        <dependency>
+          <groupId>top.marchand.java.utils</groupId>
+          <artifactId>classpath-utils</artifactId>
+          <version>1.00.00</version>
         </dependency>
         <dependency>
             <groupId>io.xspec</groupId>
             <artifactId>xspec</artifactId>
-            <version>1.1.0-SNAPSHOT</version>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+          <groupId>org.mricaud.xml</groupId>
+          <artifactId>xut</artifactId>
+          <version>0.1.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -182,8 +192,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.3</version>
                     <configuration>
-                        <source>1.7</source>
-                        <target>1.7</target>
+                        <source>1.8</source>
+                        <target>1.8</target>
                     </configuration>
                 </plugin>
                 <plugin>
