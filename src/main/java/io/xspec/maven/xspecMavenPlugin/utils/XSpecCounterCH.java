@@ -29,6 +29,7 @@ package io.xspec.maven.xspecMavenPlugin.utils;
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import org.xml.sax.Attributes;
 import org.xml.sax.Parser;
@@ -38,8 +39,6 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 import org.xml.sax.helpers.ParserAdapter;
 import org.xml.sax.helpers.XMLFilterImpl;
-import uk.org.adamretter.maven.LogProvider;
-import uk.org.adamretter.maven.XSpecMojo;
 
 /**
  * A ContentHandler, to count and log with parameters...
@@ -100,7 +99,7 @@ public class XSpecCounterCH extends DefaultHandler2 {
             try {
                 Source source = uriResolver.resolve(atts.getValue("href"), systemId);
                 importedSystemId = source.getSystemId();
-            } catch(Exception ex) {
+            } catch(TransformerException ex) {
                 logProvider.getLog().error("while resolving "+atts.getValue("href")+" to "+systemId, ex);
             }
             if(importedSystemId!=null) {
@@ -108,7 +107,7 @@ public class XSpecCounterCH extends DefaultHandler2 {
                 try {
                     if(activateLogs) 
                         logProvider.getLog().warn(LOG_PREFIX+"[in "+systemId+"] parsing imported XSpec "+importedSystemId);
-                    final Parser parser = XSpecMojo.PARSER_FACTORY.newSAXParser().getParser();
+                    final Parser parser = XmlStuff.PARSER_FACTORY.newSAXParser().getParser();
                     final XMLReader reader = new ParserAdapter(parser);
                     importedTestFilter = new XSpecCounterCH(importedSystemId, uriResolver, logProvider, logProvider.getLog().isDebugEnabled());
                     XMLFilter filter = new XMLFilterImpl(reader) {

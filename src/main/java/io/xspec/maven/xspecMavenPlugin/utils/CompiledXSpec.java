@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018, Christophe Marchand, XSpec organization
+ * Copyright © 2013, Adam Retter
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,48 +24,52 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.xspec.maven.xspecMavenPlugin.resources;
+package io.xspec.maven.xspecMavenPlugin.utils;
+
+import java.io.File;
 
 /**
- * This class holds XSpec implementation resources
- * @author cmarchand
+ * Simple class holding the results of compiling an XSpec
+ *
+ * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  */
-public interface XSpecImplResources {
-    public static final String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
+public class CompiledXSpec {
+
+    private final int tests;
+    private final int pendingTests;
+    private final File compiledStylesheet;
+
+    public CompiledXSpec(final int tests, final int pendingTests, final File compiledStylesheet) {
+        this.tests = tests;
+        this.pendingTests = pendingTests;
+        this.compiledStylesheet = compiledStylesheet;
+    }
 
     /**
-     * Usually, generate-xspec-tests.xsl
-     * @return XSpec compiler for XSL URI
+     * Count of the number of tests in the compiled XSpec
+     * (including pending tests)
+     *
+     * @return The number of tests
      */
-    public String getXSpecXslCompilerUri();
-    
+    public int getTests() {
+        return tests;
+    }
+
     /**
-     * Usually generate-query-tests.xsl
-     * @return XSpec compiler for XQuery URI
+     * Count of the number of pending tests in the compiled XSpec
+     *
+     * @return The number of pending tests
      */
-    public String getXSpecXQueryCompilerUri();
-    
+    public int getPendingTests() {
+        return pendingTests;
+    }
+
     /**
-     * Usually schut-to-xspec.xsl
-     * @return XSpec-for-Schematron converter URI
+     * File system path of the compiled XSpec stylesheet
+     *
+     * @return path to the compiled xspec stylesheet
      */
-    public String getSchematronSchutConverterUri();
-    
-    /**
-     * Usually format-xspec-report.xsl
-     * @return XSpec reporter URI
-     */
-    public String getXSpecReporterUri();
-    
-    /**
-     * Usually junit-report.xsl
-     * @return JUnit reporter URI
-     */
-    public String getJUnitReporterUri();
-    
-    /**
-     * Usually coverage-report.xsl
-     * @return XSpec Code Coverage reporter URI
-     */
-    public String getXSpecCoverageReporterUri();
+    public File getCompiledStylesheet() {
+        return compiledStylesheet;
+    }
 }

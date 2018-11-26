@@ -46,7 +46,7 @@ public class DefaultSchematronImplResources implements SchematronImplResources {
     }
 
     @Override
-    public String getSchIsoDsdlInclude() {
+    public String getSchIsoDsdlIncludeUri() {
         return schIsoDsdlInclude;
     }
 
@@ -55,7 +55,7 @@ public class DefaultSchematronImplResources implements SchematronImplResources {
     }
 
     @Override
-    public String getSchIsoAbstractExpand() {
+    public String getSchIsoAbstractExpandUri() {
         return schIsoAbstractExpand;
     }
 
@@ -64,7 +64,7 @@ public class DefaultSchematronImplResources implements SchematronImplResources {
     }
 
     @Override
-    public String getSchIsoSvrlForXslt2() {
+    public String getSchIsoSvrlForXslt2Uri() {
         return schIsoSvrlForXslt2;
     }
 

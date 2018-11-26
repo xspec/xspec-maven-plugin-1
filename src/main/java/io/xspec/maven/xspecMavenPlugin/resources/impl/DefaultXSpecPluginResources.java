@@ -33,8 +33,6 @@ import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
  * @author cmarchand
  */
 public class DefaultXSpecPluginResources implements XSpecPluginResources {
-    public static final transient String LOCAL_PREFIX = "dependency://io.xspec.maven+xspec-maven-plugin/";
-    public static final transient String XML_UTILITIES_PREFIX = "dependency://org.mricaud+xml-utilities/";
     
     private String junitAggregator;
     private String dependencyScanner;
@@ -46,7 +44,7 @@ public class DefaultXSpecPluginResources implements XSpecPluginResources {
     }
 
     @Override
-    public String getJunitAggregator() {
+    public String getJunitAggregatorUri() {
         return junitAggregator;
     }
 
@@ -55,7 +53,7 @@ public class DefaultXSpecPluginResources implements XSpecPluginResources {
     }
 
     @Override
-    public String getDependencyScanner() {
+    public String getDependencyScannerUri() {
         return dependencyScanner;
     }
 

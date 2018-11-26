@@ -24,8 +24,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.org.adamretter.maven;
+package io.xspec.maven.xspecMavenPlugin.utils;
 
+import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecCounterCH;
 import javax.xml.transform.URIResolver;
 import org.xml.sax.Attributes;

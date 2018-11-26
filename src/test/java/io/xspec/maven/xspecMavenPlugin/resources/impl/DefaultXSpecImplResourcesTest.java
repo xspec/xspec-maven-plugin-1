@@ -45,11 +45,11 @@ public class DefaultXSpecImplResourcesTest {
     @Test
     public void testDefaultValuesPrefixes() {
         DefaultXSpecImplResources impl = new DefaultXSpecImplResources();
-        assertTrue("junitReporter is not a XSpec resource", impl.getJUnitReporter().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
-        assertTrue("jschutConverter is not a XSpec resource", impl.getSchematronSchutConverter().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
-        assertTrue("coverageReporter is not a XSpec resource", impl.getXSpecCoverageReporter().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
-        assertTrue("xspecReporter is not a XSpec resource", impl.getXSpecReporter().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
-        assertTrue("xqueryCompiler is not a XSpec resource", impl.getXSpecXQueryCompiler().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
+        assertTrue("junitReporter is not a XSpec resource", impl.getJUnitReporterUri().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
+        assertTrue("jschutConverter is not a XSpec resource", impl.getSchematronSchutConverterUri().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
+        assertTrue("coverageReporter is not a XSpec resource", impl.getXSpecCoverageReporterUri().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
+        assertTrue("xspecReporter is not a XSpec resource", impl.getXSpecReporterUri().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
+        assertTrue("xqueryCompiler is not a XSpec resource", impl.getXSpecXQueryCompilerUri().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
         assertTrue("xsltCompiler is not a XSpec resource", impl.getXSpecXslCompilerUri().startsWith(DefaultXSpecImplResources.XSPEC_PREFIX));
     }
     
@@ -62,11 +62,11 @@ public class DefaultXSpecImplResourcesTest {
         impl.setXSpecReporter("");
         impl.setXSpecXQueryCompiler("");
         impl.setXSpecXslCompilerUri("");
-        assertEquals("setJUnitReporter is not efficient", "", impl.getJUnitReporter());
-        assertEquals("setSchematronSchutConverter is not efficient", "", impl.getXSpecCoverageReporter());
-        assertEquals("setXSpecCoverageReporter is not efficient", "", impl.getXSpecCoverageReporter());
-        assertEquals("setXSpecReporter is not efficient", "", impl.getXSpecReporter());
-        assertEquals("setXSpecXQueryCompiler is not efficient", "", impl.getXSpecXQueryCompiler());
+        assertEquals("setJUnitReporter is not efficient", "", impl.getJUnitReporterUri());
+        assertEquals("setSchematronSchutConverter is not efficient", "", impl.getXSpecCoverageReporterUri());
+        assertEquals("setXSpecCoverageReporter is not efficient", "", impl.getXSpecCoverageReporterUri());
+        assertEquals("setXSpecReporter is not efficient", "", impl.getXSpecReporterUri());
+        assertEquals("setXSpecXQueryCompiler is not efficient", "", impl.getXSpecXQueryCompilerUri());
         assertEquals("setXSpecXslCompilerUri is not efficient", "", impl.getXSpecXslCompilerUri());
     }
 }

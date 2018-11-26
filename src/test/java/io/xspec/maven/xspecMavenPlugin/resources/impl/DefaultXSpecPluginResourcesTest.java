@@ -47,10 +47,10 @@ public class DefaultXSpecPluginResourcesTest {
         DefaultXSpecPluginResources impl = new DefaultXSpecPluginResources();
         assertTrue(
                 "dependencyScanner does not starts with XML_UTILILITES prefix", 
-                impl.getDependencyScanner().startsWith(DefaultXSpecPluginResources.XML_UTILITIES_PREFIX));
+                impl.getDependencyScannerUri().startsWith(DefaultXSpecPluginResources.XML_UTILITIES_PREFIX));
         assertTrue(
                 "junitAggregator does not starts with LOCAL prefix",
-                impl.getJunitAggregator().startsWith(DefaultXSpecPluginResources.LOCAL_PREFIX)
+                impl.getJunitAggregatorUri().startsWith(DefaultXSpecPluginResources.LOCAL_PREFIX)
         );
     }
     
@@ -59,7 +59,7 @@ public class DefaultXSpecPluginResourcesTest {
         DefaultXSpecPluginResources impl = new DefaultXSpecPluginResources();
         impl.setDependencyScanner("");
         impl.setJunitAggregator("");
-        assertEquals("setDependencyScanner is not efficient", "", impl.getDependencyScanner());
-        assertEquals("setJunitAggregator is not efficient", "", impl.getJunitAggregator());
+        assertEquals("setDependencyScanner is not efficient", "", impl.getDependencyScannerUri());
+        assertEquals("setJunitAggregator is not efficient", "", impl.getJunitAggregatorUri());
     }
 }

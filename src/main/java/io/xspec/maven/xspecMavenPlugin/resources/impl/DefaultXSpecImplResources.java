@@ -33,7 +33,7 @@ import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
  * @author cmarchand
  */
 public class DefaultXSpecImplResources implements XSpecImplResources {
-    public static final transient String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
+
     private String xspecXslCompilerUri;
     private String xspecXQueryCompilerUri;
     private String schematronUnitTestConverter;
@@ -55,19 +55,19 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     public String getXSpecXslCompilerUri() { return xspecXslCompilerUri; }
 
     @Override
-    public String getXSpecXQueryCompiler() { return xspecXQueryCompilerUri; }
+    public String getXSpecXQueryCompilerUri() { return xspecXQueryCompilerUri; }
 
     @Override
-    public String getSchematronSchutConverter() { return schematronUnitTestConverter; }
+    public String getSchematronSchutConverterUri() { return schematronUnitTestConverter; }
 
     @Override
-    public String getXSpecReporter() { return xspecReporter; }
+    public String getXSpecReporterUri() { return xspecReporter; }
 
     @Override
-    public String getJUnitReporter() { return junitReporter; }
+    public String getJUnitReporterUri() { return junitReporter; }
 
     @Override
-    public String getXSpecCoverageReporter() { return xspecCoverageReporter; }
+    public String getXSpecCoverageReporterUri() { return xspecCoverageReporter; }
 
     /**
      * Defines the XSpec compiler for XSL URI

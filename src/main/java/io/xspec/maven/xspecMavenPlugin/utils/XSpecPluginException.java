@@ -1,5 +1,5 @@
 /**
- * Copyright © 2013, Adam Retter
+ * Copyright © 2018, Christophe Marchand, XSpec organization
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,52 +24,31 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.org.adamretter.maven;
-
-import java.io.File;
+package io.xspec.maven.xspecMavenPlugin.utils;
 
 /**
- * Simple class holding the results of compiling an XSpec
- *
- * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
+ * Thrown when an error occurs, in logic part
+ * @author cmarchand
  */
-public class CompiledXSpec {
+public class XSpecPluginException extends Exception {
 
-    private final int tests;
-    private final int pendingTests;
-    private final File compiledStylesheet;
-
-    public CompiledXSpec(final int tests, final int pendingTests, final File compiledStylesheet) {
-        this.tests = tests;
-        this.pendingTests = pendingTests;
-        this.compiledStylesheet = compiledStylesheet;
+    public XSpecPluginException() {
     }
 
-    /**
-     * Count of the number of tests in the compiled XSpec
-     * (including pending tests)
-     *
-     * @return The number of tests
-     */
-    public int getTests() {
-        return tests;
+    public XSpecPluginException(String message) {
+        super(message);
     }
 
-    /**
-     * Count of the number of pending tests in the compiled XSpec
-     *
-     * @return The number of pending tests
-     */
-    public int getPendingTests() {
-        return pendingTests;
+    public XSpecPluginException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    /**
-     * File system path of the compiled XSpec stylesheet
-     *
-     * @return path to the compiled xspec stylesheet
-     */
-    public File getCompiledStylesheet() {
-        return compiledStylesheet;
+    public XSpecPluginException(Throwable cause) {
+        super(cause);
     }
+
+    public XSpecPluginException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
+    
 }

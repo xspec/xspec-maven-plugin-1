@@ -137,7 +137,7 @@
         <dependency>
             <groupId>io.xspec</groupId>
             <artifactId>xspec</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1-SNAPSHOT</version>
         </dependency>
         <dependency>
           <groupId>org.mricaud.xml</groupId>

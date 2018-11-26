@@ -45,9 +45,9 @@ public class DefaultSchematronImplResourcesTest {
     @Test
     public void testDefaultvaluesPrefixes() {
         DefaultSchematronImplResources impl = new DefaultSchematronImplResources();
-        assertTrue("schIsoAbstractExpand is not from Schematron implementation",impl.getSchIsoAbstractExpand().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
-        assertTrue("schIsoDsdlInclude is not from Schematron implementation",impl.getSchIsoDsdlInclude().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
-        assertTrue("schIsoSvrlForXslt2 is not from Schematron implementation",impl.getSchIsoSvrlForXslt2().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
+        assertTrue("schIsoAbstractExpand is not from Schematron implementation",impl.getSchIsoAbstractExpandUri().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
+        assertTrue("schIsoDsdlInclude is not from Schematron implementation",impl.getSchIsoDsdlIncludeUri().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
+        assertTrue("schIsoSvrlForXslt2 is not from Schematron implementation",impl.getSchIsoSvrlForXslt2Uri().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
     }
     
     @Test
@@ -56,9 +56,9 @@ public class DefaultSchematronImplResourcesTest {
         impl.setSchIsoAbstractExpand("");
         impl.setSchIsoDsdlInclude("");
         impl.setSchIsoSvrlForXslt2("");
-        assertEquals("setSchIsoAbstractExpand is not efficient", "", impl.getSchIsoAbstractExpand());
-        assertEquals("setSchIsoDsdlInclude is not efficient", "", impl.getSchIsoDsdlInclude());
-        assertEquals("setSchIsoSvrlForXslt2 is not efficient", "", impl.getSchIsoSvrlForXslt2());
+        assertEquals("setSchIsoAbstractExpand is not efficient", "", impl.getSchIsoAbstractExpandUri());
+        assertEquals("setSchIsoDsdlInclude is not efficient", "", impl.getSchIsoDsdlIncludeUri());
+        assertEquals("setSchIsoSvrlForXslt2 is not efficient", "", impl.getSchIsoSvrlForXslt2Uri());
     }
     
 }

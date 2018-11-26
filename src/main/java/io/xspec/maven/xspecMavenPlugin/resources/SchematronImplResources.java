@@ -36,18 +36,18 @@ public interface SchematronImplResources {
      * Usually iso_dsdl_include.xsl
      * @return Schematron ISO dsdl include URI
      */
-    public String getSchIsoDsdlInclude();
+    public String getSchIsoDsdlIncludeUri();
     
     /**
      * Usually iso_abstract_expand.xsl
      * @return Schematron ISO abstract expand URI
      */
-    public String getSchIsoAbstractExpand();
+    public String getSchIsoAbstractExpandUri();
     
     /**
      * Usuall iso_svrl_for_xslt2.xsl
      * @return Schematron ISO Svrl for XSLT includes URI
      */
-    public String getSchIsoSvrlForXslt2();
+    public String getSchIsoSvrlForXslt2Uri();
     
 }
