@@ -276,7 +276,7 @@ public class XmlStuff {
         return xspec4xsltCompiler;
     }
 
-    public void setXspec4xsltCompiler(XsltExecutable xspec4xsltCompiler) {
+    private void setXspec4xsltCompiler(XsltExecutable xspec4xsltCompiler) {
         this.xspec4xsltCompiler = xspec4xsltCompiler;
     }
 
@@ -284,7 +284,7 @@ public class XmlStuff {
         return xspec4xqueryCompiler;
     }
 
-    public void setXspec4xqueryCompiler(XsltExecutable xspec4xqueryCompiler) {
+    private void setXspec4xqueryCompiler(XsltExecutable xspec4xqueryCompiler) {
         this.xspec4xqueryCompiler = xspec4xqueryCompiler;
     }
 
@@ -292,7 +292,7 @@ public class XmlStuff {
         return reporter;
     }
 
-    public void setReporter(XsltExecutable reporter) {
+    private void setReporter(XsltExecutable reporter) {
         this.reporter = reporter;
     }
     
@@ -315,13 +315,13 @@ public class XmlStuff {
     }
     
     public URIResolver getUriResolver() { return xsltCompiler.getURIResolver(); }
-    public void setUriResolver(URIResolver urr) { this.xsltCompiler.setURIResolver(urr); }
+//    public void setUriResolver(URIResolver urr) { this.xsltCompiler.setURIResolver(urr); }
 
     public XsltExecutable getXeSurefire() {
         return xeSurefire;
     }
 
-    public void setXeSurefire(XsltExecutable xeSurefire) {
+    private void setXeSurefire(XsltExecutable xeSurefire) {
         this.xeSurefire = xeSurefire;
     }
     
@@ -359,9 +359,9 @@ public class XmlStuff {
         }
     }
     
-    public void setSchematronDsdl(XsltExecutable xe) { schDsdl = xe; }
-    public void setSchematronExpand(XsltExecutable xe) { schExpand = xe; }
-    public void setSchematronSvrl(XsltExecutable xe) { schSvrl = xe; }
+    private void setSchematronDsdl(XsltExecutable xe) { schDsdl = xe; }
+    private void setSchematronExpand(XsltExecutable xe) { schExpand = xe; }
+    private void setSchematronSvrl(XsltExecutable xe) { schSvrl = xe; }
     public XsltExecutable getSchematronDsdl() { return schDsdl; }
     public XsltExecutable getSchematronExpand() { return schExpand; }
     public XsltExecutable getSchematronSvrl() { return schSvrl; }
@@ -369,11 +369,11 @@ public class XmlStuff {
     public XPathExecutable getXpSchGetXSpecFile() { return xpSchGetXSpec; }
 //    public void setXpSchGetSchParams(XPathExecutable xe) { xpSchGetParams = xe; }
 //    public XPathExecutable getXpSchGetSchParams() { return xpSchGetParams; }
-    public void setSchematronSchut(XsltExecutable xe) { schSchut = xe; }
+    private void setSchematronSchut(XsltExecutable xe) { schSchut = xe; }
     public XsltExecutable getSchematronSchut() { return schSchut; }
 
     public XsltExecutable getXmlDependencyScanner() { return xmlDependencyScanner; }
-    public void setXmlDependencyScanner(XsltExecutable xmlDependencyScanner) { this.xmlDependencyScanner = xmlDependencyScanner; }
+    private void setXmlDependencyScanner(XsltExecutable xmlDependencyScanner) { this.xmlDependencyScanner = xmlDependencyScanner; }
 
     public XPathExecutable getXpFileSearcher() { return xpFileSearcher; }
     private void setXpFileSearcher(XPathExecutable xpFileSearcher) { this.xpFileSearcher = xpFileSearcher; }
@@ -383,8 +383,8 @@ public class XmlStuff {
         if(toCheck.equals(Object.class)) return false;
         return extendsClass(toCheck.getSuperclass(), inheritor);
     }
-    public void setJUnitReporter(XsltExecutable xe) { junitReporter = xe ; }
+    private void setJUnitReporter(XsltExecutable xe) { junitReporter = xe ; }
     public XsltExecutable getJUnitReporter() { return junitReporter; }
-    public void setCoverageReporter(XsltExecutable xe) { coverageReporter = xe; }
+    private void setCoverageReporter(XsltExecutable xe) { coverageReporter = xe; }
     public XsltExecutable getCoverageReporter() { return coverageReporter; }
 }
