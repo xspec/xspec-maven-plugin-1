@@ -24,54 +24,34 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.xspec.maven.xspecMavenPlugin.resources;
+package io.xspec.maven.xspecMavenPlugin.utils;
 
 /**
- * This class holds XSpec implementation resources
+ * This exception is thrown when a XSpec fails, or is missed.
+ * This exception is not used for implementation problems, missing
+ * resources or I/O problems.
+ * 
  * @author cmarchand
  */
-public interface XSpecImplResources {
-    public static final String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
+public class XSpecFailureException extends Exception {
 
-    /**
-     * Usually, generate-xspec-tests.xsl
-     * @return XSpec compiler for XSL URI
-     */
-    public String getXSpecXslCompilerUri();
+    public XSpecFailureException() {
+    }
+
+    public XSpecFailureException(String message) {
+        super(message);
+    }
+
+    public XSpecFailureException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public XSpecFailureException(Throwable cause) {
+        super(cause);
+    }
+
+    public XSpecFailureException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
     
-    /**
-     * Usually generate-query-tests.xsl
-     * @return XSpec compiler for XQuery URI
-     */
-    public String getXSpecXQueryCompilerUri();
-    
-    /**
-     * Usually schut-to-xspec.xsl
-     * @return XSpec-for-Schematron converter URI
-     */
-    public String getSchematronSchutConverterUri();
-    
-    /**
-     * Usually format-xspec-report.xsl
-     * @return XSpec reporter URI
-     */
-    public String getXSpecReporterUri();
-    
-    /**
-     * Usually junit-report.xsl
-     * @return JUnit reporter URI
-     */
-    public String getJUnitReporterUri();
-    
-    /**
-     * Usually coverage-report.xsl
-     * @return XSpec Code Coverage reporter URI
-     */
-    public String getXSpecCoverageReporterUri();
-    
-    /**
-     * Usually test-report.css
-     * @return 
-     */
-    public String getXSpecCssReportUri();
 }

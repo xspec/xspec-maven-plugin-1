@@ -40,6 +40,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     private String xspecReporter;
     private String junitReporter;
     private String xspecCoverageReporter;
+    private String testReportCss;
     
     public DefaultXSpecImplResources() {
         super();
@@ -49,6 +50,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
         xspecReporter = XSPEC_PREFIX+"reporter/format-xspec-report.xsl";
         junitReporter = XSPEC_PREFIX+"reporter/junit-report.xsl";
         xspecCoverageReporter = XSPEC_PREFIX+"reporter/coverage-report.xsl";
+        testReportCss = XSPEC_PREFIX+"reporter/test-report.css";
     }
 
     @Override
@@ -68,6 +70,9 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
 
     @Override
     public String getXSpecCoverageReporterUri() { return xspecCoverageReporter; }
+
+    @Override
+    public String getXSpecCssReportUri() { return testReportCss; }
 
     /**
      * Defines the XSpec compiler for XSL URI
@@ -116,4 +121,13 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     public void setXSpecCoverageReporter(String xspecCoverageReporter) {
         this.xspecCoverageReporter = xspecCoverageReporter;
     }
+
+    /**
+     * Defines the report Css URI
+     * @param testReportCss 
+     */
+    public void setTestReportCss(String testReportCss) {
+        this.testReportCss = testReportCss;
+    }
+
 }

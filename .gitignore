@@ -11,3 +11,6 @@ target/
 # Intelli-J Files #
 .idea/
 *.iml
+
+# MacOS files
+**/.DS_Store

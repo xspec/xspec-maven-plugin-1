@@ -24,54 +24,30 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.xspec.maven.xspecMavenPlugin.resources;
+package io.xspec.maven.xspecMavenPlugin.utils.extenders;
+
+import io.xspec.maven.xspecMavenPlugin.utils.CatalogWriter;
+import top.marchand.java.classpath.utils.ClasspathUtils;
 
 /**
- * This class holds XSpec implementation resources
+ * This interface is used to extend Classwriter mecanism.
+ * Its main goal is to be used in unit tests, where jars may not be in classpath.
+ * Outside unit tests, there is no reason to use it.
+ * 
  * @author cmarchand
  */
-public interface XSpecImplResources {
-    public static final String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
-
+public interface CatalogWriterExtender {
     /**
-     * Usually, generate-xspec-tests.xsl
-     * @return XSpec compiler for XSL URI
+     * Call before catalog is written
+     * @param writer The catalog writer
+     * @param cu The ClasspathUtils used by the CatalogWriter
      */
-    public String getXSpecXslCompilerUri();
+    void beforeWrite(CatalogWriter writer, ClasspathUtils cu);
     
     /**
-     * Usually generate-query-tests.xsl
-     * @return XSpec compiler for XQuery URI
+     * Call after catalog has been written
+     * @param writer The writer
+     * @param cu The ClasspathUtils used by the writer
      */
-    public String getXSpecXQueryCompilerUri();
-    
-    /**
-     * Usually schut-to-xspec.xsl
-     * @return XSpec-for-Schematron converter URI
-     */
-    public String getSchematronSchutConverterUri();
-    
-    /**
-     * Usually format-xspec-report.xsl
-     * @return XSpec reporter URI
-     */
-    public String getXSpecReporterUri();
-    
-    /**
-     * Usually junit-report.xsl
-     * @return JUnit reporter URI
-     */
-    public String getJUnitReporterUri();
-    
-    /**
-     * Usually coverage-report.xsl
-     * @return XSpec Code Coverage reporter URI
-     */
-    public String getXSpecCoverageReporterUri();
-    
-    /**
-     * Usually test-report.css
-     * @return 
-     */
-    public String getXSpecCssReportUri();
+    void afterWrite(CatalogWriter writer, ClasspathUtils cu);
 }

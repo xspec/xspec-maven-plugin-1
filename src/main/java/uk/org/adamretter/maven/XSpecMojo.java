@@ -37,9 +37,15 @@ import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultSchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
+import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
+import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
+import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
 import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecFailureException;
+import io.xspec.maven.xspecMavenPlugin.utils.XSpecFailureException;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
+import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
+import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -449,7 +455,4 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         return ret;
     }
 
-    public enum XSpecType {
-        XSL, SCH, XQ;
-    }
 }

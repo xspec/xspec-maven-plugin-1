@@ -74,7 +74,6 @@ import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
-import net.sf.saxon.trans.XPathException;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.plugin.logging.Log;
 import org.xml.sax.EntityResolver;
@@ -82,11 +81,17 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import top.marchand.maven.saxon.utils.SaxonOptions;
-import top.marchand.maven.saxon.utils.SaxonUtils;
 import io.xspec.maven.xspecMavenPlugin.utils.CompiledXSpec;
+import io.xspec.maven.xspecMavenPlugin.utils.IndexGenerator;
 import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
-import uk.org.adamretter.maven.XSpecMojo;
+import io.xspec.maven.xspecMavenPlugin.utils.XSpecFailureException;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecResultsHandler;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.net.URL;
+import io.xspec.maven.xspecMavenPlugin.utils.XSpecType;
+import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
 
 /**
  * This class implements the logic of Mojo
@@ -112,10 +117,12 @@ public class XSpecRunner implements LogProvider {
     private boolean initDone;
     private List<ProcessedFile> processedFiles;
     private XSpecCompiler xspecCompiler;
+    private CatalogWriterExtender catalogWriterExtender;
 
     public static final QName INITIAL_TEMPLATE_NAME=QName.fromClarkName("{http://www.jenitennison.com/xslt/xspec}main");
     private static final QName QN_REPORT_CSS_URI = new QName("report-css-uri");
     private static final String COVERAGE_ERROR_MESSAGE = "Coverage report is only available with Saxon-PE or Saxon-EE";
+    private boolean failed;
     
     public XSpecRunner(final Log log, final File baseDirectory) {
         super();
@@ -143,6 +150,7 @@ public class XSpecRunner implements LogProvider {
                     "setResources(XSpecImplResources,SchematronImplResources,XSpecPluginResources) " +
                     "must be call before init()");
         }
+        System.err.println("Creating XmlStuff");
         xmlStuff = new XmlStuff(
                 new Processor(saxonConfiguration),
                 saxonOptions,
@@ -150,43 +158,49 @@ public class XSpecRunner implements LogProvider {
                 xspecResources,
                 pluginResources,
                 schResources,
-                baseDirectory);
-        if(saxonOptions!=null) {
-            try {
-                SaxonUtils.prepareSaxonConfiguration(xmlStuff.getProcessor(), saxonOptions);
-            } catch(XPathException ex) {
-                getLog().error(ex);
-                throw new XSpecPluginException("Illegal value in Saxon configuration property", ex);
-            }
-        }
+                baseDirectory,
+                options,
+                executionProperties,
+                catalogWriterExtender
+        );
+//        if(saxonOptions!=null) {
+//            try {
+//                SaxonUtils.prepareSaxonConfiguration(xmlStuff.getProcessor(), saxonOptions);
+//            } catch(XPathException ex) {
+//                getLog().error(ex);
+//                throw new XSpecPluginException("Illegal value in Saxon configuration property", ex);
+//            }
+//        }
         if(options==null) options = new RunnerOptions(baseDirectory);
-        try {
-            xmlStuff.getXsltCompiler().setURIResolver(buildUriResolver(xmlStuff.getXsltCompiler().getURIResolver()));
-            // this must not be done twice
-            initDone = true;
-        } catch (IOException ex) {
-            throw new XSpecPluginException("while creating URIResolver", ex);
-        }
         xspecCompiler = new XSpecCompiler(xmlStuff, options, log);
         return this;
     }
     
-    public void execute() throws XSpecPluginException {
-            getLog().debug("Looking for XSpecs in: " + options.testDir);
-            final List<File> xspecs = findAllXSpecs();
-            getLog().info("Found " + xspecs.size() + " XSpecs...");
-            boolean failed = false;
-            processedFiles= new ArrayList<>(xspecs.size());
-            for (final File xspec : xspecs) {
-                try {
-                    if (!processXSpec(xspec)) {
-                        failed = true;
-                    }
-                } catch(IOException | TransformerException | SaxonApiException ex) {
+    public void execute() throws XSpecPluginException, XSpecFailureException {
+        getLog().debug("Looking for XSpecs in: " + options.testDir);
+        final List<File> xspecs = findAllXSpecs();
+        getLog().info("Found " + xspecs.size() + " XSpecs...");
+        failed = false;
+        processedFiles= new ArrayList<>(xspecs.size());
+        for (final File xspec : xspecs) {
+            try {
+                if (!processXSpec(xspec)) {
                     failed = true;
-                    throw new XSpecPluginException("while processing "+xspec.getAbsolutePath(), ex);
                 }
+            } catch(IOException | TransformerException | SaxonApiException ex) {
+                failed = true;
+                throw new XSpecFailureException("while processing "+xspec.getAbsolutePath(), ex);
             }
+        }
+        
+        try {
+            extractCssResource();
+        } catch(IOException ex) {
+            throw new XSpecPluginException("while extracting CSS", ex);
+        }
+        if (failed) {
+            throw new XSpecPluginException("Some XSpec tests failed or were missed!");
+        }
     }
 
     /**
@@ -201,7 +215,7 @@ public class XSpecRunner implements LogProvider {
         getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
 
         XdmNode xspecDocument = xmlStuff.getDocumentBuilder().build(xspec);
-        XSpecMojo.XSpecType type = getXSpecType(xspecDocument);
+        XSpecType type = getXSpecType(xspecDocument);
         switch(type) {
             case XQ: return processXQueryXSpec(xspecDocument);
             case SCH: {
@@ -540,7 +554,7 @@ public class XSpecRunner implements LogProvider {
      * @return XSpecType
      * @throws SaxonApiException If file is not a XSpec one
      */
-    XSpecMojo.XSpecType getXSpecType(XdmNode doc) throws SaxonApiException {
+    XSpecType getXSpecType(XdmNode doc) throws SaxonApiException {
         XPathSelector xps = xmlStuff.getXpExecGetXSpecType().load();
         xps.setContextItem(doc);
         XdmValue values = xps.evaluate();
@@ -551,13 +565,13 @@ public class XSpecRunner implements LogProvider {
                 switch(nodeName) {
                     case "query": 
                     case "query-at": {
-                        return XSpecMojo.XSpecType.XQ;
+                        return XSpecType.XQ;
                     }
                     case "schematron": {
-                        return XSpecMojo.XSpecType.SCH;
+                        return XSpecType.SCH;
                     }
                     case "stylesheet": {
-                        return XSpecMojo.XSpecType.XSL;
+                        return XSpecType.XSL;
                     }
                 }
             }
@@ -594,7 +608,16 @@ public class XSpecRunner implements LogProvider {
         this.options = options;
         return this;
     }
-
+    
+    /**
+     * Generates general index. May be overriden if required
+     * @throws XSpecPluginException 
+     */
+    public void generateIndex() throws XSpecPluginException {
+        IndexGenerator generator = new IndexGenerator(options, processedFiles);
+        generator.generateIndex();
+    }
+    
     /**
      * Creates the URI Resolver. It also generates the catalog with all
      * dependencies
@@ -605,14 +628,14 @@ public class XSpecRunner implements LogProvider {
      * @throws XMLStreamException
      * @throws MojoFailureException 
      */
-    private URIResolver buildUriResolver(final URIResolver saxonUriResolver) throws IOException, XSpecPluginException {
-        CatalogWriter cw = new CatalogWriter();
-        File catalog = cw.writeCatalog(options.catalogFile, executionProperties, options.keepGeneratedCatalog);
-        if(!options.keepGeneratedCatalog) {
-            getLog().info("keeping generated catalog: "+catalog.toURI().toURL().toExternalForm());
-        }
-        return new Resolver(saxonUriResolver, catalog, getLog());
-    }
+//    private URIResolver buildUriResolver(final URIResolver saxonUriResolver) throws IOException, XSpecPluginException {
+//        CatalogWriter cw = new CatalogWriter(this.getClass().getClassLoader(), catalogWriterExtender);
+//        File catalog = cw.writeCatalog(options.catalogFile, executionProperties, options.keepGeneratedCatalog);
+//        if(options.keepGeneratedCatalog) {
+//            getLog().info("keeping generated catalog: "+catalog.toURI().toURL().toExternalForm());
+//        }
+//        return new Resolver(saxonUriResolver, catalog, getLog());
+//    }
     
     /**
      * We want to be sure that external-functions are allowed
@@ -639,4 +662,34 @@ public class XSpecRunner implements LogProvider {
     
     @Override
     public Log getLog() { return log; }
+    
+    protected void extractCssResource() throws MalformedURLException, IOException {
+        File cssFile = new File(options.reportDir, XmlStuff.RESOURCES_TEST_REPORT_CSS);
+        cssFile.getParentFile().mkdirs();
+        try {
+            Source cssSource = xmlStuff.getUriResolver().resolve(xspecResources.getXSpecCssReportUri(), baseDirectory.toURI().toURL().toExternalForm());
+            BufferedInputStream is = new BufferedInputStream(new URL(cssSource.getSystemId()).openStream());
+            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(cssFile));
+            byte[] buffer = new byte[1024];
+            int read = is.read(buffer);
+            while(read>0) {
+                bos.write(buffer, 0, read);
+                read = is.read(buffer);
+            }
+        } catch(TransformerException ex) {
+            getLog().error("while extracting CSS: ",ex);
+        }
+    }
+    
+    // for UT only
+    XmlStuff getXmlStuff() { return xmlStuff; }
+
+    public CatalogWriterExtender getCatalogWriterExtender() {
+        return catalogWriterExtender;
+    }
+
+    public void setCatalogWriterExtender(CatalogWriterExtender catalogWriterExtender) {
+        this.catalogWriterExtender = catalogWriterExtender;
+    }
+    
 }

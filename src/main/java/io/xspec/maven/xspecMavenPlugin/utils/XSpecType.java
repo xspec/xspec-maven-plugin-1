@@ -1,5 +1,5 @@
 /**
- * Copyright © 2018, Christophe Marchand, XSpec organization
+ * Copyright © 2018, Christophe Marchand
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,54 +24,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package io.xspec.maven.xspecMavenPlugin.resources;
+package io.xspec.maven.xspecMavenPlugin.utils;
 
 /**
- * This class holds XSpec implementation resources
+ * XSpec types.
+ * Xsl, Schematron, XQuery
  * @author cmarchand
  */
-public interface XSpecImplResources {
-    public static final String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
-
-    /**
-     * Usually, generate-xspec-tests.xsl
-     * @return XSpec compiler for XSL URI
-     */
-    public String getXSpecXslCompilerUri();
+public enum XSpecType {
+    XSL, SCH, XQ
     
-    /**
-     * Usually generate-query-tests.xsl
-     * @return XSpec compiler for XQuery URI
-     */
-    public String getXSpecXQueryCompilerUri();
-    
-    /**
-     * Usually schut-to-xspec.xsl
-     * @return XSpec-for-Schematron converter URI
-     */
-    public String getSchematronSchutConverterUri();
-    
-    /**
-     * Usually format-xspec-report.xsl
-     * @return XSpec reporter URI
-     */
-    public String getXSpecReporterUri();
-    
-    /**
-     * Usually junit-report.xsl
-     * @return JUnit reporter URI
-     */
-    public String getJUnitReporterUri();
-    
-    /**
-     * Usually coverage-report.xsl
-     * @return XSpec Code Coverage reporter URI
-     */
-    public String getXSpecCoverageReporterUri();
-    
-    /**
-     * Usually test-report.css
-     * @return 
-     */
-    public String getXSpecCssReportUri();
 }

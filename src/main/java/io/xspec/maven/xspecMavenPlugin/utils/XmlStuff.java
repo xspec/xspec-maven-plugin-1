@@ -26,9 +26,12 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
+import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
+import uk.org.adamretter.maven.XSpecMojo;
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
+import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -36,6 +39,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
+import java.util.Properties;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
@@ -61,7 +65,6 @@ import net.sf.saxon.trans.XPathException;
 import org.apache.maven.plugin.logging.Log;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 import top.marchand.maven.saxon.utils.SaxonUtils;
-import uk.org.adamretter.maven.XSpecMojo;
 
 /**
  * This class holds all utility variables need to process XSPec (XsltCompiler, XPathCompiler, compiled Xslt, and so on...)
@@ -90,13 +93,15 @@ public class XmlStuff {
     public final static QName QN_REPORT_CSS = new QName("report-css-uri");
     public static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
     private XPathExecutable xpSchGetXSpec;
-//    private XPathExecutable xpSchGetParams;
     private XsltExecutable schSchut;
     private final Log log;
     private final XSpecImplResources xspecResources;
     private final XSpecPluginResources pluginResources;
     private final SchematronImplResources schematronResources;
     private final File baseDir;
+    private final RunnerOptions options;
+    private final Properties executionProperties;
+    // for code coverage
     private String generateXspecUtilsUri;
     private String schLocationCompareUri;
     public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
@@ -109,13 +114,19 @@ public class XmlStuff {
             XSpecImplResources xspecResources, 
             XSpecPluginResources pluginResources, 
             SchematronImplResources schematronResources,
-            File baseDir) throws XSpecPluginException {
+            File baseDir,
+            RunnerOptions options,
+            Properties executionProperties,
+            CatalogWriterExtender extender) throws XSpecPluginException {
         super();
         this.processor = processor;
         this.xspecResources = xspecResources;
         this.pluginResources = pluginResources;
         this.schematronResources = schematronResources;
         this.baseDir = baseDir;
+        this.options=options;
+        this.executionProperties=executionProperties;
+        this.log=log;
         if(saxonOptions!=null) {
             try {
                 SaxonUtils.prepareSaxonConfiguration(this.processor, saxonOptions);
@@ -124,7 +135,6 @@ public class XmlStuff {
                 throw new XSpecPluginException("Illegal value in Saxon configuration property", ex);
             }
         }
-
         
         documentBuilder = processor.newDocumentBuilder();
         xsltCompiler = processor.newXsltCompiler();
@@ -138,7 +148,12 @@ public class XmlStuff {
         } catch(XPathException ex) {
             throw new XSpecPluginException(ex);
         }
-        this.log=log;
+        try {
+            getXsltCompiler().setURIResolver(buildUriResolver(getXsltCompiler().getURIResolver(), extender));
+        } catch(IOException ex) {
+            throw new XSpecPluginException("while constructing URIResolver", ex);
+        }
+        System.err.println("URI resolver Ok");
         ClassLoader cl = getClass().getClassLoader();
         if(cl instanceof URLClassLoader) {
             URLClassLoader ucl = (URLClassLoader)cl;
@@ -176,6 +191,27 @@ public class XmlStuff {
         } catch(XSpecPluginException | MalformedURLException | SaxonApiException ex) {
             throw new XSpecPluginException(ex);
         }
+    }
+    
+    /**
+     * Creates the URI Resolver. It also generates the catalog with all
+     * dependencies
+     * @param saxonUriResolver
+     * @return
+     * @throws DependencyResolutionRequiredException
+     * @throws IOException
+     * @throws XMLStreamException
+     * @throws MojoFailureException 
+     */
+    private URIResolver buildUriResolver(final URIResolver saxonUriResolver, CatalogWriterExtender extender) throws IOException, XSpecPluginException {
+        System.err.println("buildUriResolver");
+        CatalogWriter cw = new CatalogWriter(this.getClass().getClassLoader(), extender);
+        System.err.println("CatalogWriter instanciated");
+        File catalog = cw.writeCatalog(options.catalogFile, executionProperties, options.keepGeneratedCatalog);
+        if(options.keepGeneratedCatalog) {
+            getLog().info("keeping generated catalog: "+catalog.toURI().toURL().toExternalForm());
+        }
+        return new Resolver(saxonUriResolver, catalog, getLog());
     }
     
     private void createXPathExecutables() throws SaxonApiException {
