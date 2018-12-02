@@ -37,11 +37,7 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import javanet.staxutils.IndentingXMLStreamWriter;
 import javax.xml.stream.XMLOutputFactory;
@@ -71,9 +67,30 @@ public class CatalogWriter {
         this.catalogWriterExtender = ext;
     }
         
-    public File writeCatalog(String userCatalogFilename, Properties environment, boolean keepGeneratedCatalog) throws XSpecPluginException, IOException {
+    /**
+     * Generates and write a catalog tha t resolves all resources for XSpec,
+     * schematron and plugin implementation. If XSpec execution requires a user
+     * defined catalog, it may be specified in <tt>userCatalogFileName</tt>.<br/>
+     * <tt>userCatalogFileName</tt> may be null ; no <tt>&lt;nextCatalog&gt;</tt> 
+     * entry will be added to generated catalog.<br/>
+     * If a non null value is provided for <tt>userCatalogFileName</tt>, then
+     * a non null value <strong>must</strong> be provided for <tt>environment</tt> ;
+     * else, a  IllegalArgumentException will be thrown.
+     * @param userCatalogFilename The nextCatalog URI to add to generated catalog.
+     * @param environment Environment properties, used to resolve all placeholders
+     * in <tt>userCatalogFileName</tt>.
+     * @param keepGeneratedCatalog Indicates if generated catalog must be kept after
+     * plugin execution. If <tt>false</tt>, generated catalog will be deleted at
+     * JVM exit.
+     * @return Generated file
+     * @throws XSpecPluginException
+     * @throws IOException 
+     */
+    public File writeCatalog(String userCatalogFilename, Properties environment, boolean keepGeneratedCatalog) throws XSpecPluginException, IOException, IllegalArgumentException {
+        if(userCatalogFilename!=null && environment==null) {
+            throw new IllegalArgumentException("If you specify a userCatalogFilename, you must provide a non null environment.");
+        }
         File tmpCatalog = File.createTempFile("tmp", "-catalog.xml");
-        System.err.println("writeCatalog to "+tmpCatalog.getAbsolutePath());
         try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(tmpCatalog), Charset.forName("UTF-8"))) {
             XMLStreamWriter xmlWriter = XMLOutputFactory.newFactory().createXMLStreamWriter(osw);
             xmlWriter = new IndentingXMLStreamWriter(xmlWriter);
@@ -86,17 +103,17 @@ public class CatalogWriter {
                 catalogWriterExtender.beforeWrite(this, cu);
             }
             String jarUri = cu.getArtifactJarUri("io.xspec", "xspec");
-            System.err.println("io.xspec jarUri="+jarUri);
+//            System.err.println("io.xspec jarUri="+jarUri);
             writeCatalogEntry(xmlWriter, jarUri, XSpecImplResources.XSPEC_PREFIX);
             // com.schematron / iso-schematron
             writeCatalogEntry(xmlWriter, jarUri, DefaultSchematronImplResources.SCHEMATRON_PREFIX);
             // io.xspec / xspec-maven-plugin
             jarUri = cu.getArtifactJarUri("org.mricaud.xml", "xut");
-            System.err.println("org.mricaud.xml jarUri="+jarUri);
+//            System.err.println("org.mricaud.xml jarUri="+jarUri);
             writeCatalogEntry(xmlWriter, jarUri, XSpecPluginResources.XML_UTILITIES_PREFIX);
             // io.xspec.maven / xspec-maven-plugin
             jarUri = cu.getArtifactJarUri("io.xspec.maven", "xspec-maven-plugin");
-            System.err.println("io.xspec.maven jarUri="+jarUri);
+//            System.err.println("io.xspec.maven jarUri="+jarUri);
             writeCatalogEntry(xmlWriter, jarUri, XSpecPluginResources.LOCAL_PREFIX);
             if(userCatalogFilename!=null) {
                 xmlWriter.writeEmptyElement("nextCatalog");
@@ -118,7 +135,7 @@ public class CatalogWriter {
                 catalogWriterExtender.afterWrite(this, cu);
             }
             osw.flush();
-            System.err.println("catalog written");
+//            System.err.println("catalog written");
         } catch(XMLStreamException | ClasspathException ex) {
             System.err.println("while creating catalog, exception thrown: "+ex.getClass().getName());
             throw new XSpecPluginException("while creating catalog", ex);

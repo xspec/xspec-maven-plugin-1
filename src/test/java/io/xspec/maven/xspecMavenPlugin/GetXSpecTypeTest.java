@@ -81,32 +81,10 @@ public class GetXSpecTypeTest {
         options.keepGeneratedCatalog = true;
         runner.setEnvironment(new Properties(), options);
         SaxonOptions saxonOptions = new SaxonOptions();
-        System.err.println("saxonOptions: "+saxonOptions);
-        System.err.println("runner: "+runner);
         URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
-        System.err.println("url="+url!=null?url.toExternalForm():"null");
         File classesDir = new File(url.toURI()).getParentFile();
         String classesUri = classesDir.toURI().toURL().toExternalForm();
-        System.err.println("classesUri="+classesUri);
-        CatalogWriterExtender extender = new CatalogWriterExtender() {
-            @Override
-            public void beforeWrite(CatalogWriter writer, ClasspathUtils cu) {
-                cu.setCallback((String groupId, String artifactId) -> {
-                    System.err.println("callback call with ("+groupId+","+artifactId+")");
-                    if("io.xspec.maven".equals(groupId) && "xspec-maven-plugin".equals(artifactId)) {
-                        return classesUri;
-                    } else if("com.schematron".equals(groupId) && "iso-schematron".equals(artifactId)) {
-                        return cu.getArtifactJarUri("io.xspec", "xspec");
-                    } else {
-                        throw new ClasspathException("No resource found for ("+groupId+","+artifactId+") in callback");
-                    }
-                });
-            }
-            @Override
-            public void afterWrite(CatalogWriter writer, ClasspathUtils cu) {
-                cu.removeCallback();
-            }
-        };
+        CatalogWriterExtender extender = new TestCatalogWriterExtender(classesUri);
         runner.setCatalogWriterExtender(extender);
         runner.init(saxonOptions);
     }
