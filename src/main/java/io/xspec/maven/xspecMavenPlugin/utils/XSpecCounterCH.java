@@ -45,7 +45,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * @author cmarchand
  */
 public class XSpecCounterCH extends DefaultHandler2 {
-    private final static String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
+    public final static String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
 
     private int tests = 0;
     private int pendingTests = 0;
@@ -64,8 +64,8 @@ public class XSpecCounterCH extends DefaultHandler2 {
         this.systemId=systemId;
         this.uriResolver=uriResolver;
         this.logProvider=logProvider;
-//        this.activateLogs = activateLogs;
-        this.activateLogs = false;
+        this.activateLogs = activateLogs;
+//        this.activateLogs = false;
         if(prefix.length>0) {
             LOG_PREFIX=prefix[0];
         } else LOG_PREFIX="";
@@ -74,7 +74,7 @@ public class XSpecCounterCH extends DefaultHandler2 {
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         if(activateLogs)
-            logProvider.getLog().info("startElement("+uri+","+localName+","+qName+",...)");
+            logProvider.getLog().debug(LOG_PREFIX+"startElement("+uri+","+localName+","+qName+",...)");
         if(XSPEC_NS.equals(uri) && ("pendingTests".equals(localName) || "pending".equals(localName))) {
             pendingWrapper++;
         } else if(XSPEC_NS.equals(uri) && 
@@ -83,17 +83,17 @@ public class XSpecCounterCH extends DefaultHandler2 {
             pendingWrapper++;
             pendingScenario = true;
             if(activateLogs)
-                logProvider.getLog().info(LOG_PREFIX+"entering pending scenario");
+                logProvider.getLog().debug(LOG_PREFIX+"entering pending scenario");
         } else if(XSPEC_NS.equals(uri) && "expect".equals(localName)) {
             if(activateLogs)
-                logProvider.getLog().info(LOG_PREFIX+"entering expect");
+                logProvider.getLog().debug(LOG_PREFIX+"entering expect");
             if(pendingWrapper > 0) {
                 pendingTests++;
             }
             tests++;
         } else if(XSPEC_NS.equals(uri) && "import".equals(localName)) {
             if(activateLogs)
-                logProvider.getLog().warn(LOG_PREFIX+"[in "+systemId+"] seeing imported XSpec "+atts.getValue("href"));
+                logProvider.getLog().debug(LOG_PREFIX+"[in "+systemId+"] seeing imported XSpec "+atts.getValue("href"));
             // in this particular case, we must count also in imported xspec
             String importedSystemId = null;
             try {
@@ -109,7 +109,7 @@ public class XSpecCounterCH extends DefaultHandler2 {
                         logProvider.getLog().warn(LOG_PREFIX+"[in "+systemId+"] parsing imported XSpec "+importedSystemId);
                     final Parser parser = XmlStuff.PARSER_FACTORY.newSAXParser().getParser();
                     final XMLReader reader = new ParserAdapter(parser);
-                    importedTestFilter = new XSpecCounterCH(importedSystemId, uriResolver, logProvider, logProvider.getLog().isDebugEnabled());
+                    importedTestFilter = new XSpecCounterCH(importedSystemId, uriResolver, logProvider, activateLogs, XSPEC_NS+importedSystemId+": ");
                     XMLFilter filter = new XMLFilterImpl(reader) {
                         @Override
                         public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
@@ -138,11 +138,11 @@ public class XSpecCounterCH extends DefaultHandler2 {
             pendingWrapper--;
             pendingScenario = false;
             if(activateLogs)
-                logProvider.getLog().info(LOG_PREFIX+"exiting pending scenario");
+                logProvider.getLog().debug(LOG_PREFIX+"exiting pending scenario");
         } else if(XSPEC_NS.equals(uri) && "import".equals(localName)) {
             if(activateLogs) {
-                logProvider.getLog().warn(LOG_PREFIX+"Adding "+importedTestFilter.getTests()+" tests");
-                logProvider.getLog().warn(LOG_PREFIX+"Adding "+importedTestFilter.getPendingTests()+" pending tests");
+                logProvider.getLog().debug(LOG_PREFIX+"Adding "+importedTestFilter.getTests()+" tests");
+                logProvider.getLog().debug(LOG_PREFIX+"Adding "+importedTestFilter.getPendingTests()+" pending tests");
             }
             this.tests+=importedTestFilter.getTests();
             this.pendingTests+=importedTestFilter.getPendingTests();
