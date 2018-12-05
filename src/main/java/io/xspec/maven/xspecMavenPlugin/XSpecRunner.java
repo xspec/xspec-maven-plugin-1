@@ -26,11 +26,9 @@
  */
 package io.xspec.maven.xspecMavenPlugin;
 
-import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
-import io.xspec.maven.xspecMavenPlugin.utils.CatalogWriter;
 import io.xspec.maven.xspecMavenPlugin.utils.FileFinder;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
@@ -49,10 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import net.sf.saxon.Configuration;
@@ -98,6 +94,7 @@ import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
  * @author cmarchand
  */
 public class XSpecRunner implements LogProvider {
+    public final static String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
     // technical
     private final Log log;
     private final Configuration saxonConfiguration;
@@ -119,7 +116,7 @@ public class XSpecRunner implements LogProvider {
     private XSpecCompiler xspecCompiler;
     private CatalogWriterExtender catalogWriterExtender;
 
-    public static final QName INITIAL_TEMPLATE_NAME=QName.fromClarkName("{http://www.jenitennison.com/xslt/xspec}main");
+    public static final QName INITIAL_TEMPLATE_NAME=new QName(XSPEC_NS, "main");
     private static final QName QN_REPORT_CSS_URI = new QName("report-css-uri");
     private static final String COVERAGE_ERROR_MESSAGE = "Coverage report is only available with Saxon-PE or Saxon-EE";
     private boolean failed;
@@ -243,7 +240,7 @@ public class XSpecRunner implements LogProvider {
         } else {
             getLog().debug("XQuery compiled XSpec is at "+compiledXSpec.getCompiledStylesheet().getAbsolutePath());
             /* execute the test stylesheet */
-            final XSpecResultsHandler resultsHandler = new XSpecResultsHandler(this);
+            final XSpecResultsHandler resultsHandler = new XSpecResultsHandler();
             boolean processedFileAdded = false;
             try {
                 final XQueryExecutable xeXSpec = xmlStuff.getXqueryCompiler().compile(new FileInputStream(compiledXSpec.getCompiledStylesheet()));
@@ -384,7 +381,7 @@ public class XSpecRunner implements LogProvider {
             return false;
         } else {
             /* execute the test stylesheet */
-            final XSpecResultsHandler resultsHandler = new XSpecResultsHandler(this);
+            final XSpecResultsHandler resultsHandler = new XSpecResultsHandler();
             try {
                 final XsltExecutable xeXSpec = xmlStuff.compileXsl(
                         new StreamSource(compiledXSpec.getCompiledStylesheet()));

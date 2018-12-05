@@ -26,37 +26,32 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
-import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
+import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.DefaultHandler2;
 
 /**
- * Extracts test results from the SAX Stream
+ * Extracts test results from the SAX Stream.
+ * The stream is the result of XSpec execution
  *
  * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  */
 public class XSpecResultsHandler extends DefaultHandler2 {
 
-    private final static String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
-
     private int tests = 0;
     private int passed = 0;
     private int failed = 0;
     private int pending = 0;
-    private final LogProvider logProvider;
 
-    public XSpecResultsHandler(LogProvider logProvider) {
+    public XSpecResultsHandler() {
         super();
-        this.logProvider=logProvider;
     }
-    
-    
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
-        if(XSPEC_NS.equals(uri) && localName.equals("test")) {
+        if(localName.equals("test") && XSpecRunner.XSPEC_NS.equals(uri)) {
             tests++;
             final String successful = attributes.getValue("successful");
             final String sPending = attributes.getValue("pending");
