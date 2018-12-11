@@ -147,7 +147,11 @@ public class XSpecRunner implements LogProvider {
                     "setResources(XSpecImplResources,SchematronImplResources,XSpecPluginResources) " +
                     "must be call before init()");
         }
-        System.err.println("Creating XmlStuff");
+        getLog().debug("Creating XmlStuff");
+        if(options==null) {
+            getLog().debug("options was null, creating a new one.");
+            options = new RunnerOptions(baseDirectory);
+        }
         xmlStuff = new XmlStuff(
                 new Processor(saxonConfiguration),
                 saxonOptions,
@@ -160,16 +164,9 @@ public class XSpecRunner implements LogProvider {
                 executionProperties,
                 catalogWriterExtender
         );
-//        if(saxonOptions!=null) {
-//            try {
-//                SaxonUtils.prepareSaxonConfiguration(xmlStuff.getProcessor(), saxonOptions);
-//            } catch(XPathException ex) {
-//                getLog().error(ex);
-//                throw new XSpecPluginException("Illegal value in Saxon configuration property", ex);
-//            }
-//        }
-        if(options==null) options = new RunnerOptions(baseDirectory);
+        getLog().debug("creating new XSpecCompiler");
         xspecCompiler = new XSpecCompiler(xmlStuff, options, log);
+        initDone = true;
         return this;
     }
     
@@ -178,7 +175,7 @@ public class XSpecRunner implements LogProvider {
         final List<File> xspecs = findAllXSpecs();
         getLog().info("Found " + xspecs.size() + " XSpecs...");
         failed = false;
-        processedFiles= new ArrayList<>(xspecs.size());
+        initProcessedFiles(xspecs.size());
         for (final File xspec : xspecs) {
             try {
                 if (!processXSpec(xspec)) {
@@ -419,6 +416,7 @@ public class XSpecRunner implements LogProvider {
                 xmlSerializer.setOutputProperty(Serializer.Property.METHOD, "xml");
                 xmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
                 xmlSerializer.setOutputFile(xspecXmlResult);
+                getLog().debug("\txml report output set");
 
                 //setup html report output
                 final File xspecHtmlResult = xspecCompiler.getXSpecHtmlResultPath(options.reportDir, sourceFile);
@@ -429,6 +427,7 @@ public class XSpecRunner implements LogProvider {
                 XsltTransformer reporter = xmlStuff.getReporter().load();
                 reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
                 reporter.setDestination(htmlSerializer);
+                getLog().debug("\thtml report output set");
 
 
                 // setup surefire report output
@@ -449,6 +448,7 @@ public class XSpecRunner implements LogProvider {
                 } else {
                     xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
                 }
+                getLog().debug("\tsurefire report output set");
 
                 // JUnit report - no more JUnit report
 //                XsltTransformer juReporter = xmlStuff.getJUnitReporter().load();
@@ -457,12 +457,16 @@ public class XSpecRunner implements LogProvider {
 //                junitDest.setOutputProperty(Serializer.Property.INDENT, "yes");
 //                juReporter.setDestination(junitDest);
 //                junitFiles.add(junitFile);
+                getLog().debug("\tcreating PF");
                 ProcessedFile pf = new ProcessedFile(options.testDir, sourceFile, options.reportDir, xspecHtmlResult);
+                getLog().debug("\tadding PF to list");
                 processedFiles.add(pf);
                 processedFileAdded = true;
+                getLog().debug("\tprocessedFile processed");
                 String relativeCssPath = 
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
 //                reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
+                getLog().debug("\trelativeCssPath: "+relativeCssPath);
 
                 //execute
                 final Destination destination = 
@@ -474,6 +478,8 @@ public class XSpecRunner implements LogProvider {
                                                 xtSurefire)
                                         ), 
                                 reporter);
+                getLog().debug("\tdestination tree constructed");
+
                 XMLReader reader = xmlStuff.PARSER_FACTORY.newSAXParser().getXMLReader();
                 reader.setEntityResolver((EntityResolver)xmlStuff.getUriResolver());
                 Source xspecSource = new SAXSource(reader, new InputSource(new FileInputStream(sourceFile)));
@@ -482,6 +488,7 @@ public class XSpecRunner implements LogProvider {
                 xtXSpec.setURIResolver(xmlStuff.getUriResolver());
                 xtXSpec.setDestination(destination);
                 xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
+                getLog().debug("\tlaunching transform");
                 xtXSpec.transform();
 
                 // limit to pure XSLT, exclude schematron
@@ -538,9 +545,11 @@ public class XSpecRunner implements LogProvider {
             }
             if (resultsHandler.getFailed() + missed > 0) {
                 getLog().error(msg);
+                getLog().debug("\tXSpec terminated, return false");
                 return false;
             } else {
                 getLog().info(msg);
+                getLog().debug("\tXSpec terminated, return true");
                 return true;
             }
         }
@@ -687,6 +696,14 @@ public class XSpecRunner implements LogProvider {
 
     public void setCatalogWriterExtender(CatalogWriterExtender catalogWriterExtender) {
         this.catalogWriterExtender = catalogWriterExtender;
+    }
+    
+    /**
+     * expose this to package to let unit tests initialize PF, 
+     * when running outside of {@link #execute()} method.
+     */
+    void initProcessedFiles(int size) {
+        processedFiles= new ArrayList<>(size);
     }
     
 }

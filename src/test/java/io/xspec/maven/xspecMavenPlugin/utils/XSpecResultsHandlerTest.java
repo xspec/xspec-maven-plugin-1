@@ -30,6 +30,7 @@ import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 /**
@@ -49,6 +50,32 @@ public class XSpecResultsHandlerTest {
         assertEquals(handler.getTests(), handler.getFailed()+handler.getPassed()+handler.getPending());
     }
     
+    @Test
+    public void testAnotherElement() throws SAXException {
+        XSpecResultsHandler handler = new XSpecResultsHandler();
+        handler.startDocument();
+        handler.startElement(XSpecRunner.XSPEC_NS, "content", "x:content", EMPTY_ATTRS);
+        handler.endElement(XSpecRunner.XSPEC_NS, "content", "x:content");
+        assertEquals(0, handler.getFailed());
+        assertEquals(0, handler.getPassed());
+        assertEquals(0, handler.getPending());
+        assertEquals(0, handler.getTests());
+        assertEquals(handler.getTests(), handler.getFailed()+handler.getPassed()+handler.getPending());
+    }
+
+    @Test
+    public void testAnotherNS() throws SAXException {
+        XSpecResultsHandler handler = new XSpecResultsHandler();
+        handler.startDocument();
+        handler.startElement("top:marchand:xml:maven", "test", "x:test", EMPTY_ATTRS);
+        handler.endElement("top:marchand:xml:maven", "test", "x:test");
+        assertEquals(0, handler.getFailed());
+        assertEquals(0, handler.getPassed());
+        assertEquals(0, handler.getPending());
+        assertEquals(0, handler.getTests());
+        assertEquals(handler.getTests(), handler.getFailed()+handler.getPassed()+handler.getPending());
+    }
+
     @Test   // this should have one failed, because no attribute
     public void testNoAttribute() throws Exception {
         XSpecResultsHandler handler = new XSpecResultsHandler();
