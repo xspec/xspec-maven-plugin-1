@@ -39,8 +39,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 import net.sf.saxon.s9api.XdmNode;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import top.marchand.maven.saxon.utils.SaxonOptions;
@@ -49,47 +47,19 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  *
  * @author cmarchand
  */
-public class XSpecRunnerTest {
+public class XSpecRunnerTest extends TestUtils {
     
-    private static File baseDirectory;
-    private static File projectDirectory;
-    private static File testDirectory;
-    private static final Log LOG = new SystemStreamLog();
-    
-    public static File getProjectDirectory() throws URISyntaxException {
-        if(projectDirectory==null) {
-            projectDirectory = new File(XSpecRunner.class.getClassLoader().getResource("").toURI()).getParentFile().getParentFile();
-        }
-        return projectDirectory;
-    }
-    public static File getBaseDirectory() throws URISyntaxException {
-        if(baseDirectory==null) {
-            baseDirectory = new File(getProjectDirectory(), "target/surefire-reports/tests");
-            baseDirectory.mkdirs();
-        }
-        return baseDirectory;
-    }
-    public static File getTestDirectory() throws URISyntaxException {
-        if(testDirectory==null) {
-            testDirectory = new File(getProjectDirectory(), "src/test/resources/filesToTest/");
-        }
-        return testDirectory;
-    }
     
     @Test
     public void extractCssResourceTest() throws Exception {
-        XSpecRunner runner = new XSpecRunner(LOG, getBaseDirectory());
+        XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
         runner.setResources(
                 new DefaultXSpecImplResources(), 
                 new DefaultSchematronImplResources(), 
                 new DefaultXSpecPluginResources());
         RunnerOptions options = new RunnerOptions(getBaseDirectory());
-        runner.setEnvironment(
-                new Properties(), options);
-        URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
-        File classesDir = new File(url.toURI()).getParentFile();
-        String classesUri = classesDir.toURI().toURL().toExternalForm();
-        runner.setCatalogWriterExtender(new TestCatalogWriterExtender(classesUri));
+        runner.setEnvironment(new Properties(), options);
+        runner.setCatalogWriterExtender(newExtender());
 
         runner.init(new SaxonOptions());
         runner.extractCssResource();
@@ -99,7 +69,7 @@ public class XSpecRunnerTest {
     
     @Test(expected = IllegalStateException.class)
     public void initBeforeSetResources() throws Exception {
-        XSpecRunner runner = new XSpecRunner(LOG, getBaseDirectory());
+        XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
         runner.init(new SaxonOptions());
         fail("calling init(SaxonOption) before setResources(...) should throw an IllegalStateException");
     }
@@ -108,7 +78,7 @@ public class XSpecRunnerTest {
     public void initTwiceTest() throws Exception {
         SaxonOptions saxonOptions = new SaxonOptions();
         XSpecRunner runner = getNewRunner(saxonOptions);
-        LOG.debug("calling runner.init a second time");
+        getLog().debug("calling runner.init a second time");
         runner.init(saxonOptions);
         fail("init shouldn't be call twice without throwing an IllegalStateException");
     }
@@ -136,15 +106,12 @@ public class XSpecRunnerTest {
     }
     
     private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
-        XSpecRunner runner = new XSpecRunner(LOG, getBaseDirectory());
+        XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
         runner.setResources(
                 new DefaultXSpecImplResources(), 
                 new DefaultSchematronImplResources(), 
                 new DefaultXSpecPluginResources());
-        URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
-        File classesDir = new File(url.toURI()).getParentFile();
-        String classesUri = classesDir.toURI().toURL().toExternalForm();
-        runner.setCatalogWriterExtender(new TestCatalogWriterExtender(classesUri));
+        runner.setCatalogWriterExtender(newExtender());
         runner.setEnvironment(new Properties(), runnerOptions);
         runner.init(saxonOptions);
         return runner;
