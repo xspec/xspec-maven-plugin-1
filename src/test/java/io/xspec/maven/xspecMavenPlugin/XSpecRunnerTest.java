@@ -31,11 +31,13 @@ import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.utils.CatalogWriter;
 import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
+import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.Properties;
-import javax.xml.transform.stream.StreamSource;
 import net.sf.saxon.s9api.XdmNode;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
@@ -50,15 +52,28 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
 public class XSpecRunnerTest {
     
     private static File baseDirectory;
+    private static File projectDirectory;
+    private static File testDirectory;
     private static final Log LOG = new SystemStreamLog();
     
+    public static File getProjectDirectory() throws URISyntaxException {
+        if(projectDirectory==null) {
+            projectDirectory = new File(XSpecRunner.class.getClassLoader().getResource("").toURI()).getParentFile().getParentFile();
+        }
+        return projectDirectory;
+    }
     public static File getBaseDirectory() throws URISyntaxException {
         if(baseDirectory==null) {
-            baseDirectory = new File(XSpecRunner.class.getClassLoader().getResource("").toURI()).getParentFile().getParentFile();
-            baseDirectory = new File(baseDirectory, "target/surefire-reports/tests");
+            baseDirectory = new File(getProjectDirectory(), "target/surefire-reports/tests");
             baseDirectory.mkdirs();
         }
         return baseDirectory;
+    }
+    public static File getTestDirectory() throws URISyntaxException {
+        if(testDirectory==null) {
+            testDirectory = new File(getProjectDirectory(), "src/test/resources/filesToTest/");
+        }
+        return testDirectory;
     }
     
     @Test
@@ -91,18 +106,8 @@ public class XSpecRunnerTest {
     
     @Test(expected = IllegalStateException.class)
     public void initTwiceTest() throws Exception {
-        XSpecRunner runner = new XSpecRunner(LOG, getBaseDirectory());
-        runner.setResources(
-                new DefaultXSpecImplResources(), 
-                new DefaultSchematronImplResources(), 
-                new DefaultXSpecPluginResources());
         SaxonOptions saxonOptions = new SaxonOptions();
-        URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
-        File classesDir = new File(url.toURI()).getParentFile();
-        String classesUri = classesDir.toURI().toURL().toExternalForm();
-        runner.setCatalogWriterExtender(new TestCatalogWriterExtender(classesUri));
-
-        runner.init(saxonOptions);
+        XSpecRunner runner = getNewRunner(saxonOptions);
         LOG.debug("calling runner.init a second time");
         runner.init(saxonOptions);
         fail("init shouldn't be call twice without throwing an IllegalStateException");
@@ -110,17 +115,7 @@ public class XSpecRunnerTest {
 
     @Test
     public void processXsltXspecTest() throws Exception {
-        XSpecRunner runner = new XSpecRunner(LOG, getBaseDirectory());
-        runner.setResources(
-                new DefaultXSpecImplResources(), 
-                new DefaultSchematronImplResources(), 
-                new DefaultXSpecPluginResources());
-        SaxonOptions saxonOptions = new SaxonOptions();
-        URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
-        File classesDir = new File(url.toURI()).getParentFile();
-        String classesUri = classesDir.toURI().toURL().toExternalForm();
-        runner.setCatalogWriterExtender(new TestCatalogWriterExtender(classesUri));
-        runner.init(saxonOptions);
+        XSpecRunner runner = getNewRunner(new SaxonOptions());
         File xspecFile = new File(getBaseDirectory().getParentFile().getParentFile().getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1.xspec");
         XdmNode node = runner.getXmlStuff().getDocumentBuilder().build(xspecFile);
         assertNotNull("node is null", node);
@@ -128,5 +123,34 @@ public class XSpecRunnerTest {
         runner.initProcessedFiles(1);
         boolean ret = runner.processXsltXSpec(node);
         assertTrue("XSpec failed", ret);
+    }
+    
+    @Test
+    public void findAllXSpecsTests() throws Exception {
+        RunnerOptions runnerOptions = new RunnerOptions(getBaseDirectory());
+        runnerOptions.testDir = new File(getTestDirectory(), "xsltTestCase");
+        XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
+        List<File> xspecFiles = runner.findAllXSpecs();
+        assertEquals("wrong number of XSpecFiles found", 1, xspecFiles.size());
+        assertEquals("wrong file found", "xsl1.xspec", xspecFiles.get(0).getName());
+    }
+    
+    private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
+        XSpecRunner runner = new XSpecRunner(LOG, getBaseDirectory());
+        runner.setResources(
+                new DefaultXSpecImplResources(), 
+                new DefaultSchematronImplResources(), 
+                new DefaultXSpecPluginResources());
+        URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
+        File classesDir = new File(url.toURI()).getParentFile();
+        String classesUri = classesDir.toURI().toURL().toExternalForm();
+        runner.setCatalogWriterExtender(new TestCatalogWriterExtender(classesUri));
+        runner.setEnvironment(new Properties(), runnerOptions);
+        runner.init(saxonOptions);
+        return runner;
+    }
+    
+    private XSpecRunner getNewRunner(SaxonOptions saxonOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
+       return  getNewRunner(saxonOptions, new RunnerOptions(getBaseDirectory()));
     }
 }

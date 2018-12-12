@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import static org.junit.Assert.*;
@@ -71,6 +72,16 @@ public class FileFinderTest {
         FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**", "**/*bak*"));
         List<Path> ret = finder.search();
         assertEquals("we expect 3 regular files", 3, ret.size());
+    }
+    
+    @Test
+    public void testXSpecFiles() throws URISyntaxException, IOException {
+        File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
+        System.out.println("searching in "+rootDir.getAbsolutePath());
+        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", new ArrayList<>());
+        List<Path> ret = finder.search();
+        assertEquals(1, ret.size());
+        assertTrue(ret.get(0).toString().endsWith("xsl1.xspec"));
     }
     
     

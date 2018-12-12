@@ -653,13 +653,23 @@ public class XSpecRunner implements LogProvider {
         return ret;
     }
     
-    private List<File> findAllXSpecs() throws XSpecPluginException {
+    /**
+     * Package private to allow unit tests
+     */
+    List<File> findAllXSpecs() throws XSpecPluginException {
         FileFinder finder = new FileFinder(options.testDir, "**/*.xspec", options.excludes);
         final Path testPath = options.testDir.toPath();
+//        getLog().debug("testPath: "+testPath.toString());
         try {
             List<Path> found = finder.search();
             List<File> ret = new ArrayList<>(found.size());
-            found.stream().forEach((p) -> ret.add(p.resolve(testPath).toFile()));
+            found.stream().forEach((p) -> {
+//                    getLog().debug("p: "+p.toString());
+                    File resolved = testPath.resolve(p).toFile();
+//                    getLog().debug("resolved: "+resolved.getAbsolutePath());
+                    ret.add(resolved);
+                }
+            );
             return ret;
         } catch(IOException ex) {
             throw new XSpecPluginException(ex);
