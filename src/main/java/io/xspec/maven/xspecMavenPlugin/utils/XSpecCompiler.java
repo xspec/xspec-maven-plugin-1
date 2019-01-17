@@ -243,7 +243,7 @@ public class XSpecCompiler implements LogProvider {
             XdmNode node = (XdmNode)(ret.itemAt(i));
             String uri = node.getAttributeValue(QN_URI);
             try {
-            copyFile(xspecDocument.getUnderlyingNode().getSystemId(), uri, resultFile);
+                copyFile(xspecDocument.getUnderlyingNode().getSystemId(), uri, resultFile);
             } catch(URISyntaxException ex) {
                 // it can not happens, it is always correct as provided by saxon
                 throw new SaxonApiException("Saxon has generated an invalid URI : ",ex);
@@ -310,9 +310,7 @@ public class XSpecCompiler implements LogProvider {
      * @return 
      */
     private File getCompiledPath(final File xspecReportDir, final File xspec, final String name, final String extension) {
-        if (!xspecReportDir.exists()) {
-            xspecReportDir.mkdirs();
-        }
+        checkDirExists(xspecReportDir);
         Path relativeSource = options.testDir.toPath().relativize(xspec.toPath());
         File executionReportDir = getExecutionReportDir(xspecReportDir);
         executionReportDir.mkdirs();
@@ -350,9 +348,7 @@ public class XSpecCompiler implements LogProvider {
      * @return A filepath for the report
      */
     final public File getXSpecResultPath(final File xspecReportDir, final File xspec, final String extension) {
-        if (!xspecReportDir.exists()) {
-            xspecReportDir.mkdirs();
-        }
+        checkDirExists(xspecReportDir);
         Path relativeSource = options.testDir.toPath().relativize(xspec.toPath());
         File executionReportDir = getExecutionReportDir(xspecReportDir);
         executionReportDir.mkdirs();
@@ -361,9 +357,7 @@ public class XSpecCompiler implements LogProvider {
     }
     
     final public File getCoverageTempPath(final File xspecReportDir, final File xspec) {
-        if (!xspecReportDir.exists()) {
-            xspecReportDir.mkdirs();
-        }
+        checkDirExists(xspecReportDir);
         Path relativeSource = options.testDir.toPath().relativize(xspec.toPath());
         File executionReportDir = (
                 options.executionId!=null && !"default".equals(options.executionId) ? 
@@ -374,9 +368,7 @@ public class XSpecCompiler implements LogProvider {
         return new File(outputDir, "coverage-"+xspec.getName().replace(".xspec","") + ".xml");
     }
     final public File getCoverageFinalPath(final File xspecReportDir, final File xspec) {
-        if (!xspecReportDir.exists()) {
-            xspecReportDir.mkdirs();
-        }
+        checkDirExists(xspecReportDir);
         Path relativeSource = options.testDir.toPath().relativize(xspec.toPath());
         File executionReportDir = (
                 options.executionId!=null && !"default".equals(options.executionId) ? 
@@ -398,6 +390,12 @@ public class XSpecCompiler implements LogProvider {
             executionReportDirs.put(xspecReportDir, executionReportDir);
         }
         return executionReportDir;
+    }
+
+    private void checkDirExists(final File xspecReportDir) {
+        if (!xspecReportDir.exists()) {
+            xspecReportDir.mkdirs();
+        }
     }
 
     @Override

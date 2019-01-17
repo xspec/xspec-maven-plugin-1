@@ -29,6 +29,7 @@ package io.xspec.maven.xspecMavenPlugin.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -49,8 +50,8 @@ import javax.xml.transform.stream.StreamSource;
  */
 public class IndexGenerator {
     
-    private final RunnerOptions options;
-    private final List<ProcessedFile> processedFiles;
+    protected final RunnerOptions options;
+    protected final List<ProcessedFile> processedFiles;
     
     public IndexGenerator(RunnerOptions options, List<ProcessedFile> processedFiles) {
         super();
@@ -70,22 +71,24 @@ public class IndexGenerator {
             t.setOutputProperty(OutputKeys.METHOD, "html");
             t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             t.setOutputProperty(OutputKeys.INDENT, "yes");
+            t.setOutputProperty(OutputKeys.VERSION, "5.0");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             XMLStreamWriter sw = XMLOutputFactory.newInstance().createXMLStreamWriter(baos);
-            sw.writeStartDocument("1.0", "UTF-8");
-            sw.writeDTD("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">");
+            sw.writeStartDocument("UTF-8", "1.0");
+//            sw.writeDTD("<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">");
             sw.writeStartElement("html");
               sw.writeStartElement("head");
                 sw.writeStartElement("style");
-                  sw.writeCData("\n\ttable {border: solid black 1px; border-collapse: collapse; }\n");
-                  sw.writeCData("\ttr.error {background-color: red; color: white; }\n");
-                  sw.writeCData("\ttr.error td a { color: white;}\n");
-                  sw.writeCData("\ttr.title {background-color: lightgrey; }\n");
-                  sw.writeCData("\ttd,th {border: solid black 1px; }\n");
-                  sw.writeCData("\ttd:not(:first-child) {text-align: right; }\n");
+                  sw.writeAttribute("type", "text/css");
+                  sw.writeCharacters("\n\ttable {border: solid black 1px; border-collapse: collapse; }\n");
+                  sw.writeCharacters("\ttr.error {background-color: red; color: white; }\n");
+                  sw.writeCharacters("\ttr.error td a { color: white;}\n");
+                  sw.writeCharacters("\ttr.title {background-color: lightgrey; }\n");
+                  sw.writeCharacters("\ttd,th {border: solid black 1px; }\n");
+                  sw.writeCharacters("\ttd:not(:first-child) {text-align: right; }\n");
                 sw.writeEndElement();
                 sw.writeStartElement("title");
-                  sw.writeCData("XSpec results");
+                  sw.writeCharacters("XSpec results");
                 sw.writeEndElement();
                 sw.writeStartElement("meta");
                   sw.writeAttribute("name", "date");
@@ -94,18 +97,20 @@ public class IndexGenerator {
               sw.writeEndElement(); // head
               sw.writeStartElement("body");
                 sw.writeStartElement("h1");
-                  sw.writeCData("XSpec results");
+                  sw.writeCharacters("XSpec results");
                 sw.writeEndElement();
                 writeTable(sw);
               sw.writeEndElement(); // body
             sw.writeEndElement();   // html
             sw.writeEndDocument();
             sw.flush();
+            baos.flush();
+            baos.close();
             InputStream is = new ByteArrayInputStream(baos.toByteArray());
             StreamSource source = new StreamSource(is);
-            
+//            System.out.print(new String(baos.toByteArray()));
             t.transform(source, new StreamResult(index));
-        } catch(IllegalArgumentException | XMLStreamException | TransformerException ex) {
+        } catch(IllegalArgumentException | XMLStreamException | TransformerException | IOException ex) {
             throw new XSpecPluginException("while generating index: "+index.getAbsolutePath(), ex);
         }        
     }
@@ -140,7 +145,6 @@ public class IndexGenerator {
             sw.writeEndElement();
           sw.writeEndElement(); // thead
           sw.writeStartElement("tbody");
-          sw.writeEndElement();     // tbody
             String lastRootDir = "";
             for(ProcessedFile pf: processedFiles) {
                 String rootDir = pf.getRootSourceDir().toString();
@@ -149,7 +153,7 @@ public class IndexGenerator {
                         sw.writeAttribute("class", "title");
                         sw.writeStartElement("td");
                           sw.writeAttribute("colspan", "6");
-                          sw.writeCData(rootDir);
+                          sw.writeCharacters(rootDir);
                         sw.writeEndElement();
                       sw.writeEndElement();
                       lastRootDir = rootDir;
@@ -162,7 +166,7 @@ public class IndexGenerator {
                   sw.writeStartElement("td");
                     sw.writeStartElement("a");
                       sw.writeAttribute("href", pf.getReportFile().toUri().toString());
-                      sw.writeCData(pf.getRelativeSourcePath());
+                      sw.writeCharacters(pf.getRelativeSourcePath());
                     sw.writeEndElement();
                   sw.writeEndElement(); //td
                   writeTd(sw, pf.getPassed());
@@ -170,7 +174,7 @@ public class IndexGenerator {
                   writeTd(sw, pf.getFailed());
                   writeTd(sw, pf.getMissed());
                   sw.writeStartElement("td");
-                    sw.writeCData(Integer.toString(pf.getTotal()));
+                    sw.writeCharacters(Integer.toString(pf.getTotal()));
                   sw.writeEndElement();
                 sw.writeEndElement();   // tr
             }
@@ -188,7 +192,7 @@ public class IndexGenerator {
     private void writeTd(XMLStreamWriter sw, int count) throws XMLStreamException {
         sw.writeStartElement("td");
         if(count==0) sw.writeAttribute("class", "zero");
-        sw.writeCData(Integer.toString(count));
+        sw.writeCharacters(Integer.toString(count));
         sw.writeEndElement();
     }
     /**
@@ -200,7 +204,7 @@ public class IndexGenerator {
      */
     private void writeCell(XMLStreamWriter sw, String cellName, String value) throws XMLStreamException {
         sw.writeStartElement(cellName);
-          sw.writeCData(value);
+          sw.writeCharacters(value);
         sw.writeEndElement();
     }
 

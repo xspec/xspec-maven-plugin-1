@@ -28,6 +28,7 @@ package io.xspec.maven.xspecMavenPlugin.utils;
 
 import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -73,9 +74,9 @@ public class RunnerOptions {
         super();
         testDir = new File(baseDir, "src/test/xspec");
         reportDir = new File(baseDir, "target/xspec-reports");
-        excludes = Collections.EMPTY_LIST;
+        excludes = new ArrayList<>();
         executionId = "default";
-        surefireReportDir = new File(baseDir, "surefire-reports");
+        surefireReportDir = new File(baseDir, "target/surefire-reports");
         coverage = Boolean.FALSE;
     }
     

@@ -102,4 +102,32 @@ public class XSpecCompilerTest extends TestUtils {
         assertNotNull(files);
         assertTrue(files.isEmpty());
     }
+    
+    @Test
+    public void getCoverageTempPathTest() throws Exception {
+        XSpecCompiler compiler = new XSpecCompiler(stuff,runnerOptions,getLog());
+        File xspec = new File(runnerOptions.testDir, "schematronTestCase/schematron1.xspec");
+        File ret = compiler.getCoverageTempPath(runnerOptions.reportDir, xspec);
+        File expected = new File(runnerOptions.reportDir, "schematronTestCase/schematron1.xspec/coverage-schematron1.xml");
+        assertEquals(expected.getAbsolutePath(),ret.getAbsolutePath());
+    }
+    
+    @Test
+    public void getCoverageFinalPathTest() throws Exception {
+        XSpecCompiler compiler = new XSpecCompiler(stuff,runnerOptions,getLog());
+        File xspec = new File(runnerOptions.testDir, "schematronTestCase/schematron1.xspec");
+        File ret = compiler.getCoverageFinalPath(runnerOptions.reportDir, xspec);
+        File expected = new File(runnerOptions.reportDir, "schematronTestCase/schematron1.xspec/schematron1-coverage.html");
+        assertEquals(expected.getAbsolutePath(),ret.getAbsolutePath());
+    }
+    
+    @Test
+    public void copyFileTest() throws Exception {
+        XSpecCompiler compiler = new XSpecCompiler(stuff,runnerOptions,getLog());
+        File xspec = new File(runnerOptions.testDir, "schematronTestCase/schematron1.xspec");
+        File resultBase = new File(runnerOptions.reportDir, "schematronTestCase/schematron1.xspec/");
+        compiler.copyFile(xspec.toURI().toURL().toExternalForm(), "included.xsl", resultBase);
+        File expected = new File(runnerOptions.reportDir, "schematronTestCase/included.xsl");
+        assertTrue("File does not exist: "+expected.getAbsolutePath(), expected.exists());
+    }
 }
