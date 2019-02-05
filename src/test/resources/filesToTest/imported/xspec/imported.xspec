@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<x:description xmlns:x="http://www.jenitennison.com/xslt/xspec">
+ <!-- just a x:expect, to increment XSpec counter -->
+ <x:scenario>
+  <x:expect />
+ </x:scenario>
+</x:description>

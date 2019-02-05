@@ -26,6 +26,13 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
+import io.xspec.maven.xspecMavenPlugin.TestUtils;
+import java.io.File;
+import java.net.URISyntaxException;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.URIResolver;
+import javax.xml.transform.stream.StreamSource;
 import org.apache.maven.plugin.logging.Log;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -127,7 +134,7 @@ public class XSpecCounterCHTest {
                 true, "[Counter] ");
         Attributes emptyAttrs = new Attributes2Impl();
         AttributesImpl pendingAttrs = new AttributesImpl();
-        pendingAttrs.addAttribute(null, "pending", "pending", "pouet", "wainting for implementation");
+        pendingAttrs.addAttribute(null, "pending", "pending", "pouet", "waiting for implementation");
         counter.startDocument();
         counter.startElement(XSpecCounterCH.XSPEC_NS, "description", "x:description", emptyAttrs);
         counter.startElement(XSpecCounterCH.XSPEC_NS, "pending", "x:pending", emptyAttrs);
@@ -142,6 +149,26 @@ public class XSpecCounterCHTest {
         assertEquals(1, counter.getPendingTests());
     }
 
+    @Test
+    public void testXSpecImport() throws Exception {
+        LogMock log = new LogMock();
+        URIResolver uriResolver = new LocalUriResolver();
+         XSpecCounterCH counter = new XSpecCounterCH(
+                "file:/home/fake/test.xspec", 
+                uriResolver, 
+                createLogProvider(log), 
+                true, "[Import] ");
+        Attributes emptyAttrs = new Attributes2Impl();
+        AttributesImpl hrefAttrs = new AttributesImpl();
+        hrefAttrs.addAttribute(null, "href", "href", "pouet", "imported.xspec");
+        counter.startDocument();
+        counter.startElement(XSpecCounterCH.XSPEC_NS, "description", "x:description", emptyAttrs);
+        counter.startElement(XSpecCounterCH.XSPEC_NS, "import", "x:import", hrefAttrs);
+        counter.endElement(XSpecCounterCH.XSPEC_NS, "import", "x:import");
+        counter.endElement(XSpecCounterCH.XSPEC_NS, "description", "x:description");
+        counter.endDocument();
+        assertEquals(1, counter.getTests());
+    }
 
     private LogProvider createLogProvider(final Log log) {
         return () -> log;
@@ -214,4 +241,15 @@ public class XSpecCounterCHTest {
         
     }
     
+    private class LocalUriResolver implements URIResolver {
+        @Override
+        public Source resolve(String href, String base) throws TransformerException {
+            try {
+                File importedXspecFile = new File(new File(new File(TestUtils.getTestDirectory(),"imported"),"xspec"),"imported.xspec");
+                return new StreamSource(importedXspecFile);
+            } catch(URISyntaxException ex) {
+                throw new TransformerException(ex);
+            }
+        }
+    }
 }

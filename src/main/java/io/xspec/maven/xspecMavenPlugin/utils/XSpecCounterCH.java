@@ -65,7 +65,6 @@ public class XSpecCounterCH extends DefaultHandler2 {
         this.uriResolver=uriResolver;
         this.logProvider=logProvider;
         this.activateLogs = activateLogs;
-//        this.activateLogs = false;
         if(prefix.length>0) {
             LOG_PREFIX=prefix[0];
         } else LOG_PREFIX="";

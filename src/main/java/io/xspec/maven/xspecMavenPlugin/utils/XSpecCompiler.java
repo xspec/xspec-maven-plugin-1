@@ -74,7 +74,11 @@ public class XSpecCompiler implements LogProvider {
     
     private final HashMap<File,File> executionReportDirs;
     private final List<File> filesToDelete;
+    // FIXME: In XSpec 1.3, this will be renames to stylesheet-uri
+    // https://github.com/xspec/xspec/pull/325
     public static final QName QN_STYLESHEET = new QName("stylesheet");
+    // FIXME: In XSpec 1.3, this will be renamed to test-dir-uri
+    // https://github.com/xspec/xspec/pull/322
     public static final QName QN_TEST_DIR = new QName("test_dir");
     public static final QName QN_URI = new QName("uri");
     
