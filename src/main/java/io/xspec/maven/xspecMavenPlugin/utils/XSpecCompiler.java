@@ -228,6 +228,8 @@ public class XSpecCompiler implements LogProvider {
         schut.setDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)));
         schut.transform();
         getLog().debug("XSpec for schematron compiled: "+resultFile.getAbsolutePath());
+        // TODO: refacto. We could use a TeeDestination(serializer, XdmDestination) to avoid parsing result file
+        // Hum... not sure
         XdmNode result = xmlStuff.getDocumentBuilder().build(resultFile);
         if(!resultFile.exists()) {
             getLog().error(resultFile.getAbsolutePath()+" has not be written");
