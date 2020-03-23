@@ -45,6 +45,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import top.marchand.java.classpath.utils.ClasspathException;
 import top.marchand.java.classpath.utils.ClasspathUtils;
+import top.marchand.java.classpath.utils.NotFoundCallback;
 
 /**
  * This class writes catalog catalog
@@ -53,6 +54,7 @@ import top.marchand.java.classpath.utils.ClasspathUtils;
 public class CatalogWriter {
     private final ClasspathUtils cu;
     private CatalogWriterExtender catalogWriterExtender;
+    private NotFoundCallback artifactNotFoundCallback;
     
     public CatalogWriter(ClassLoader cl) throws XSpecPluginException {
         super();
@@ -65,6 +67,10 @@ public class CatalogWriter {
     public CatalogWriter(ClassLoader cl, CatalogWriterExtender ext) throws XSpecPluginException {
         this(cl);
         this.catalogWriterExtender = ext;
+    }
+    
+    public void setNotFoundCallback(NotFoundCallback artifactNotFoundCallback) {
+        this.artifactNotFoundCallback=artifactNotFoundCallback;
     }
         
     /**
@@ -143,7 +149,9 @@ public class CatalogWriter {
             System.err.println("while creating catalog, NPE thrown: "+ex.getClass().getName());
             throw new XSpecPluginException("while creating catalog", ex);
         }
-        if(!keepGeneratedCatalog) tmpCatalog.deleteOnExit();
+        if(!keepGeneratedCatalog) {
+            tmpCatalog.deleteOnExit();
+        }
         return tmpCatalog;
     }
 

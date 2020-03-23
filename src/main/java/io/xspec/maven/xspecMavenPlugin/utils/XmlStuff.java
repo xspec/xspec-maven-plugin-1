@@ -149,7 +149,7 @@ public class XmlStuff {
             throw new XSpecPluginException(ex);
         }
         try {
-            getXsltCompiler().setURIResolver(buildUriResolver(getXsltCompiler().getURIResolver(), extender));
+            xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver(), extender));
         } catch(IOException ex) {
             throw new XSpecPluginException("while constructing URIResolver", ex);
         }
@@ -284,12 +284,7 @@ public class XmlStuff {
     
     private Log getLog() { return log; }
     public XsltExecutable compileXsl(Source source) throws SaxonApiException {
-        try {
-            return getXsltCompiler().compile(source);
-        } catch(NullPointerException ex) {
-            log.error("while compiling XSL "+source.getSystemId());
-            return null;
-        }
+        return getXsltCompiler().compile(source);
     }
 
     public Processor getProcessor() {
@@ -351,7 +346,6 @@ public class XmlStuff {
     }
     
     public URIResolver getUriResolver() { return xsltCompiler.getURIResolver(); }
-//    public void setUriResolver(URIResolver urr) { this.xsltCompiler.setURIResolver(urr); }
 
     public XsltExecutable getXeSurefire() {
         return xeSurefire;
@@ -398,25 +392,55 @@ public class XmlStuff {
     private void setSchematronDsdl(XsltExecutable xe) { schDsdl = xe; }
     private void setSchematronExpand(XsltExecutable xe) { schExpand = xe; }
     private void setSchematronSvrl(XsltExecutable xe) { schSvrl = xe; }
+    /**
+     * Return XSL for <tt>iso_dsdl_include.xsl</tt>
+     * @return iso_dsdl_include.xsl XSL
+     */
     public XsltExecutable getSchematronDsdl() { return schDsdl; }
+    /**
+     * Return XSL for <tt>iso_abstract_expand.xsl</tt>
+     * @return iso_abstract_expand.xsl XSL
+     */
     public XsltExecutable getSchematronExpand() { return schExpand; }
+    /**
+     * Return XSL for <tt>iso_svrl_for_xslt2.xsl</tt>
+     * @return iso_svrl_for_xslt2.xsl XSL
+     */
     public XsltExecutable getSchematronSvrl() { return schSvrl; }
     private void setXpSchGetXSpecFile(XPathExecutable xe) { xpSchGetXSpec = xe; }
+    /**
+     * Return XPath that get all Schematron files
+     * @return all schematron files XPath
+     */
     public XPathExecutable getXpSchGetXSpecFile() { return xpSchGetXSpec; }
 //    public void setXpSchGetSchParams(XPathExecutable xe) { xpSchGetParams = xe; }
 //    public XPathExecutable getXpSchGetSchParams() { return xpSchGetParams; }
     private void setSchematronSchut(XsltExecutable xe) { schSchut = xe; }
+    /**
+     * Return XSL for <tt>schut-to-xspec.xsl</tt>
+     * @return schut-to-xspec.xsl XSL
+     */
     public XsltExecutable getSchematronSchut() { return schSchut; }
-
+    /**
+     * Returns XSL for dependency scanner
+     * @return dependency scanner XSL
+     */
     public XsltExecutable getXmlDependencyScanner() { return xmlDependencyScanner; }
     private void setXmlDependencyScanner(XsltExecutable xmlDependencyScanner) { this.xmlDependencyScanner = xmlDependencyScanner; }
-
+    /**
+     * Return XPath for file searcher
+     * @return file seracher XPath
+     */
     public XPathExecutable getXpFileSearcher() { return xpFileSearcher; }
     private void setXpFileSearcher(XPathExecutable xpFileSearcher) { this.xpFileSearcher = xpFileSearcher; }
     
     private boolean extendsClass(Class toCheck, Class inheritor) {
-        if(toCheck.equals(inheritor)) return true;
-        if(toCheck.equals(Object.class)) return false;
+        if(toCheck.equals(inheritor)) {
+            return true;
+        }
+        if(toCheck.equals(Object.class)) {
+            return false;
+        }
         return extendsClass(toCheck.getSuperclass(), inheritor);
     }
     private void setJUnitReporter(XsltExecutable xe) { junitReporter = xe ; }

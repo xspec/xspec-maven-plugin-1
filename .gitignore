@@ -14,3 +14,4 @@ target/
 
 # MacOS files
 **/.DS_Store
+src/test/resources/filesToTest/context-*

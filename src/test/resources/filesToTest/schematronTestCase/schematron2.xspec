@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+        
+    TODO Update @schematron attribute which should point to the Schematron file being tested.
+    
+-->
+<x:description xmlns:x="http://www.jenitennison.com/xslt/xspec" schematron="schematron2.sch">
+    <x:scenario label="demo-01">
+        <x:context>
+          <fake>
+            <my_element/>
+          </fake>
+        </x:context>
+
+        <x:scenario label="Scenario for testing a rule">
+            <x:expect-not-assert label="Should not occurs" 
+              id="my_element.assert1"
+              location="/fake/my_element"/>
+            <x:expect-assert label="Should occurs"
+              id="my_element.assert2"
+              location="/fake/my_element"/>
+        </x:scenario>
+    </x:scenario>
+</x:description>
