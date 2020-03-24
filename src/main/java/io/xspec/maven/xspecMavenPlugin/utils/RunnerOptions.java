@@ -67,7 +67,8 @@ public class RunnerOptions {
 
     
     /**
-     * Construct a new RunnerOptions instance, with all default values;
+     * Construct a new RunnerOptions instance, with all default values,
+     * according to maven defaults
      * @param baseDir Project base directory
      */
     public RunnerOptions(File baseDir) {

@@ -100,6 +100,9 @@ public class XSpecRunner implements LogProvider {
     private final Configuration saxonConfiguration;
     
     // environment
+    /**
+     * project directory, in a maven use case
+     */
     private final File baseDirectory;
     
     // resources

@@ -74,12 +74,12 @@ public class XSpecCompiler implements LogProvider {
     
     private final HashMap<File,File> executionReportDirs;
     private final List<File> filesToDelete;
-    // FIXME: In XSpec 1.3, this will be renames to stylesheet-uri
+    // In XSpec 1.3, this has been renamed to stylesheet-uri
     // https://github.com/xspec/xspec/pull/325
-    public static final QName QN_STYLESHEET = new QName("stylesheet");
+    public static final QName QN_STYLESHEET = new QName("stylesheet-uri");
     // FIXME: In XSpec 1.3, this will be renamed to test-dir-uri
     // https://github.com/xspec/xspec/pull/322
-    public static final QName QN_TEST_DIR = new QName("test_dir");
+//    public static final QName QN_TEST_DIR = new QName("test_dir");
     public static final QName QN_URI = new QName("uri");
     
     public XSpecCompiler(XmlStuff xmlStuff, RunnerOptions options, Log log) {
@@ -123,7 +123,7 @@ public class XSpecCompiler implements LogProvider {
 
             isXSpec = new FileInputStream(sourceFile);
 
-            final SAXParser parser = xmlStuff.PARSER_FACTORY.newSAXParser();
+            final SAXParser parser = XmlStuff.PARSER_FACTORY.newSAXParser();
             final XMLReader reader = parser.getXMLReader();
             final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(
                     reader, 
@@ -170,11 +170,11 @@ public class XSpecCompiler implements LogProvider {
     /**
      * Prepare a Schematron XSpec test.
      * There two phases : 
-     * <ul>
+     * <ol>
      * <li>compile schematron to a XSLT</li>
      * <li>compile the XSpec (that points to the schematron) into a XSpec that 
      * points to the XSLT (the compiled at phase 1)</li>
-     * </ul>
+     * </ol>
      * 
      * @param xspecDocument
      * @return
@@ -220,7 +220,8 @@ public class XSpecCompiler implements LogProvider {
         // modifying xspec to point to compiled schematron
         XsltTransformer schut = xmlStuff.getSchematronSchut().load();
         schut.setParameter(QN_STYLESHEET, new XdmAtomicValue(compiledSchematronDest.toURI().toString()));
-        schut.setParameter(QN_TEST_DIR, new XdmAtomicValue(options.testDir.toURI().toString()));
+        // plus nécessaire à partir de 1.5.0
+//        schut.setParameter(QN_TEST_DIR, new XdmAtomicValue(options.testDir.toURI().toString()));
         schut.setInitialContextNode(xspecDocument);
         File resultFile = getCompiledXspecSchematronPath(options.reportDir, sourceFile);
         // WARNING : we can't use a XdmDestination, the XdmNode generated does not have 
@@ -329,18 +330,23 @@ public class XSpecCompiler implements LogProvider {
     }
 
     /**
-     * Get location for Compiled XSpecs
+     * Get location for Compiled XSpecs in case of schematron
      * @param xspecReportDir The directory to place XSpec reports in
      * @param schematron The Schematron that will be compiled eventually
      *
      * @return A filepath to place the compiled Schematron (a XSLT) in
      */
     final File getCompiledSchematronPath(final File xspecReportDir, final File schematron) {
+        // with XSpec 1.5.0, it changes to 
         File ret = getCompiledPath(xspecReportDir, schematron, "schematron", ".xslt");
         return ret;
     }
     final File getCompiledXspecSchematronPath(final File xspecReportDir, final File xspec) {
-        File ret = getCompiledPath(xspecReportDir, xspec, FilenameUtils.getBaseName(xspec.getName()),"-compiled.xspec");
+        File ret = getCompiledPath(
+                xspecReportDir, 
+                xspec, 
+                FilenameUtils.getBaseName(xspec.getName()),
+                "-compiled.xspec");
         filesToDelete.add(ret);
         return ret;
     }
