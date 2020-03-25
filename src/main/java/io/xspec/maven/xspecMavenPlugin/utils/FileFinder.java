@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.maven.plugin.logging.Log;
 
 /**
  * This class find in a directory files that match a pettern, and are not
@@ -48,25 +49,28 @@ public class FileFinder {
     private final File directoryToSearch;
     private final String matchPattern;
     private final List<String> excludes;
+    private final Log log;
 
     /**
      * Creates a new FileFinder that will search in <tt>directoryToSearch</tt>,
      * for files that match <tt>matchPattern</tt>, and are not excluded by
-     * patterns stored in <tt>excludes</tt>.
-     * Search is always recursive.
+     * patterns stored in <tt>excludes</tt>.Search is always recursive.
      * @param directoryToSearch The directory to sarch in
      * @param matchPattern The pattern files must match. If you want to search
      * recursively, you have to use <tt>**\/</tt> pattern
      * @param excludes The patterns selected files must not match
+     * @param log Logger to use
      */
     public FileFinder(
             final File directoryToSearch, 
             final String matchPattern, 
-            final List<String> excludes) {
+            final List<String> excludes,
+            final Log log) {
         super();
         this.directoryToSearch = directoryToSearch;
         this.matchPattern = matchPattern;
         this.excludes = (excludes!=null ? excludes : Collections.EMPTY_LIST);
+        this.log = log;
     }
     
     /**
@@ -79,12 +83,17 @@ public class FileFinder {
     public List<Path> search() throws IOException {
         Path rootPath = directoryToSearch.toPath();
         PathMatcher matcher = rootPath.getFileSystem().getPathMatcher(getSyntaxAndPattern(matchPattern));
-        Stream<Path> stream = Files.find(rootPath, Integer.MAX_VALUE, (p, a) -> matcher.matches(p) && !a.isDirectory());
+        List<Path> found = Files.find(rootPath, Integer.MAX_VALUE, (p, a) -> matcher.matches(p) && !a.isDirectory()).collect(Collectors.toList());
         for(String exclude: excludes) {
             PathMatcher pmex = rootPath.getFileSystem().getPathMatcher(getSyntaxAndPattern(exclude));
-            stream = stream.filter(p -> !pmex.matches(p));
+            for(int i=found.size()-1; i>=0; i--) {
+                Path p = found.get(i);
+                if(pmex.matches(p)) {
+                    found.remove(i);
+                }
+            }
         }
-        return stream.collect(Collectors.toList());
+        return found;
     }
     
     private String getSyntaxAndPattern(String pattern) {
@@ -92,8 +101,16 @@ public class FileFinder {
         // fucking windows !
         // TODO: FIXME
         if("\\".equals(File.pathSeparator)) {
-            return syntaxAndPattern.replaceAll("/", "\\");
-        } else return syntaxAndPattern;
+            syntaxAndPattern = syntaxAndPattern.replaceAll("/", "\\");
+        }
+        String prefix = syntaxAndPattern.substring(0, syntaxAndPattern.indexOf(":")+1);
+        String pp = syntaxAndPattern.substring(prefix.length());
+        if(!syntaxAndPattern.substring(syntaxAndPattern.indexOf(":")).contains("*")) {
+            getLog().warn("Pattern "+pp+" does not contain wildchar. If it's an exclude pattern, it may not match some regular files. ");
+            
+        }
+        return syntaxAndPattern;
     }
-    
+
+    public Log getLog() { return log; }
 }

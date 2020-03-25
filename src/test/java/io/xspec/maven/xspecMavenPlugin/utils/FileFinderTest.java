@@ -33,6 +33,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugin.logging.SystemStreamLog;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -41,11 +43,13 @@ import org.junit.Test;
  * @author cmarchand
  */
 public class FileFinderTest {
+    private final Log log = new SystemStreamLog();
+    
     @Test
     public void testAllFiles() throws URISyntaxException, IOException {
         File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
         System.out.println("Searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*", null);
+        FileFinder finder = new FileFinder(rootDir, "**/*", null, log);
         List<Path> ret = finder.search();
         assertEquals("we expect 5 regular files", 5, ret.size());
     }
@@ -53,7 +57,7 @@ public class FileFinderTest {
     public void testAllButBak() throws URISyntaxException, IOException {
         File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
         System.out.println("Searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/*bak*"));
+        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/*bak*"), log);
         List<Path> ret = finder.search();
         assertEquals("we expect 4 regular files", 4, ret.size());
     }
@@ -61,7 +65,7 @@ public class FileFinderTest {
     public void testAllButEn() throws URISyntaxException, IOException {
         File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
         System.out.println("Searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**"));
+        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**"), log);
         List<Path> ret = finder.search();
         assertEquals("we expect 4 regular files", 4, ret.size());
     }
@@ -69,7 +73,7 @@ public class FileFinderTest {
     public void testAllButEnAndBak() throws URISyntaxException, IOException {
         File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
         System.out.println("Searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**", "**/*bak*"));
+        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**", "**/*bak*"), log);
         List<Path> ret = finder.search();
         assertEquals("we expect 3 regular files", 3, ret.size());
     }
@@ -78,7 +82,26 @@ public class FileFinderTest {
     public void testXSpecFiles() throws URISyntaxException, IOException {
         File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
         System.out.println("searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", new ArrayList<>());
+        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", new ArrayList<>(), log);
+        List<Path> ret = finder.search();
+        assertEquals(1, ret.size());
+        assertTrue(ret.get(0).toString().endsWith("xsl1.xspec"));
+    }
+    
+    @Test
+    public void testFilenameWithoutWildCharBasedExclusions() throws Exception {
+        File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest");
+        List<String> excludes = Arrays.asList("imported.xspec", "schematron2.xspec");
+        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", excludes, log);
+        List<Path> ret = finder.search();
+        assertEquals(3, ret.size());
+    }
+
+    @Test
+    public void testFilenameWithWildCharBasedExclusions() throws Exception {
+        File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest");
+        List<String> excludes = Arrays.asList("**/imported.xspec", "**/schematron2.xspec");
+        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", excludes, log);
         List<Path> ret = finder.search();
         assertEquals(1, ret.size());
         assertTrue(ret.get(0).toString().endsWith("xsl1.xspec"));

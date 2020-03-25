@@ -172,7 +172,6 @@ public class XSpecRunner implements LogProvider {
             getLog().error("Exception while creating XmlStuff", ex);
             throw ex;
         }
-        getLog().debug("creating new XSpecCompiler");
         xspecCompiler = new XSpecCompiler(xmlStuff, options, log);
         initDone = true;
         return this;
@@ -669,7 +668,7 @@ public class XSpecRunner implements LogProvider {
      * Package private to allow unit tests
      */
     List<File> findAllXSpecs() throws XSpecPluginException {
-        FileFinder finder = new FileFinder(options.testDir, "**/*.xspec", options.excludes);
+        FileFinder finder = new FileFinder(options.testDir, "**/*.xspec", options.excludes, getLog());
         final Path testPath = options.testDir.toPath();
         try {
             List<Path> found = finder.search();

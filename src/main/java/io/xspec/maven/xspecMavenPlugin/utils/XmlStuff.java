@@ -194,7 +194,6 @@ public class XmlStuff {
         } catch(RuntimeException ex) {
             throw new XSpecPluginException(ex.getMessage(), ex);
         }
-        getLog().debug("XmlStuff created !");
     }
     
     /**
@@ -208,9 +207,9 @@ public class XmlStuff {
      * @throws MojoFailureException 
      */
     private URIResolver buildUriResolver(final URIResolver saxonUriResolver, CatalogWriterExtender extender) throws IOException, XSpecPluginException {
-        System.err.println("buildUriResolver");
+        getLog().debug("buildUriResolver");
         CatalogWriter cw = new CatalogWriter(this.getClass().getClassLoader(), extender);
-        System.err.println("CatalogWriter instanciated");
+        getLog().debug("CatalogWriter instanciated");
         File catalog = cw.writeCatalog(options.catalogFile, executionProperties, options.keepGeneratedCatalog);
         if(options.keepGeneratedCatalog) {
             getLog().info("keeping generated catalog: "+catalog.toURI().toURL().toExternalForm());
@@ -286,7 +285,9 @@ public class XmlStuff {
                 "com.saxonica.config.EnterpriseConfiguration".equals(configurationClassName);
     }
     
-    private Log getLog() { return log; }
+    private Log getLog() { 
+        return log;
+    }
     public XsltExecutable compileXsl(Source source) throws SaxonApiException {
         return getXsltCompiler().compile(source);
     }

@@ -109,14 +109,16 @@ public class XSpecRunnerTest extends TestUtils {
         assertTrue("index file "+indexFile.getAbsolutePath()+" is not a file", indexFile.isFile());
     }
     
-    @Test @Ignore
+    @Test
     public void executeTest() throws Exception {
         getLog().info("baseDirectory: "+getBaseDirectory().getAbsolutePath());
         RunnerOptions options = new RunnerOptions(getBaseDirectory());
         options.testDir=new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
+        getLog().info("reportDirectory: "+options.reportDir.getAbsolutePath());
         XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
         runner.execute();
         File indexFile = new File(options.reportDir,"index.html");
+        runner.generateIndex();
         assertTrue("index file "+indexFile.getAbsolutePath()+" does not exist", indexFile.exists());
         assertTrue("index file "+indexFile.getAbsolutePath()+" is not a file", indexFile.isFile());
     }
