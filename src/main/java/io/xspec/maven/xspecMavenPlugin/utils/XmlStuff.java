@@ -135,62 +135,66 @@ public class XmlStuff {
                 throw new XSpecPluginException("Illegal value in Saxon configuration property", ex);
             }
         }
-        
         documentBuilder = processor.newDocumentBuilder();
-        xsltCompiler = processor.newXsltCompiler();
-        xsltCompiler.setCompileWithTracing(true);
-        xpathCompiler = processor.newXPathCompiler();
-        xpathCompiler.declareNamespace("x", XSpecMojo.XSPEC_NS);
-        xqueryCompiler = processor.newXQueryCompiler();
-        xqueryCompiler.setCompileWithTracing(true);
         try {
-            doAdditionalConfiguration(saxonOptions);
-        } catch(XPathException ex) {
-            throw new XSpecPluginException(ex);
-        }
-        try {
-            xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver(), extender));
-        } catch(IOException ex) {
-            throw new XSpecPluginException("while constructing URIResolver", ex);
-        }
-        System.err.println("URI resolver Ok");
-        ClassLoader cl = getClass().getClassLoader();
-        if(cl instanceof URLClassLoader) {
-            URLClassLoader ucl = (URLClassLoader)cl;
+            xsltCompiler = processor.newXsltCompiler();
+            xsltCompiler.setCompileWithTracing(true);
+            xpathCompiler = processor.newXPathCompiler();
+            xpathCompiler.declareNamespace("x", XSpecMojo.XSPEC_NS);
+            xqueryCompiler = processor.newXQueryCompiler();
+            xqueryCompiler.setCompileWithTracing(true);
             try {
-                for(Enumeration<URL> enumer = ucl.findResources("META-INF/services/top.marchand.xml.gaulois.xml"); enumer.hasMoreElements();) {
-                    URL url = enumer.nextElement();
-                    log.debug("loading service "+url.toExternalForm());
-                    XdmNode document = documentBuilder.build(new StreamSource(url.openStream()));
-                    XPathSelector selector = xpathCompiler.compile("/gaulois-services/saxon/extensions/function").load();
-                    selector.setContextItem(document);
-                    XdmSequenceIterator it = selector.evaluate().iterator();
-                    while(it.hasNext()) {
-                        String className = it.next().getStringValue();
-                        try {
-                            Class clazz = Class.forName(className);
-                            if(extendsClass(clazz, ExtensionFunctionDefinition.class)) {
-                                Class<ExtensionFunctionDefinition> cle = (Class<ExtensionFunctionDefinition>)clazz;
-                                processor.getUnderlyingConfiguration().registerExtensionFunction(cle.newInstance());
-                                log.debug(className+"registered as Saxon extension function");
-                            } else {
-                                log.warn(className+" does not extends "+ExtensionFunctionDefinition.class.getName());
+                doAdditionalConfiguration(saxonOptions);
+            } catch(XPathException ex) {
+                throw new XSpecPluginException(ex);
+            }
+            try {
+                xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver(), extender));
+            } catch(IOException ex) {
+                throw new XSpecPluginException("while constructing URIResolver", ex);
+            }
+            getLog().info("URI resolver Ok");
+            ClassLoader cl = getClass().getClassLoader();
+            if(cl instanceof URLClassLoader) {
+                URLClassLoader ucl = (URLClassLoader)cl;
+                try {
+                    for(Enumeration<URL> enumer = ucl.findResources("META-INF/services/top.marchand.xml.gaulois.xml"); enumer.hasMoreElements();) {
+                        URL url = enumer.nextElement();
+                        log.debug("loading service "+url.toExternalForm());
+                        XdmNode document = documentBuilder.build(new StreamSource(url.openStream()));
+                        XPathSelector selector = xpathCompiler.compile("/gaulois-services/saxon/extensions/function").load();
+                        selector.setContextItem(document);
+                        XdmSequenceIterator it = selector.evaluate().iterator();
+                        while(it.hasNext()) {
+                            String className = it.next().getStringValue();
+                            try {
+                                Class clazz = Class.forName(className);
+                                if(extendsClass(clazz, ExtensionFunctionDefinition.class)) {
+                                    Class<ExtensionFunctionDefinition> cle = (Class<ExtensionFunctionDefinition>)clazz;
+                                    processor.getUnderlyingConfiguration().registerExtensionFunction(cle.newInstance());
+                                    log.debug(className+"registered as Saxon extension function");
+                                } else {
+                                    log.warn(className+" does not extends "+ExtensionFunctionDefinition.class.getName());
+                                }
+                            } catch(ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+                                log.warn("unable to load extension function "+className);
                             }
-                        } catch(ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
-                            log.warn("unable to load extension function "+className);
                         }
                     }
+                } catch(IOException | SaxonApiException ex) {
+                    log.error("while looking for resources in /META-INF/services/top.marchand.xml.gaulois/", ex);
                 }
-            } catch(IOException | SaxonApiException ex) {
-                log.error("while looking for resources in /META-INF/services/top.marchand.xml.gaulois/", ex);
             }
+            try {
+                createXPathExecutables();
+                createXsltExecutables();
+            } catch(XSpecPluginException | MalformedURLException | SaxonApiException ex) {
+                throw new XSpecPluginException(ex);
+            }
+        } catch(RuntimeException ex) {
+            throw new XSpecPluginException(ex.getMessage(), ex);
         }
-        try {
-            createXPathExecutables();
-            createXsltExecutables();
-        } catch(XSpecPluginException | MalformedURLException | SaxonApiException ex) {
-            throw new XSpecPluginException(ex);
-        }
+        getLog().debug("XmlStuff created !");
     }
     
     /**

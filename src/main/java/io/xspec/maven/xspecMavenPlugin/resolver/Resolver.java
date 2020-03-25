@@ -26,6 +26,7 @@
  */
 package io.xspec.maven.xspecMavenPlugin.resolver;
 
+import io.xspec.maven.xspecMavenPlugin.utils.QuietLogger;
 import java.io.File;
 import java.io.IOException;
 import javax.xml.transform.Source;
@@ -47,6 +48,7 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
     private final URIResolver saxonResolver;
     private final Log log;
     org.xmlresolver.Resolver cr;
+    private static final boolean LOG_ENABLE = false;
     
     /**
      * Creates a new URI resolver, based on a catalog file and a saxon URI Resolver
@@ -92,7 +94,8 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
     }
     
     private Log getLog() {
-        return log;
+        if(LOG_ENABLE) return log;
+        return QuietLogger.getLogger();
     }
 
     @Override

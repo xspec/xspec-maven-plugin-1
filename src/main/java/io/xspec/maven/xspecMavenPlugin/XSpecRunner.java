@@ -150,23 +150,28 @@ public class XSpecRunner implements LogProvider {
                     "setResources(XSpecImplResources,SchematronImplResources,XSpecPluginResources) " +
                     "must be call before init()");
         }
-        getLog().debug("Creating XmlStuff");
+        getLog().debug("Creating XmlStuff...");
         if(options==null) {
             getLog().debug("options was null, creating a new one.");
             options = new RunnerOptions(baseDirectory);
         }
-        xmlStuff = new XmlStuff(
-                new Processor(saxonConfiguration),
-                saxonOptions,
-                getLog(), 
-                xspecResources,
-                pluginResources,
-                schResources,
-                baseDirectory,
-                options,
-                executionProperties,
-                catalogWriterExtender
-        );
+        try {
+            xmlStuff = new XmlStuff(
+                    new Processor(saxonConfiguration),
+                    saxonOptions,
+                    getLog(), 
+                    xspecResources,
+                    pluginResources,
+                    schResources,
+                    baseDirectory,
+                    options,
+                    executionProperties,
+                    catalogWriterExtender
+            );
+        } catch(XSpecPluginException ex) {
+            getLog().error("Exception while creating XmlStuff", ex);
+            throw ex;
+        }
         getLog().debug("creating new XSpecCompiler");
         xspecCompiler = new XSpecCompiler(xmlStuff, options, log);
         initDone = true;
@@ -623,6 +628,10 @@ public class XSpecRunner implements LogProvider {
      * @throws XSpecPluginException 
      */
     public void generateIndex() throws XSpecPluginException {
+        if(processedFiles==null) {
+            throw new IllegalStateException("no execution has been done. processedFiles is null");
+        }
+        getLog().warn("processedFiles is "+processedFiles.size()+" length");
         IndexGenerator generator = new IndexGenerator(options, processedFiles);
         generator.generateIndex();
     }
@@ -662,14 +671,11 @@ public class XSpecRunner implements LogProvider {
     List<File> findAllXSpecs() throws XSpecPluginException {
         FileFinder finder = new FileFinder(options.testDir, "**/*.xspec", options.excludes);
         final Path testPath = options.testDir.toPath();
-//        getLog().debug("testPath: "+testPath.toString());
         try {
             List<Path> found = finder.search();
             List<File> ret = new ArrayList<>(found.size());
             found.stream().forEach((p) -> {
-//                    getLog().debug("p: "+p.toString());
                     File resolved = testPath.resolve(p).toFile();
-//                    getLog().debug("resolved: "+resolved.getAbsolutePath());
                     ret.add(resolved);
                 }
             );

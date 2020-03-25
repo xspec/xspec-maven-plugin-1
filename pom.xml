@@ -45,10 +45,6 @@
   </developers>
 
   <properties>
-    <!--xspec.groupId>io.xspec</xspec.groupId>
-        <xspec.artifactId>xspec</xspec.artifactId>
-        <xspec.version>0.5.0</xspec.version>
-        <xspec.packaging>zip</xspec.packaging-->
     <schematron.groupId>io.xspec</schematron.groupId>
     <schematron.artifactId>schematron</schematron.artifactId>
     <schematron.version>2017-02-09</schematron.version>

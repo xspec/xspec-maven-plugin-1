@@ -39,6 +39,7 @@ import java.util.Properties;
 import net.sf.saxon.s9api.XdmNode;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 
 /**
@@ -92,10 +93,37 @@ public class XSpecRunnerTest extends TestUtils {
         boolean ret = runner.processXsltXSpec(node);
         assertTrue("XSpec failed", ret);
     }
+    @Test
+    public void generateIndexWithXsltTest() throws Exception {
+        RunnerOptions options = new RunnerOptions(getBaseDirectory());
+        XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
+        File xspecFile = new File(getBaseDirectory().getParentFile().getParentFile().getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1.xspec");
+        XdmNode node = runner.getXmlStuff().getDocumentBuilder().build(xspecFile);
+        assertNotNull("node is null", node);
+        assertNotNull("node baseUri is null", node.getBaseURI());
+        runner.initProcessedFiles(1);
+        runner.processXsltXSpec(node);
+        runner.generateIndex();
+        File indexFile = new File(options.reportDir,"index.html");
+        assertTrue("index file "+indexFile.getAbsolutePath()+" does not exist", indexFile.exists());
+        assertTrue("index file "+indexFile.getAbsolutePath()+" is not a file", indexFile.isFile());
+    }
+    
+    @Test @Ignore
+    public void executeTest() throws Exception {
+        getLog().info("baseDirectory: "+getBaseDirectory().getAbsolutePath());
+        RunnerOptions options = new RunnerOptions(getBaseDirectory());
+        options.testDir=new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
+        XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
+        runner.execute();
+        File indexFile = new File(options.reportDir,"index.html");
+        assertTrue("index file "+indexFile.getAbsolutePath()+" does not exist", indexFile.exists());
+        assertTrue("index file "+indexFile.getAbsolutePath()+" is not a file", indexFile.isFile());
+    }
     
     @Test
     public void findAllXSpecsTests() throws Exception {
-        RunnerOptions runnerOptions = new RunnerOptions(getBaseDirectory());
+        RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
         runnerOptions.testDir = new File(getTestDirectory(), "xsltTestCase");
         XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
         List<File> xspecFiles = runner.findAllXSpecs();
