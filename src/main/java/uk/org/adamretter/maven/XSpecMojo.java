@@ -388,13 +388,12 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             } else {
                 getLog().warn("Some XSpec tests failed or were missed, but build will not fail!");
             }
-            try {
-                runner.generateIndex();
-            } catch(XSpecPluginException ex2) {
-                throw new MojoFailureException("while generating index", ex2);
-            }
         } catch (final XSpecPluginException ex) {
             throw new MojoExecutionException("While running XSpecs", ex);
+        } finally {
+            try {
+                runner.generateIndex();
+            } catch(XSpecPluginException ex2) { }
         }
     }
     

@@ -278,8 +278,6 @@ public class XSpecRunner implements LogProvider {
                         xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
                         xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
-                        // setBaseOutputURI not required, surefire-reporter.xsl 
-                        // does xsl:result-document with absolute @href
                         xtSurefire = xt;
                     } catch(MalformedURLException ex) {
                         getLog().warn("Unable to generate surefire report", ex);
@@ -304,8 +302,6 @@ public class XSpecRunner implements LogProvider {
                                                 xtSurefire)
                                         ),
                                 reporter);
-                // ??? par quoi remplacer cela ???
-//                xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
                 Source xspecSource = new StreamSource(sourceFile);
                 xtXSpec.setSource(xspecSource);
                 xtXSpec.setURIResolver(xmlStuff.getUriResolver());
