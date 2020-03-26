@@ -120,7 +120,6 @@ public class XSpecRunner implements LogProvider {
     private CatalogWriterExtender catalogWriterExtender;
 
     public static final QName INITIAL_TEMPLATE_NAME=new QName(XSPEC_NS, "main");
-    private static final QName QN_REPORT_CSS_URI = new QName("report-css-uri");
     private static final String COVERAGE_ERROR_MESSAGE = "Coverage report is only available with Saxon-PE or Saxon-EE";
     private boolean failed;
     
@@ -293,7 +292,7 @@ public class XSpecRunner implements LogProvider {
                 processedFileAdded = true;
                 String relativeCssPath = 
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
-                reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
+                reporter.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
                 //execute
                 
                 final Destination destination = 
@@ -474,6 +473,8 @@ public class XSpecRunner implements LogProvider {
                         (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
 //                reporter.setParameter(new QName("report-css-uri"), new XdmAtomicValue(relativeCssPath));
                 getLog().debug("\trelativeCssPath: "+relativeCssPath);
+                // issue #36
+                reporter.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
 
                 //execute
                 final Destination destination = 
@@ -512,7 +513,7 @@ public class XSpecRunner implements LogProvider {
                         Path relative = options.testDir.toPath().relativize(sourceFile.toPath());
                         getLog().info("coverage tests: "+relative.toString());
                         coverage.setParameter(new QName("tests"), XdmAtomicValue.makeAtomicValue(relative.toString()));
-                        coverage.setParameter(QN_REPORT_CSS_URI, new XdmAtomicValue(relativeCssPath));
+                        coverage.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
                         coverage.transform();
                     } else {
                         getLog().warn(COVERAGE_ERROR_MESSAGE);
