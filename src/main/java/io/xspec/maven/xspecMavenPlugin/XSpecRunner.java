@@ -80,6 +80,7 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
 import io.xspec.maven.xspecMavenPlugin.utils.CompiledXSpec;
 import io.xspec.maven.xspecMavenPlugin.utils.IndexGenerator;
 import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
+import io.xspec.maven.xspecMavenPlugin.utils.OwnErrorListener;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecFailureException;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecResultsHandler;
 import java.io.BufferedInputStream;
@@ -88,6 +89,7 @@ import java.io.FileOutputStream;
 import java.net.URL;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecType;
 import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
+import javax.xml.transform.ErrorListener;
 
 /**
  * This class implements the logic of Mojo
@@ -120,6 +122,7 @@ public class XSpecRunner implements LogProvider {
     private CatalogWriterExtender catalogWriterExtender;
 
     public static final QName INITIAL_TEMPLATE_NAME=new QName(XSPEC_NS, "main");
+    public static final QName INLINE_CSS = new QName("inline-css");
     private static final String COVERAGE_ERROR_MESSAGE = "Coverage report is only available with Saxon-PE or Saxon-EE";
     private boolean failed;
     
@@ -379,12 +382,15 @@ public class XSpecRunner implements LogProvider {
         if (compiledXSpec == null) {
             return false;
         } else {
+            getLog().info("XSpec has been compiled");
             /* execute the test stylesheet */
             final XSpecResultsHandler resultsHandler = new XSpecResultsHandler();
             try {
+                final ErrorListener errorListener = new OwnErrorListener(getLog());
                 final XsltExecutable xeXSpec = xmlStuff.compileXsl(
                         new StreamSource(compiledXSpec.getCompiledStylesheet()));
                 final XsltTransformer xtXSpec = xeXSpec.load();
+                xtXSpec.setErrorListener(errorListener);
                 // no code coverage at this point
                 File tempCoverageFile = xspecCompiler.getCoverageTempPath(options.reportDir, sourceFile);
 //                if(options.coverage) {
@@ -427,6 +433,7 @@ public class XSpecRunner implements LogProvider {
                 htmlSerializer.setOutputProperty(Serializer.Property.INDENT, "yes");
                 htmlSerializer.setOutputFile(xspecHtmlResult);
                 XsltTransformer reporter = xmlStuff.getReporter().load();
+                reporter.setErrorListener(errorListener);
                 reporter.setBaseOutputURI(xspecHtmlResult.toURI().toString());
                 reporter.setDestination(htmlSerializer);
                 getLog().debug("\thtml report output set");
@@ -436,6 +443,7 @@ public class XSpecRunner implements LogProvider {
                 Destination xtSurefire = null;
                 if(xmlStuff.getXeSurefire()!=null) {
                     XsltTransformer xt = xmlStuff.getXeSurefire().load();
+                    xt.setErrorListener(errorListener);
                     try {
                         xt.setParameter(new QName("baseDir"), new XdmAtomicValue(baseDirectory.toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.reportDir.toURI().toURL().toExternalForm()));
@@ -471,6 +479,7 @@ public class XSpecRunner implements LogProvider {
                 getLog().debug("\trelativeCssPath: "+relativeCssPath);
                 // issue #36
                 reporter.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
+//                reporter.setParameter(INLINE_CSS, XdmAtomicValue.makeAtomicValue("true"));
 
                 //execute
                 final Destination destination = 
@@ -494,6 +503,8 @@ public class XSpecRunner implements LogProvider {
                 xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
                 getLog().debug("\tlaunching transform");
                 xtXSpec.transform();
+                
+                getLog().debug("XSpec run");
 
                 // limit to pure XSLT, exclude schematron
                 // https://github.com/xspec/xspec/issues/191
@@ -501,6 +512,7 @@ public class XSpecRunner implements LogProvider {
                     // coverage
                     if(xmlStuff.getCoverageReporter()!=null) {
                         XsltTransformer coverage = xmlStuff.getCoverageReporter().load();
+                        coverage.setErrorListener(errorListener);
                         File coverageReportFile = xspecCompiler.getCoverageFinalPath(options.reportDir, sourceFile);
                         coverage.setDestination(xmlStuff.getProcessor().newSerializer(coverageReportFile));
                         coverage.setSource(new StreamSource(tempCoverageFile));
@@ -509,7 +521,8 @@ public class XSpecRunner implements LogProvider {
                         Path relative = options.testDir.toPath().relativize(sourceFile.toPath());
                         getLog().info("coverage tests: "+relative.toString());
                         coverage.setParameter(new QName("tests"), XdmAtomicValue.makeAtomicValue(relative.toString()));
-                        coverage.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
+//                        coverage.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
+                        coverage.setParameter(INLINE_CSS, XdmAtomicValue.makeAtomicValue("true"));
                         coverage.transform();
                     } else {
                         getLog().warn(COVERAGE_ERROR_MESSAGE);

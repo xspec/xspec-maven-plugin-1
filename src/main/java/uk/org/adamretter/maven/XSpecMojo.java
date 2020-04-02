@@ -26,9 +26,6 @@
  */
 package uk.org.adamretter.maven;
 
-import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
-import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
-import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
 import net.sf.saxon.s9api.*;
 import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
@@ -40,10 +37,7 @@ import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResource
 import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
 import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
-import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecFailureException;
-import io.xspec.maven.xspecMavenPlugin.utils.XSpecFailureException;
-import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
 import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
 import org.apache.maven.plugin.AbstractMojo;
@@ -337,7 +331,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
     public MojoExecution execution;
     
-    private String generateXspecUtilsUri = null;
+//    private String generateXspecUtilsUri = null;
 
 
     // package private for tests
@@ -345,13 +339,13 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     
     // package private for test purpose
     boolean uriResolverSet = false;
-    private List<ProcessedFile> processedFiles;
-    private static final List<ProcessedFile> PROCESS_FILES = new ArrayList<>();
-    private static URIResolver initialUriResolver;
+//    private List<ProcessedFile> processedFiles;
+//    private static final List<ProcessedFile> PROCESS_FILES = new ArrayList<>();
+//    private static URIResolver initialUriResolver;
     public static final QName QN_NAME = new QName("name");
     public static final QName QN_SELECT = new QName("select");
 //    private List<File> filesToDelete, junitFiles;
-    private String schLocationCompareUri;
+//    private String schLocationCompareUri;
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {

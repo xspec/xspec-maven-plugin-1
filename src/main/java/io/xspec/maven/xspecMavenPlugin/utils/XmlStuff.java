@@ -35,6 +35,8 @@ import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -165,18 +167,25 @@ public class XmlStuff {
                         XPathSelector selector = xpathCompiler.compile("/gaulois-services/saxon/extensions/function").load();
                         selector.setContextItem(document);
                         XdmSequenceIterator it = selector.evaluate().iterator();
+                        Class[] emptyParams = new Class[]{};
                         while(it.hasNext()) {
                             String className = it.next().getStringValue();
                             try {
                                 Class clazz = Class.forName(className);
                                 if(extendsClass(clazz, ExtensionFunctionDefinition.class)) {
                                     Class<ExtensionFunctionDefinition> cle = (Class<ExtensionFunctionDefinition>)clazz;
-                                    processor.getUnderlyingConfiguration().registerExtensionFunction(cle.newInstance());
+                                    Constructor<ExtensionFunctionDefinition> cc = cle.getConstructor(emptyParams);
+                                    processor.getUnderlyingConfiguration().registerExtensionFunction(cc.newInstance());
                                     log.debug(className+"registered as Saxon extension function");
                                 } else {
                                     log.warn(className+" does not extends "+ExtensionFunctionDefinition.class.getName());
                                 }
-                            } catch(ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+                            } catch(
+                                    ClassNotFoundException | 
+                                    InstantiationException | 
+                                    IllegalAccessException | 
+                                    InvocationTargetException |
+                                    NoSuchMethodException ex) {
                                 log.warn("unable to load extension function "+className);
                             }
                         }
@@ -185,9 +194,15 @@ public class XmlStuff {
                     log.error("while looking for resources in /META-INF/services/top.marchand.xml.gaulois/", ex);
                 }
             }
+            // TODO: for next release of XSpec :
+            // add extension function io.xspec.xspec.saxon.funcdefs.LineNumber
+//            processor.getUnderlyingConfiguration().registerExtensionFunction(
+//                    new io.xspec.xspec.saxon.funcdefs.LineNumber());
             try {
                 createXPathExecutables();
+                getLog().debug("XPath executables created");
                 createXsltExecutables();
+                getLog().debug("XSLT executables created");
             } catch(XSpecPluginException | MalformedURLException | SaxonApiException ex) {
                 throw new XSpecPluginException(ex);
             }
