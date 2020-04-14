@@ -86,7 +86,8 @@ public class IndexGeneratorTest extends TestUtils {
         File expected = new File(options.reportDir, "index.html");
         assertTrue("index file not generated", expected.exists());
         assertTrue("index file is not a file", expected.isFile());
-        long nbLines = 38;
+        // WARNING: with Saxon 9.8, there are only 38 lines
+        long nbLines = 40;
         assertEquals("index should have "+nbLines+" lines", nbLines, Files.lines(expected.toPath()).count());
     }
     
@@ -101,7 +102,8 @@ public class IndexGeneratorTest extends TestUtils {
         IndexGenerator gen = new IndexGenerator(options, Arrays.asList(pf), xmlStuff);
         gen.generateIndex();
         File expected = new File(options.reportDir, "index.html");
-        long nbLines = 39 + 3 + 8;
+        // WARNING : with Saxon 9.8, there are only 39 lines
+        long nbLines = 41 + 3 + 8;
         assertEquals("index should have "+nbLines+" lines", nbLines, Files.lines(expected.toPath()).count());
         assertEquals("table should contain 1 red row", 1, Files.lines(expected.toPath()).filter(l -> l.contains("class=\"error\"")).count());
     }
