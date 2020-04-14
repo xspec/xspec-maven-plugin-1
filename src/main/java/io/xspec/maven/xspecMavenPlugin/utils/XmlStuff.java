@@ -376,6 +376,7 @@ public class XmlStuff {
     }
     
     public Serializer newSerializer(final OutputStream os) { return getProcessor().newSerializer(os); }
+    public Serializer newSerializer() { return getProcessor().newSerializer(); }
 
     public XQueryCompiler getXqueryCompiler() {
         return xqueryCompiler;
