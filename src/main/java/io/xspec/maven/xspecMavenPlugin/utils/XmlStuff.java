@@ -41,6 +41,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
@@ -58,6 +59,7 @@ import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XdmAtomicValue;
+import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.s9api.XsltCompiler;
@@ -107,6 +109,7 @@ public class XmlStuff {
     private String generateXspecUtilsUri;
     private String schLocationCompareUri;
     public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
+    private static final Class[] EMPTY_PARAMS = new Class[]{};
 
     
     public XmlStuff(
@@ -166,27 +169,19 @@ public class XmlStuff {
                         XdmNode document = documentBuilder.build(new StreamSource(url.openStream()));
                         XPathSelector selector = xpathCompiler.compile("/gaulois-services/saxon/extensions/function").load();
                         selector.setContextItem(document);
-                        XdmSequenceIterator it = selector.evaluate().iterator();
-                        Class[] emptyParams = new Class[]{};
-                        while(it.hasNext()) {
-                            String className = it.next().getStringValue();
-                            try {
-                                Class clazz = Class.forName(className);
-                                if(extendsClass(clazz, ExtensionFunctionDefinition.class)) {
-                                    Class<ExtensionFunctionDefinition> cle = (Class<ExtensionFunctionDefinition>)clazz;
-                                    Constructor<ExtensionFunctionDefinition> cc = cle.getConstructor(emptyParams);
-                                    processor.getUnderlyingConfiguration().registerExtensionFunction(cc.newInstance());
-                                    log.debug(className+"registered as Saxon extension function");
-                                } else {
-                                    log.warn(className+" does not extends "+ExtensionFunctionDefinition.class.getName());
-                                }
-                            } catch(
-                                    ClassNotFoundException | 
-                                    InstantiationException | 
-                                    IllegalAccessException | 
-                                    InvocationTargetException |
-                                    NoSuchMethodException ex) {
-                                log.warn("unable to load extension function "+className);
+                        Object o = selector.evaluate().iterator();
+                        if(o instanceof XdmSequenceIterator) {
+                            // saxon 9.8
+                            XdmSequenceIterator it = (XdmSequenceIterator)o;
+                            while(it.hasNext()) {
+                                String className = it.next().getStringValue();
+                                registerSaxonExtension(className);
+                            }
+                        } else {
+                            Iterator<XdmItem> it = (Iterator<XdmItem>)o;
+                            while(it.hasNext()) {
+                                String className = it.next().getStringValue();
+                                registerSaxonExtension(className);
                             }
                         }
                     }
@@ -208,6 +203,27 @@ public class XmlStuff {
             }
         } catch(RuntimeException ex) {
             throw new XSpecPluginException(ex.getMessage(), ex);
+        }
+    }
+    
+    private void registerSaxonExtension(String className) {
+        try {
+            Class clazz = Class.forName(className);
+            if(extendsClass(clazz, ExtensionFunctionDefinition.class)) {
+                Class<ExtensionFunctionDefinition> cle = (Class<ExtensionFunctionDefinition>)clazz;
+                Constructor<ExtensionFunctionDefinition> cc = cle.getConstructor(EMPTY_PARAMS);
+                processor.getUnderlyingConfiguration().registerExtensionFunction(cc.newInstance());
+                log.debug(className+"registered as Saxon extension function");
+            } else {
+                log.warn(className+" does not extends "+ExtensionFunctionDefinition.class.getName());
+            }
+        } catch(
+                ClassNotFoundException | 
+                InstantiationException | 
+                IllegalAccessException | 
+                InvocationTargetException |
+                NoSuchMethodException ex) {
+            log.warn("unable to load extension function "+className);
         }
     }
     

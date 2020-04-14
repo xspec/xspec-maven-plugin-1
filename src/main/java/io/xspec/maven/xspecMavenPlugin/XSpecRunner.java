@@ -91,6 +91,7 @@ import java.net.URL;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecType;
 import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
 import java.io.PrintStream;
+import java.util.Iterator;
 import javax.xml.transform.ErrorListener;
 import net.sf.saxon.lib.TraceListener;
 import net.sf.saxon.s9api.XdmDestination;
@@ -722,20 +723,42 @@ public class XSpecRunner implements LogProvider {
         XPathSelector xps = xmlStuff.getXpExecGetXSpecType().load();
         xps.setContextItem(doc);
         XdmValue values = xps.evaluate();
-        for(XdmSequenceIterator it=values.iterator();it.hasNext();) {
-            XdmNode item=(XdmNode)(it.next());
-            if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
-                String nodeName = item.getNodeName().getLocalName();
-                switch(nodeName) {
-                    case "query": 
-                    case "query-at": {
-                        return XSpecType.XQ;
+        Object o = values.iterator();
+        if(o instanceof XdmSequenceIterator) {
+            for(XdmSequenceIterator it=(XdmSequenceIterator)o; it.hasNext();) {
+                XdmNode item=(XdmNode)(it.next());
+                if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
+                    String nodeName = item.getNodeName().getLocalName();
+                    switch(nodeName) {
+                        case "query": 
+                        case "query-at": {
+                            return XSpecType.XQ;
+                        }
+                        case "schematron": {
+                            return XSpecType.SCH;
+                        }
+                        case "stylesheet": {
+                            return XSpecType.XSL;
+                        }
                     }
-                    case "schematron": {
-                        return XSpecType.SCH;
-                    }
-                    case "stylesheet": {
-                        return XSpecType.XSL;
+                }
+            }
+        } else {
+            for(Iterator<XdmItem> it=(Iterator<XdmItem>)o; it.hasNext();) {
+                XdmNode item=(XdmNode)(it.next());
+                if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
+                    String nodeName = item.getNodeName().getLocalName();
+                    switch(nodeName) {
+                        case "query": 
+                        case "query-at": {
+                            return XSpecType.XQ;
+                        }
+                        case "schematron": {
+                            return XSpecType.SCH;
+                        }
+                        case "stylesheet": {
+                            return XSpecType.XSL;
+                        }
                     }
                 }
             }
