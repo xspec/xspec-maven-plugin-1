@@ -26,30 +26,62 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
+import io.xspec.maven.xspecMavenPlugin.TestUtils;
+import static io.xspec.maven.xspecMavenPlugin.TestUtils.getBaseDirectory;
+import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultSchematronImplResources;
+import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
+import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Properties;
+import net.sf.saxon.Configuration;
+import net.sf.saxon.s9api.Processor;
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.Test;
+import top.marchand.maven.saxon.utils.SaxonOptions;
 
 /**
  *
  * @author cmarchand
  */
-public class IndexGeneratorTest {
+public class IndexGeneratorTest extends TestUtils {
     private final RunnerOptions options = new RunnerOptions(new File("target/tests"));
+    private XmlStuff xmlStuff;
+    
+    @Before
+    public void before() {
+        Configuration saxonConfiguration = Configuration.newConfiguration();
+        Processor proc = new Processor(saxonConfiguration);
+        try {
+            xmlStuff = new XmlStuff(
+                    proc, 
+                    new SaxonOptions(), 
+                    getLog(), 
+                    new DefaultXSpecImplResources(), 
+                    new DefaultXSpecPluginResources(), 
+                    new DefaultSchematronImplResources(), 
+                    getBaseDirectory(), 
+                    options, 
+                    new Properties(), 
+                    newExtender());
+        } catch(Exception ex) {
+            // ignore
+        }
+    }
 
     @Test
     public void constructorTest() {
-        IndexGenerator gen = new IndexGenerator(options, Collections.EMPTY_LIST);
+        IndexGenerator gen = new IndexGenerator(options, Collections.EMPTY_LIST, xmlStuff);
         assertEquals("options are not set", this.options, gen.options);
         assertEquals("processedFiles are not set", 0, gen.processedFiles.size());
     }
     
     @Test
     public void indexFileTest() throws Exception {
-        IndexGenerator gen = new IndexGenerator(options, Collections.EMPTY_LIST);
+        IndexGenerator gen = new IndexGenerator(options, Collections.EMPTY_LIST, xmlStuff);
         gen.generateIndex();
         File expected = new File(options.reportDir, "index.html");
         assertTrue("index file not generated", expected.exists());
@@ -66,7 +98,7 @@ public class IndexGeneratorTest {
                 options.reportDir, 
                 new File(options.reportDir, "toto.xspec.html"));
         pf.setResults(10, 1, 1, 1, 13);
-        IndexGenerator gen = new IndexGenerator(options, Arrays.asList(pf));
+        IndexGenerator gen = new IndexGenerator(options, Arrays.asList(pf), xmlStuff);
         gen.generateIndex();
         File expected = new File(options.reportDir, "index.html");
         long nbLines = 39 + 3 + 8;

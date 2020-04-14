@@ -29,6 +29,7 @@ package io.xspec.maven.xspecMavenPlugin.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -41,8 +42,10 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import net.sf.saxon.s9api.SaxonApiException;
+import net.sf.saxon.s9api.Serializer;
+import net.sf.saxon.s9api.XdmNode;
 
 /**
  * Generates the general index
@@ -52,11 +55,13 @@ public class IndexGenerator {
     
     protected final RunnerOptions options;
     protected final List<ProcessedFile> processedFiles;
+    protected final XmlStuff stuff;
     
-    public IndexGenerator(RunnerOptions options, List<ProcessedFile> processedFiles) {
+    public IndexGenerator(RunnerOptions options, List<ProcessedFile> processedFiles, final XmlStuff stuff) {
         super();
         this.options = options;
         this.processedFiles = processedFiles;
+        this.stuff = stuff;
     }
     
     /**
@@ -67,15 +72,14 @@ public class IndexGenerator {
         File index = new File(options.reportDir, "index.html");
         try {
             if(!options.reportDir.exists()) options.reportDir.mkdirs();
-            Transformer t = TransformerFactory.newInstance().newTransformer();
-            t.setOutputProperty(OutputKeys.METHOD, "html");
-            t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            t.setOutputProperty(OutputKeys.INDENT, "yes");
-            t.setOutputProperty(OutputKeys.VERSION, "5.0");
+//            Transformer t = TransformerFactory.newInstance().newTransformer();
+//            t.setOutputProperty(OutputKeys.METHOD, "html");
+//            t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+//            t.setOutputProperty(OutputKeys.INDENT, "yes");
+//            t.setOutputProperty(OutputKeys.VERSION, "5.0");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             XMLStreamWriter sw = XMLOutputFactory.newInstance().createXMLStreamWriter(baos);
             sw.writeStartDocument("UTF-8", "1.0");
-//            sw.writeDTD("<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">");
             sw.writeStartElement("html");
               sw.writeStartElement("head");
                 sw.writeStartElement("style");
@@ -109,8 +113,15 @@ public class IndexGenerator {
             InputStream is = new ByteArrayInputStream(baos.toByteArray());
             StreamSource source = new StreamSource(is);
 //            System.out.print(new String(baos.toByteArray()));
-            t.transform(source, new StreamResult(index));
-        } catch(IllegalArgumentException | XMLStreamException | TransformerException | IOException ex) {
+            //t.transform(source, new StreamResult(index));
+            XdmNode tree = stuff.getDocumentBuilder().build(source);
+            Serializer ser = stuff.newSerializer(new FileOutputStream(index));
+            ser.setOutputProperty(Serializer.Property.INDENT, "true");
+            ser.setOutputProperty(Serializer.Property.METHOD, "html");
+            ser.setOutputProperty(Serializer.Property.VERSION, "5.0");
+            ser.setOutputProperty(Serializer.Property.ENCODING, "UTF-8");
+            stuff.getProcessor().writeXdmValue(tree, ser);
+        } catch(IllegalArgumentException | XMLStreamException | SaxonApiException | IOException ex) {
             throw new XSpecPluginException("while generating index: "+index.getAbsolutePath(), ex);
         }        
     }
@@ -191,7 +202,9 @@ public class IndexGenerator {
      */
     private void writeTd(XMLStreamWriter sw, int count) throws XMLStreamException {
         sw.writeStartElement("td");
-        if(count==0) sw.writeAttribute("class", "zero");
+        if(count==0) {
+            sw.writeAttribute("class", "zero");
+        }
         sw.writeCharacters(Integer.toString(count));
         sw.writeEndElement();
     }

@@ -782,7 +782,7 @@ public class XSpecRunner implements LogProvider {
             throw new IllegalStateException("no execution has been done. processedFiles is null");
         }
         getLog().warn("processedFiles is "+processedFiles.size()+" length");
-        IndexGenerator generator = new IndexGenerator(options, processedFiles);
+        IndexGenerator generator = new IndexGenerator(options, processedFiles, xmlStuff);
         generator.generateIndex();
     }
     
