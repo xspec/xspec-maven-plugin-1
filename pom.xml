@@ -471,12 +471,12 @@
 
   <distributionManagement>
     <snapshotRepository>
-      <id>${snapshotRepositoryId}</id>
-      <url>${snapshotRepositoryUrl}</url>
+      <id>sonatype-snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
     <repository>
-      <id>${releaseRepositoryId}</id>
-      <url>${releaseRepositoryUrl}</url>
+      <id>sonatype-releases</id>
+      <url>http://oss.sonatype.org/content/repositories/releases</url>
     </repository>
   </distributionManagement>
 
