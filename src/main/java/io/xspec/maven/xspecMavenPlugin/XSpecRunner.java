@@ -657,6 +657,7 @@ public class XSpecRunner implements LogProvider {
                 XsltTransformer coverage = xmlStuff.getCoverageReporter().load();
                 coverage.setErrorListener(errorListener);
                 File coverageReportFile = xspecCompiler.getCoverageFinalPath(options.reportDir, sourceFile);
+                pf.setCoverageFile(coverageReportFile.toPath());
                 coverage.setDestination(xmlStuff.getProcessor().newSerializer(coverageReportFile));
 //                coverage.setInitialContextNode(xspecResult.getXdmNode());
                 coverage.setSource(new StreamSource(coverageFile));

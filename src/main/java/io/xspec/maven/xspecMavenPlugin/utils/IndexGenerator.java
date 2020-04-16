@@ -38,10 +38,6 @@ import java.util.List;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.Serializer;
@@ -72,11 +68,6 @@ public class IndexGenerator {
         File index = new File(options.reportDir, "index.html");
         try {
             if(!options.reportDir.exists()) options.reportDir.mkdirs();
-//            Transformer t = TransformerFactory.newInstance().newTransformer();
-//            t.setOutputProperty(OutputKeys.METHOD, "html");
-//            t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-//            t.setOutputProperty(OutputKeys.INDENT, "yes");
-//            t.setOutputProperty(OutputKeys.VERSION, "5.0");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             XMLStreamWriter sw = XMLOutputFactory.newInstance().createXMLStreamWriter(baos);
             sw.writeStartDocument("UTF-8", "1.0");
@@ -112,8 +103,6 @@ public class IndexGenerator {
             baos.close();
             InputStream is = new ByteArrayInputStream(baos.toByteArray());
             StreamSource source = new StreamSource(is);
-//            System.out.print(new String(baos.toByteArray()));
-            //t.transform(source, new StreamResult(index));
             XdmNode tree = stuff.getDocumentBuilder().build(source);
             Serializer ser = stuff.newSerializer(new FileOutputStream(index));
             ser.setOutputProperty(Serializer.Property.INDENT, "true");
@@ -143,6 +132,9 @@ public class IndexGenerator {
               sw.writeAttribute("class", "failed");
             sw.writeEmptyElement("col");
               sw.writeAttribute("class", "missed");
+            if(options.coverage) {
+                sw.writeEmptyElement("col");
+            }
             sw.writeEmptyElement("col");
           sw.writeEndElement(); // colgroup
           sw.writeStartElement("thead");
@@ -152,6 +144,9 @@ public class IndexGenerator {
               writeCell(sw, "th", "Pending");
               writeCell(sw, "th", "Failed");
               writeCell(sw, "th", "Missed");
+              if(options.coverage) {
+                  writeCell(sw, "th", "Coverage");
+              }
               writeCell(sw, "th", "Total");
             sw.writeEndElement();
           sw.writeEndElement(); // thead
@@ -163,7 +158,7 @@ public class IndexGenerator {
                       sw.writeStartElement("tr");
                         sw.writeAttribute("class", "title");
                         sw.writeStartElement("td");
-                          sw.writeAttribute("colspan", "6");
+                          sw.writeAttribute("colspan", options.coverage ? "7" : "6");
                           sw.writeCharacters(rootDir);
                         sw.writeEndElement();
                       sw.writeEndElement();
@@ -184,6 +179,18 @@ public class IndexGenerator {
                   writeTd(sw, pf.getPending());
                   writeTd(sw, pf.getFailed());
                   writeTd(sw, pf.getMissed());
+                  if(options.coverage) {
+                      if(pf.getCoverageFile()!=null) {
+                          sw.writeStartElement("td");
+                            sw.writeStartElement("a");
+                              sw.writeAttribute("href", options.reportDir.toPath().relativize(pf.getCoverageFile()).toString());
+                              sw.writeCharacters("Coverage report");
+                            sw.writeEndElement();
+                          sw.writeEndElement();
+                      } else {
+                          sw.writeEmptyElement("td");
+                      }
+                  }
                   sw.writeStartElement("td");
                     sw.writeCharacters(Integer.toString(pf.getTotal()));
                   sw.writeEndElement();

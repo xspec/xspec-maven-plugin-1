@@ -52,6 +52,7 @@ public class ProcessedFile implements Serializable {
     private final String relativeSourcePath;
     private final Path outputDir;
     private final Path reportFile;
+    private Path coverageFile;
     /**
      * The relative path from {@link #reportFile} to {@link #outputDir}
      */
@@ -153,4 +154,13 @@ public class ProcessedFile implements Serializable {
         this.missed=missed;
         this.total=total;
     }
+
+    public Path getCoverageFile() {
+        return coverageFile;
+    }
+
+    public void setCoverageFile(Path coverageFile) {
+        this.coverageFile = coverageFile;
+    }
+    
 }
