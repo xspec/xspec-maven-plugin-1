@@ -38,6 +38,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     private String xspecXQueryCompilerUri;
     private String schematronUnitTestConverter;
     private String xspecReporter;
+    private String xspecFoldingReporter;
     private String junitReporter;
     private String xspecCoverageReporter;
     private String testReportCss;
@@ -48,6 +49,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
         xspecXQueryCompilerUri = XSPEC_PREFIX+"compiler/generate-query-tests.xsl";
         schematronUnitTestConverter = XSPEC_PREFIX+"schematron/schut-to-xspec.xsl";
         xspecReporter = XSPEC_PREFIX+"reporter/format-xspec-report.xsl";
+        xspecFoldingReporter = XSPEC_PREFIX+"reporter/format-xspec-report-folding.xsl";
         junitReporter = XSPEC_PREFIX+"reporter/junit-report.xsl";
         xspecCoverageReporter = XSPEC_PREFIX+"reporter/coverage-report.xsl";
         testReportCss = XSPEC_PREFIX+"reporter/test-report.css";
@@ -63,7 +65,12 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     public String getSchematronSchutConverterUri() { return schematronUnitTestConverter; }
 
     @Override
-    public String getXSpecReporterUri() { return xspecReporter; }
+    public String getXSpecReporterUri(boolean useFolding) { 
+        if(useFolding) {
+            return xspecFoldingReporter;
+        }
+        return xspecReporter;
+    }
 
     @Override
     public String getJUnitReporterUri() { return junitReporter; }

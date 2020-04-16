@@ -45,4 +45,21 @@ public interface XSpecPluginResources {
      * @return Dependency scanner URI
      */
     public String getDependencyScannerUri();
+    /**
+     * Image Down for folding report
+     * @return 
+     */
+    public String getImageDown();
+    
+    /**
+     * Image Up for folding report
+     * @return 
+     */
+    public String getImageUp();
+    
+    /**
+     * XSL that changes external images to inline images in folding report
+     * @return 
+     */
+    public String getXsltImageChanger();
 }

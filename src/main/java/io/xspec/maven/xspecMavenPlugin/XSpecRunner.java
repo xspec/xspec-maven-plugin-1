@@ -804,30 +804,11 @@ public class XSpecRunner implements LogProvider {
         if(processedFiles==null) {
             throw new IllegalStateException("no execution has been done. processedFiles is null");
         }
-        getLog().warn("processedFiles is "+processedFiles.size()+" length");
+        getLog().debug("processedFiles is "+processedFiles.size()+" length");
         IndexGenerator generator = new IndexGenerator(options, processedFiles, xmlStuff);
         generator.generateIndex();
     }
-    
-    /**
-     * Creates the URI Resolver. It also generates the catalog with all
-     * dependencies
-     * @param saxonUriResolver
-     * @return
-     * @throws DependencyResolutionRequiredException
-     * @throws IOException
-     * @throws XMLStreamException
-     * @throws MojoFailureException 
-     */
-//    private URIResolver buildUriResolver(final URIResolver saxonUriResolver) throws IOException, XSpecPluginException {
-//        CatalogWriter cw = new CatalogWriter(this.getClass().getClassLoader(), catalogWriterExtender);
-//        File catalog = cw.writeCatalog(options.catalogFile, executionProperties, options.keepGeneratedCatalog);
-//        if(options.keepGeneratedCatalog) {
-//            getLog().info("keeping generated catalog: "+catalog.toURI().toURL().toExternalForm());
-//        }
-//        return new Resolver(saxonUriResolver, catalog, getLog());
-//    }
-    
+        
     /**
      * We want to be sure that external-functions are allowed
      * @return 

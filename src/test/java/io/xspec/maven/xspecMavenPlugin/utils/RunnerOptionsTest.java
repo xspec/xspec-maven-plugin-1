@@ -55,6 +55,7 @@ public class RunnerOptionsTest {
         assertNull("catalog file is not null", options.catalogFile);
         assertEquals("executionId is not default", "default", options.executionId);
         assertTrue("excludes is not empty", options.excludes.isEmpty());
+        assertFalse("folding is not false", options.folding);
     }
     
     @Test
@@ -64,7 +65,7 @@ public class RunnerOptionsTest {
         File reportDir = new File(source, "target/xspec-reports");
         File surefireReport = new File(source, "target/surefire-reports");
 
-        RunnerOptions options = new RunnerOptions(source, Boolean.TRUE, null, null, null, null, null, null, null);
+        RunnerOptions options = new RunnerOptions(source, Boolean.TRUE, null, null, null, null, null, null, null, null);
 
         assertTrue("keepGeneratedCatalog is not true", options.keepGeneratedCatalog);
         // not changed
@@ -75,6 +76,7 @@ public class RunnerOptionsTest {
         assertNull("catalog file is not null", options.catalogFile);
         assertEquals("executionId is not default", "default", options.executionId);
         assertTrue("excludes is not empty", options.excludes.isEmpty());
+        assertFalse("folding is not false", options.folding);
     }
     
     @Test
@@ -84,7 +86,7 @@ public class RunnerOptionsTest {
         File reportDir = new File(source, "target/xspec-reports");
         File surefireReport = new File(source, "target/surefire-reports");
 
-        RunnerOptions options = new RunnerOptions(source, null, "catalog.xml", null, null, null, null, null, null);
+        RunnerOptions options = new RunnerOptions(source, null, "catalog.xml", null, null, null, null, null, null, null);
         assertEquals("catalog file is not overwriten", "catalog.xml", options.catalogFile);
 
         // not changed
@@ -95,6 +97,7 @@ public class RunnerOptionsTest {
         assertFalse("coverage is not false", options.coverage);
         assertEquals("executionId is not default", "default", options.executionId);
         assertTrue("excludes is not empty", options.excludes.isEmpty());
+        assertFalse("folding is not false", options.folding);
     }
 
     @Test
@@ -106,7 +109,7 @@ public class RunnerOptionsTest {
         
         List<String> excludes = Arrays.asList("*IT.xspec");
 
-        RunnerOptions options = new RunnerOptions(source, null, null, excludes, null, null, null, null, null);
+        RunnerOptions options = new RunnerOptions(source, null, null, excludes, null, null, null, null, null, null);
         assertEquals("excludes is empty", 1, options.excludes.size());
 
         // not changed
@@ -117,6 +120,7 @@ public class RunnerOptionsTest {
         assertNull("catalog file is not null", options.catalogFile);
         assertFalse("coverage is not false", options.coverage);
         assertEquals("executionId is not default", "default", options.executionId);
+        assertFalse("folding is not false", options.folding);
     }
 
     @Test
@@ -126,7 +130,7 @@ public class RunnerOptionsTest {
         File reportDir = new File(source, "target/xspec-reports");
         File surefireReport = new File(source, "target/surefire-reports");
         
-        RunnerOptions options = new RunnerOptions(source, null, null, null, source, null, null, null, null);
+        RunnerOptions options = new RunnerOptions(source, null, null, null, source, null, null, null, null, null);
         assertEquals("testDir not overwritten", source, options.testDir);
         // not changed
 //        assertEquals("testDir is not correct", testDir, options.testDir);
@@ -137,7 +141,8 @@ public class RunnerOptionsTest {
         assertFalse("coverage is not false", options.coverage);
         assertEquals("executionId is not default", "default", options.executionId);
         assertTrue("excludes is not empty", options.excludes.isEmpty());
-    }
+        assertFalse("folding is not false", options.folding);
+    } 
 
     @Test
     public void constructorOverrideReportTest() {
@@ -146,7 +151,7 @@ public class RunnerOptionsTest {
         File reportDir = new File(source, "target/xspec-reports");
         File surefireReport = new File(source, "target/surefire-reports");
         
-        RunnerOptions options = new RunnerOptions(source, null, null, null, null, source, null, null, null);
+        RunnerOptions options = new RunnerOptions(source, null, null, null, null, source, null, null, null, null);
         assertEquals("reportDir not overwritten", source, options.reportDir);
         // not changed
         assertEquals("testDir is not correct", testDir, options.testDir);
@@ -157,7 +162,8 @@ public class RunnerOptionsTest {
         assertFalse("coverage is not false", options.coverage);
         assertEquals("executionId is not default", "default", options.executionId);
         assertTrue("excludes is not empty", options.excludes.isEmpty());
-    }
+        assertFalse("folding is not false", options.folding);
+     } 
 
     @Test
     public void constructorOverrideExecutionIdTest() {
@@ -166,7 +172,7 @@ public class RunnerOptionsTest {
         File reportDir = new File(source, "target/xspec-reports");
         File surefireReport = new File(source, "target/surefire-reports");
         
-        RunnerOptions options = new RunnerOptions(source, null, null, null, null, null, "executionId", null, null);
+        RunnerOptions options = new RunnerOptions(source, null, null, null, null, null, "executionId", null, null, null);
         assertEquals("executionId not overwritten", "executionId", options.executionId);
 
         // not changed
@@ -178,6 +184,7 @@ public class RunnerOptionsTest {
         assertFalse("coverage is not false", options.coverage);
 //        assertEquals("executionId is not default", "default", options.executionId);
         assertTrue("excludes is not empty", options.excludes.isEmpty());
+        assertFalse("folding is not false", options.folding);
     }
 
     @Test
@@ -187,7 +194,7 @@ public class RunnerOptionsTest {
         File reportDir = new File(source, "target/xspec-reports");
         File surefireReport = new File(source, "target/surefire-reports");
         
-        RunnerOptions options = new RunnerOptions(source, null, null, null, null, null, null, source, null);
+        RunnerOptions options = new RunnerOptions(source, null, null, null, null, null, null, source, null, null);
         assertEquals("surefireReport not overwritten", source, options.surefireReportDir);
         
         // not changed
@@ -199,6 +206,7 @@ public class RunnerOptionsTest {
         assertFalse("coverage is not false", options.coverage);
         assertEquals("executionId is not default", "default", options.executionId);
         assertTrue("excludes is not empty", options.excludes.isEmpty());
+        assertFalse("folding is not false", options.folding);
     }
 
     @Test
@@ -208,7 +216,7 @@ public class RunnerOptionsTest {
         File reportDir = new File(source, "target/xspec-reports");
         File surefireReport = new File(source, "target/surefire-reports");
         
-        RunnerOptions options = new RunnerOptions(source, null, null, null, null, null, null, null, Boolean.TRUE);
+        RunnerOptions options = new RunnerOptions(source, null, null, null, null, null, null, null, Boolean.TRUE, false);
         assertTrue("coverage not overWritten", options.coverage);
         
         // not changed
@@ -220,5 +228,28 @@ public class RunnerOptionsTest {
 //        assertFalse("coverage is not false", options.coverage);
         assertEquals("executionId is not default", "default", options.executionId);
         assertTrue("excludes is not empty", options.excludes.isEmpty());
+        assertFalse("folding is not false", options.folding);
+    }
+
+    @Test
+    public void constructorOverrideFoldingTest() {
+        File source = new File(".").getAbsoluteFile();
+        File testDir = new File(source, "src/test/xspec");
+        File reportDir = new File(source, "target/xspec-reports");
+        File surefireReport = new File(source, "target/surefire-reports");
+        
+        RunnerOptions options = new RunnerOptions(source, null, null, null, null, null, null, null, null, Boolean.TRUE);
+        
+        // not changed
+        assertEquals("testDir is not correct", testDir, options.testDir);
+        assertEquals("reportDir is not correct", reportDir, options.reportDir);
+        assertEquals("surefireReport is not correct", surefireReport, options.surefireReportDir);
+        assertFalse("keepGeneratedCatalog is not false", options.keepGeneratedCatalog);
+        assertNull("catalog file is not null", options.catalogFile);
+        assertFalse("coverage is not false", options.coverage);
+        assertEquals("executionId is not default", "default", options.executionId);
+        assertTrue("excludes is not empty", options.excludes.isEmpty());
+        // must be true !
+        assertTrue("folding is not true", options.folding);
     }
 }

@@ -35,7 +35,6 @@ import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultSchematronImplResou
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
-import io.xspec.maven.xspecMavenPlugin.utils.ProcessedFile;
 import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecFailureException;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
@@ -48,9 +47,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import javax.xml.transform.*;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import org.apache.maven.execution.MavenSession;
@@ -61,12 +58,13 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
 /**
  * xspec-maven-plugin is a plugin that run all xspec unit tests at test phase, and produces reports.
  *
- * It relies on XSpec 1.0, available at http://github.com/xspec/xspec
+ * It relies on XSpec 1.5.0, available at http://github.com/xspec/xspec
  * 
  * If one unit test fails, the plugin execution fails, and the build fails.
  * 
  * <strong>Saxon implementation</strong>
- * You must define the Saxon implementation (http://www.saxonica.com), as plugin do not embed any Saxon implementation. Just declare a dependency in plugin :
+ * You must define the Saxon implementation (http://www.saxonica.com), as plugin do 
+ * not embed any Saxon implementation. Just declare a dependency in plugin :
  * 
  * <pre>
  *   &lt;plugin>
@@ -82,22 +80,30 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  *   &lt<;/plugin>
  * </pre>
  *                 
- * Saxon version must be at least 9.8.0-5. Saxon-PE or Saxon-EE can be used, but you'll have to deploy them to your local or enterprise repository, as they are not available in Maven Central. Don't forget to add a dependency to your Saxon license. The license file may be packaged in a .jar file and deployed to your local or enterprise repository.
+ * Saxon version must be at least 9.8.0-5. Saxon-PE or Saxon-EE can be used, but you'll 
+ * have to deploy them to your local or enterprise repository, as they are not available 
+ * in Maven Central. Don't forget to add a dependency to your Saxon license. The license 
+ * file may be packaged in a .jar file and deployed to your local or enterprise 
+ * repository.
  * 
  * <ul>
  * <li>xspec-maven-plugin expects XSpec files in src/test/xspec/</li>
  * <li>xspec-maven-plugin produces XSpec reports in target/xspec-reports/</li>
- * <li>xspec-maven-plugin produces Junit reports in target/surefire-reports/</li>
+ * <li>xspec-maven-plugin produces Surefire reports in target/surefire-reports/</li>
  * </ul>
  * 
- * xspec-maven-plugin respects Maven unit tests convention and supports skipTests system property. See http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#skipTests
+ * xspec-maven-plugin respects Maven unit tests convention and supports skipTests 
+ * system property. See http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#skipTests
  * 
- * xspec-maven-plugin supports testFailureIgnore configuration parameter. See http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#testFailureIgnore
+ * xspec-maven-plugin supports testFailureIgnore configuration parameter. See 
+ * http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html#testFailureIgnore
  *             
  * <strong>XPath extension functions</strong>
  * 
- * Saxon allows to create XPath extension functions in Java. See https://www.saxonica.com/documentation/index.html#!extensibility/functions. gaulois-pipe has defined a common way to automatically install extension functions in Saxon. xspec-maven-plugin supports the same mecanism.
- * It looks in classpath for META-INF/services/top.marchand.xml.gaulois.xml resources.
+ * Saxon allows to create XPath extension functions in Java. See https://www.saxonica.com/documentation/index.html#!extensibility/functions.
+ * gaulois-pipe has defined a common way to automatically install extension functions 
+ * in Saxon. xspec-maven-plugin supports the same mecanism. It looks in classpath for 
+ * <tt>META-INF/services/top.marchand.xml.gaulois.xml</tt> resources.
  * Each file declares extension functions in this format :
  * 
  * <pre>       
@@ -110,13 +116,15 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  *   &lt;/gaulois-services>
  * </pre>
  *             
- * At least two function libraries are available in xspec-maven-plugin : 
+ * At least two function libraries are available and tested with xspec-maven-plugin : 
  * <ul>
  * <li>https://github.com/cmarchand/xpath-basex-ext/</li>
  * <li>https://github.com/AxelCourt/saxon-marklogic-ext</li>
  * </ul>
  * 
- * If you want want to add your own extension functions to XSpec engine, create a maven project with function implementation, a service file, and add it as a dependency to xspec-maven-plugin delaration :
+ * If you want want to add your own extension functions to XSpec engine, create a maven 
+ * project with function implementation, a service file, and add it as a dependency to 
+ * xspec-maven-plugin delaration :
  * 
  * <pre>
  *   &lt;plugin>
@@ -325,8 +333,18 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = "false")
     public Boolean keepGeneratedCatalog;
     
+    /**
+     * Define if coverage report must be used. Coverage is applied only on XSLT unit tests,
+     * if and only if Saxon PE or EE is used.
+     */
     @Parameter(defaultValue = "false")
     private boolean coverage;
+    
+    /**
+     * Define if report must use folding presentation.
+     */
+    @Parameter(defaultValue = "false")
+    private boolean folding;
     
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
     public MojoExecution execution;
@@ -339,13 +357,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     
     // package private for test purpose
     boolean uriResolverSet = false;
-//    private List<ProcessedFile> processedFiles;
-//    private static final List<ProcessedFile> PROCESS_FILES = new ArrayList<>();
-//    private static URIResolver initialUriResolver;
     public static final QName QN_NAME = new QName("name");
     public static final QName QN_SELECT = new QName("select");
-//    private List<File> filesToDelete, junitFiles;
-//    private String schLocationCompareUri;
     
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -365,7 +378,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
                 reportDir,
                 execution==null ? null : execution.getExecutionId(),
                 surefireReportDir,
-                coverage);
+                coverage,
+                folding);
         Properties environment = new Properties();
         environment.putAll(session.getUserProperties());
         environment.putAll(session.getSystemProperties());

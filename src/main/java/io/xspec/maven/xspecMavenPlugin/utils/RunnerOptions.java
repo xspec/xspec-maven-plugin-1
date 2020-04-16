@@ -29,7 +29,6 @@ package io.xspec.maven.xspecMavenPlugin.utils;
 import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -64,6 +63,8 @@ public class RunnerOptions {
     
     public Boolean coverage;
     
+    public Boolean folding;
+    
 
     
     /**
@@ -79,6 +80,7 @@ public class RunnerOptions {
         executionId = "default";
         surefireReportDir = new File(baseDir, "target/surefire-reports");
         coverage = Boolean.FALSE;
+        folding = Boolean.FALSE;
     }
     
     /**
@@ -91,7 +93,8 @@ public class RunnerOptions {
      * @param reportDir The directory where to put reports
      * @param executionId ExecutionId to use;
      * @param surefireReportDir Surefire report dir
-     * @param coverage Says if coverage should be process or not. At this time, coverage is not yet implemented
+     * @param coverage Says if coverage should be process or not
+     * @param folding Says if folding report should be use
      */
     public RunnerOptions(
             File baseDir, 
@@ -102,16 +105,36 @@ public class RunnerOptions {
             File reportDir,
             String executionId,
             File surefireReportDir,
-            Boolean coverage) {
+            Boolean coverage,
+            Boolean folding) {
         this(baseDir);
-        if(keepGeneratedCatalog!=null) this.keepGeneratedCatalog = keepGeneratedCatalog;
-        if(catalogFile!=null) this.catalogFile = catalogFile;
-        if(excludes!=null) this.excludes.addAll(excludes);
-        if(testDir!=null) this.testDir = testDir;
-        if(reportDir!=null) this.reportDir = reportDir;
-        if(executionId!=null) this.executionId = executionId;
-        if(surefireReportDir!=null) this.surefireReportDir = surefireReportDir;
-        if(coverage!=null) this.coverage = coverage;
+        if(keepGeneratedCatalog!=null) {
+            this.keepGeneratedCatalog = keepGeneratedCatalog;
+        }
+        if(catalogFile!=null) {
+            this.catalogFile = catalogFile;
+        }
+        if(excludes!=null) {
+            this.excludes.addAll(excludes);
+        }
+        if(testDir!=null) {
+            this.testDir = testDir;
+        }
+        if(reportDir!=null) {
+            this.reportDir = reportDir;
+        }
+        if(executionId!=null) {
+            this.executionId = executionId;
+        }
+        if(surefireReportDir!=null) {
+            this.surefireReportDir = surefireReportDir;
+        }
+        if(coverage!=null) {
+            this.coverage = coverage;
+        }
+        if(folding!=null) {
+            this.folding = folding;
+        }
     }
     
 }

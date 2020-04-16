@@ -55,7 +55,7 @@ public interface XSpecImplResources {
      * Usually format-xspec-report.xsl
      * @return XSpec reporter URI
      */
-    public String getXSpecReporterUri();
+    public String getXSpecReporterUri(boolean useFolding);
     
     /**
      * Usually junit-report.xsl
@@ -74,4 +74,5 @@ public interface XSpecImplResources {
      * @return 
      */
     public String getXSpecCssReportUri();
+    
 }

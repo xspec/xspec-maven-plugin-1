@@ -32,14 +32,19 @@ import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
@@ -59,9 +64,11 @@ import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XPathSelector;
 import net.sf.saxon.s9api.XQueryCompiler;
 import net.sf.saxon.s9api.XdmAtomicValue;
+import net.sf.saxon.s9api.XdmDestination;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
 import net.sf.saxon.s9api.XdmSequenceIterator;
+import net.sf.saxon.s9api.XdmValue;
 import net.sf.saxon.s9api.XsltCompiler;
 import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
@@ -198,7 +205,7 @@ public class XmlStuff {
                 getLog().debug("XPath executables created");
                 createXsltExecutables();
                 getLog().debug("XSLT executables created");
-            } catch(XSpecPluginException | MalformedURLException | SaxonApiException ex) {
+            } catch(XSpecPluginException | SaxonApiException | URISyntaxException | IOException ex) {
                 throw new XSpecPluginException(ex);
             }
         } catch(RuntimeException ex) {
@@ -258,10 +265,10 @@ public class XmlStuff {
                         +   "/*[local-name() = 'description']/@schematron))"));
         setXpFileSearcher(getXPathCompiler().compile("//file[@dependency-type!='x:description']"));
     }
-    private void createXsltExecutables() throws MalformedURLException, XSpecPluginException, SaxonApiException {
+    private void createXsltExecutables() throws XSpecPluginException, SaxonApiException, IOException, URISyntaxException {
         getLog().debug("Using XSpec Xslt Compiler: " + xspecResources.getXSpecXslCompilerUri());
         getLog().debug("Using XSpec Xquery Compiler: " + xspecResources.getXSpecXQueryCompilerUri());
-        getLog().debug("Using XSpec Reporter: " + xspecResources.getXSpecReporterUri());
+        getLog().debug("Using XSpec Reporter: " + xspecResources.getXSpecReporterUri(options.folding));
         getLog().debug("Using JUnit Reporter: " + xspecResources.getJUnitReporterUri());
         getLog().debug("Using Coverage Reporter: " + xspecResources.getXSpecCoverageReporterUri());
         getLog().debug("Using Schematron Dsdl include: " + schematronResources.getSchIsoDsdlIncludeUri());
@@ -275,8 +282,8 @@ public class XmlStuff {
         getLog().debug(xspecResources.getXSpecXslCompilerUri()+" -> "+srcXsltCompiler.getSystemId());
         Source srcXqueryCompiler = resolveSrc(xspecResources.getXSpecXQueryCompilerUri(), baseUri, "XSpec XQuery Compiler");
         getLog().debug(xspecResources.getXSpecXQueryCompilerUri()+" -> "+srcXqueryCompiler.getSystemId());
-        Source srcReporter = resolveSrc(xspecResources.getXSpecReporterUri(), baseUri, "XSpec Reporter");
-        getLog().debug(xspecResources.getXSpecReporterUri()+" -> "+srcReporter.getSystemId());
+        Source srcReporter = resolveSrc(xspecResources.getXSpecReporterUri(options.folding), baseUri, "XSpec Reporter");
+        getLog().debug(xspecResources.getXSpecReporterUri(options.folding)+" -> "+srcReporter.getSystemId());
         Source srcJUnitReporter = resolveSrc(xspecResources.getJUnitReporterUri(), baseUri, "JUnit Reporter");
         getLog().debug(xspecResources.getJUnitReporterUri()+" -> "+srcJUnitReporter.getSystemId());
         Source srcCoverageReporter = resolveSrc(xspecResources.getXSpecCoverageReporterUri(), baseUri, "Coverage Reporter");
@@ -297,7 +304,7 @@ public class XmlStuff {
         schLocationCompareUri = resolveSrc("../schematron/sch-location-compare.xsl", srcXsltCompiler.getSystemId(), "../schematron/sch-location-compare.xsl").getSystemId();
         setXspec4xsltCompiler(compileXsl(srcXsltCompiler));
         setXspec4xqueryCompiler(compileXsl(srcXqueryCompiler));
-        setReporter(compileXsl(srcReporter));
+        setReporter(compileReporter(srcReporter));
         setJUnitReporter(compileXsl(srcJUnitReporter));
         if(isSaxonPEorEE()) {
             setCoverageReporter(compileXsl(srcCoverageReporter));
@@ -315,7 +322,48 @@ public class XmlStuff {
         return "com.saxonica.config.ProfessionalConfiguration".equals(configurationClassName) ||
                 "com.saxonica.config.EnterpriseConfiguration".equals(configurationClassName);
     }
-    
+    private XsltExecutable compileReporter(Source reporterSource) throws SaxonApiException, XSpecPluginException, IOException, URISyntaxException {
+        if(reporterSource.getSystemId().contains("fold")) {
+            getLog().debug("reporter is folding");
+            XdmNode xslSource  = documentBuilder.build(reporterSource);
+            XsltExecutable xslChanger = getXsltCompiler().compile(resolveSrc(pluginResources.getXsltImageChanger(), null,null));
+            XsltTransformer tr = xslChanger.load();
+            tr.setParameter(new QName("imgDown"), XdmValue.makeValue(encodeBase64(pluginResources.getImageDown())));
+            tr.setParameter(new QName("imgUp"), XdmValue.makeValue(encodeBase64(pluginResources.getImageUp())));
+            XdmDestination dest = new XdmDestination();
+            tr.setDestination(dest);
+            tr.setInitialContextNode(xslSource);
+            tr.setBaseOutputURI(reporterSource.getSystemId());
+            tr.transform();
+            // DEBUG
+//            Serializer ser = getProcessor().newSerializer(System.out);
+//            getProcessor().writeXdmValue(dest.getXdmNode(), ser);
+            // DEBUG
+            Source transformed = dest.getXdmNode().getUnderlyingNode();
+            return getXsltCompiler().compile(transformed);
+        } else {
+            getLog().debug("reporter is not folding");
+            return compileXsl(reporterSource);
+        }
+    }
+    private String encodeBase64(String uri) throws XSpecPluginException, IOException, URISyntaxException {
+        Source source = resolveSrc(uri, null, null);
+        URL resolvedUri = new URL(source.getSystemId());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[2048];
+        InputStream is = resolvedUri.openStream();
+        int read = is.read(buffer);
+        long written = 0;
+        while(read>0) {
+            baos.write(buffer, 0, read);
+            read = is.read(buffer);
+            written += read;
+        }
+        baos.flush();
+        getLog().debug("image is "+written+" bytes long");
+        Base64.Encoder encoder = Base64.getEncoder();
+        return encoder.encodeToString(baos.toByteArray());
+    }
     private Log getLog() { 
         return log;
     }
