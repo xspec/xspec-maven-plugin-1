@@ -138,6 +138,20 @@ public class XSpecCompilerTest extends TestUtils {
     }
     
     @Test
+    public void copyFileWithDotDotTest() throws Exception {
+        // This test case is for XSpec that references a expect or a source file that is not in src/test/xspec
+        // In this example, we have this :
+        // <x:context href="../samples/sample.xml" />
+        XSpecCompiler compiler = new XSpecCompiler(stuff, runnerOptions, getLog());
+        File xspec = new File(runnerOptions.testDir, "schematronTestCase/schematron1.xspec");
+        File resultBase = new File(runnerOptions.reportDir, "schematronTestCase/schematron1.xspec/");
+        compiler.copyFile(xspec.toURI().toURL().toExternalForm(), "../samples/sample.xml", resultBase);
+        // With File, if path contains ../foo, it is not normalized, and file is declared as not exist, but it does
+        File expected = new File(runnerOptions.reportDir, "schematronTestCase/../samples/sample.xml").toPath().normalize().toFile();
+        assertTrue("File does not exist: "+expected.getAbsolutePath(), expected.exists());
+    }
+    
+    @Test
     public void prepareSchematronDocumentTest() throws Exception {
         XdmNode xspecDoc = stuff.getDocumentBuilder().build(new File(getTestDirectory(), "schematronTestCase/schematron2.xspec"));
         XSpecCompiler compiler = new XSpecCompiler(stuff, runnerOptions, getLog());

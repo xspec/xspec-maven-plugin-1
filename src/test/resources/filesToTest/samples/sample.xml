@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<foo>
+    <bar baz="this is a good attribute"/>
+    <bar baz="this is a wrong attribute"/>
+</foo>

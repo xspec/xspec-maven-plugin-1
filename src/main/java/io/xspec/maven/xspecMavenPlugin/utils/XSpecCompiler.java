@@ -229,8 +229,6 @@ public class XSpecCompiler implements LogProvider {
         schut.setDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)));
         schut.transform();
         getLog().debug("XSpec for schematron compiled: "+resultFile.getAbsolutePath());
-        // TODO: refacto. We could use a TeeDestination(serializer, XdmDestination) to avoid parsing result file
-        // Hum... not sure
         XdmNode result = xmlStuff.getDocumentBuilder().build(resultFile);
         if(!resultFile.exists()) {
             getLog().error(resultFile.getAbsolutePath()+" has not be written");
@@ -254,6 +252,8 @@ public class XSpecCompiler implements LogProvider {
             } catch(URISyntaxException ex) {
                 // it can not happens, it is always correct as provided by saxon
                 throw new SaxonApiException("Saxon has generated an invalid URI : ",ex);
+            } catch(Exception ex) {
+                getLog().error("while copying Schematron resources...", ex);
             }
         }
         return result;
@@ -304,7 +304,10 @@ public class XSpecCompiler implements LogProvider {
         getLog().debug("copyFile("+baseUri+", "+referencedFile+", "+resultBase.getAbsolutePath()+")");
         Path basePath = new File(new URI(baseUri)).getParentFile().toPath();
         File source = basePath.resolve(referencedFile).toFile();
-        File dest = resultBase.getParentFile().toPath().resolve(referencedFile).toFile();
+        File dest = resultBase.getParentFile().toPath().resolve(referencedFile).normalize().toFile();
+        if(!dest.exists()) {
+            dest.mkdirs();
+        }
         getLog().debug("Copying "+source.getAbsolutePath()+" to "+dest.getAbsolutePath());
         Files.copy(source.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
