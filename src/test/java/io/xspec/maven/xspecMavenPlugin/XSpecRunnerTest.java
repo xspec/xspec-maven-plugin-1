@@ -133,7 +133,15 @@ public class XSpecRunnerTest extends TestUtils {
     }
     
     @Test
-    public void contextWithMissingDtdTest() throws Exception {
+    public void contextWithMissingDtdWithoutCoverageTest() throws Exception {
+        contextWithMissingDtdTest(false);
+    }
+    @Test
+    public void contextWithMissingDtdWithCoverageTest() throws Exception {
+        contextWithMissingDtdTest(true);
+    }
+    
+    public void contextWithMissingDtdTest(boolean coverage) throws Exception {
         File catalogFile = getProjectDirectory().toPath().resolve("src/test/resources/filesToTest/catalogTestCase/missing-dtd-catalog.xml").normalize().toFile();
         File testDir = new File(getTestDirectory(), "catalogTestCase");
         RunnerOptions runnerOptions = new RunnerOptions(
@@ -145,7 +153,7 @@ public class XSpecRunnerTest extends TestUtils {
                 getBaseDirectory(), 
                 null,
                 new File(getBaseDirectory(), "xspec-reports"), 
-                Boolean.FALSE, 
+                coverage, 
                 Boolean.TRUE);
         XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
         runner.execute();
