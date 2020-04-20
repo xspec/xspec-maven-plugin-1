@@ -132,6 +132,25 @@ public class XSpecRunnerTest extends TestUtils {
         assertEquals("wrong file found", "xsl1.xspec", xspecFiles.get(0).getName());
     }
     
+    @Test
+    public void contextWithMissingDtdTest() throws Exception {
+        File catalogFile = getProjectDirectory().toPath().resolve("src/test/resources/filesToTest/catalogTestCase/missing-dtd-catalog.xml").normalize().toFile();
+        File testDir = new File(getTestDirectory(), "catalogTestCase");
+        RunnerOptions runnerOptions = new RunnerOptions(
+                getProjectDirectory(), 
+                Boolean.TRUE,
+                catalogFile.getAbsolutePath(), 
+                null, 
+                testDir, 
+                getBaseDirectory(), 
+                null,
+                new File(getBaseDirectory(), "xspec-reports"), 
+                Boolean.FALSE, 
+                Boolean.TRUE);
+        XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
+        runner.execute();
+    }
+    
     private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
         XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
         runner.setResources(
