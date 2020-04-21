@@ -36,11 +36,6 @@ public interface XSpecPluginResources {
     public static final String CATALOG_NS = "urn:oasis:names:tc:entity:xmlns:xml:catalog";
     
     /**
-     * Returns URI for JUnit aggregator utility.
-     * @return JUnit aggregator URI
-     */
-    public String getJunitAggregatorUri();
-    /**
      * Returns URI for dependency scanner utility
      * @return Dependency scanner URI
      */

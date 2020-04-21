@@ -38,8 +38,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     private String xspecXQueryCompilerUri;
     private String schematronUnitTestConverter;
     private String xspecReporter;
-    private String xspecFoldingReporter;
-    private String junitReporter;
+    private final String xspecFoldingReporter;
     private String xspecCoverageReporter;
     private String testReportCss;
     
@@ -50,7 +49,6 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
         schematronUnitTestConverter = XSPEC_PREFIX+"schematron/schut-to-xspec.xsl";
         xspecReporter = XSPEC_PREFIX+"reporter/format-xspec-report.xsl";
         xspecFoldingReporter = XSPEC_PREFIX+"reporter/format-xspec-report-folding.xsl";
-        junitReporter = XSPEC_PREFIX+"reporter/junit-report.xsl";
         xspecCoverageReporter = XSPEC_PREFIX+"reporter/coverage-report.xsl";
         testReportCss = XSPEC_PREFIX+"reporter/test-report.css";
     }
@@ -71,9 +69,6 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
         }
         return xspecReporter;
     }
-
-    @Override
-    public String getJUnitReporterUri() { return junitReporter; }
 
     @Override
     public String getXSpecCoverageReporterUri() { return xspecCoverageReporter; }
@@ -111,14 +106,6 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
      */
     public void setXSpecReporter(String xspecReporter) {
         this.xspecReporter = xspecReporter;
-    }
-
-    /**
-     * Defines the JUnit reporter URI
-     * @param junitReporter 
-     */
-    public void setJUnitReporter(String junitReporter) {
-        this.junitReporter = junitReporter;
     }
 
     /**

@@ -53,15 +53,10 @@ public interface XSpecImplResources {
     
     /**
      * Usually format-xspec-report.xsl
+     * @param useFolding
      * @return XSpec reporter URI
      */
     public String getXSpecReporterUri(boolean useFolding);
-    
-    /**
-     * Usually junit-report.xsl
-     * @return JUnit reporter URI
-     */
-    public String getJUnitReporterUri();
     
     /**
      * Usually coverage-report.xsl

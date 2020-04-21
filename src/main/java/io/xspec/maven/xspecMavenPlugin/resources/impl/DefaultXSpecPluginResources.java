@@ -34,7 +34,6 @@ import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
  */
 public class DefaultXSpecPluginResources implements XSpecPluginResources {
     
-    private String junitAggregator;
     private String dependencyScanner;
     private final String imageDown;
     private final String imageUp;
@@ -42,20 +41,10 @@ public class DefaultXSpecPluginResources implements XSpecPluginResources {
     
     public DefaultXSpecPluginResources() {
         super();
-        this.junitAggregator = LOCAL_PREFIX+"io/xspec/maven/xspec-maven-plugin/junit-aggregator.xsl";
         this.dependencyScanner = XML_UTILITIES_PREFIX+"org/mricaud/xml-utilities/get-xml-file-static-dependency-tree.xsl";
         this.imageDown = LOCAL_PREFIX+"reporter/3angle-down.gif";
         this.imageUp = LOCAL_PREFIX+"reporter/3angle-right.gif";
         this.imageChangerXsl = LOCAL_PREFIX+"io/xspec/maven/xspec-maven-plugin/reporter/folding-reporter-inline-image.xsl";
-    }
-
-    @Override
-    public String getJunitAggregatorUri() {
-        return junitAggregator;
-    }
-
-    public void setJunitAggregator(String junitAggregator) {
-        this.junitAggregator = junitAggregator;
     }
 
     @Override

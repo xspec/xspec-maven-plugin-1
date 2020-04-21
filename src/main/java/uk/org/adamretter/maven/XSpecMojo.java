@@ -212,14 +212,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     @Parameter()
     public String xspecReporter;
-    
-    /**
-     * Path to reporter/junit-report.xsl.
-     * This parameter is only available for developement purposes, and should never be overriden.
-     */
-    @Parameter()
-    public String junitReporter;
-    
+        
     /**
      * Path to reporter/coverage-report.xsl.
      * This parameter is only available for developement purposes, and should never be overriden.
@@ -227,13 +220,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter()
     public String coverageReporter;
 
-    /**
-     * Path to io/xspec/maven/xspec-maven-plugin/junit-aggregator.xsl.
-     * This parameter is only available for developement purposes, and should never be overriden.
-     */
-    @Parameter()
-    public String junitAggregator;
-    
     /**
      * Path to org/mricaud/xml-utilities/get-xml-file-static-dependency-tree.xsl.
      * This parameter is only available for developement purposes, and should never be overriden.
@@ -318,12 +304,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public File surefireReportDir;
 
     /**
-     * Defines if a surefire report must be generated
-     */
-    @Parameter(defaultValue = "false")
-    public Boolean generateSurefireReport;
-    
-    /**
      * Defines if generated catalog should be kept or not.
      * xspec-maven-plugin generates its own catalog to access its own resources, 
      * and if <tt>catalogFile</tt> is defined, adds a <tt>&lt;next-catalog /></tt>
@@ -349,8 +329,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
     public MojoExecution execution;
     
-//    private String generateXspecUtilsUri = null;
-
 
     // package private for tests
     XmlStuff xmlStuff;
@@ -426,9 +404,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
         if(xspecReporter!=null && !xspecReporter.isEmpty()) {
             ret.setXSpecReporter(xspecReporter);
         }
-        if(junitReporter!=null && !junitReporter.isEmpty()) {
-            ret.setJUnitReporter(junitReporter);
-        }
         if(coverageReporter!=null && !coverageReporter.isEmpty()) {
             ret.setXSpecCoverageReporter(coverageReporter);
         }
@@ -451,9 +426,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
 
     private XSpecPluginResources getXSpecPluginResources() {
         DefaultXSpecPluginResources ret = new DefaultXSpecPluginResources();
-        if(junitAggregator!=null && !junitAggregator.isEmpty()) {
-            ret.setJunitAggregator(junitAggregator);
-        }
         if(dependencyScanner!=null && !dependencyScanner.isEmpty()) {
             ret.setDependencyScanner(dependencyScanner);
         }

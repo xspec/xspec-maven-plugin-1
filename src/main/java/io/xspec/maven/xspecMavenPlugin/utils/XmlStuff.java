@@ -269,7 +269,6 @@ public class XmlStuff {
         getLog().debug("Using XSpec Xslt Compiler: " + xspecResources.getXSpecXslCompilerUri());
         getLog().debug("Using XSpec Xquery Compiler: " + xspecResources.getXSpecXQueryCompilerUri());
         getLog().debug("Using XSpec Reporter: " + xspecResources.getXSpecReporterUri(options.folding));
-        getLog().debug("Using JUnit Reporter: " + xspecResources.getJUnitReporterUri());
         getLog().debug("Using Coverage Reporter: " + xspecResources.getXSpecCoverageReporterUri());
         getLog().debug("Using Schematron Dsdl include: " + schematronResources.getSchIsoDsdlIncludeUri());
         getLog().debug("Using Schematron expander: " + schematronResources.getSchIsoAbstractExpandUri());
@@ -284,8 +283,6 @@ public class XmlStuff {
         getLog().debug(xspecResources.getXSpecXQueryCompilerUri()+" -> "+srcXqueryCompiler.getSystemId());
         Source srcReporter = resolveSrc(xspecResources.getXSpecReporterUri(options.folding), baseUri, "XSpec Reporter");
         getLog().debug(xspecResources.getXSpecReporterUri(options.folding)+" -> "+srcReporter.getSystemId());
-        Source srcJUnitReporter = resolveSrc(xspecResources.getJUnitReporterUri(), baseUri, "JUnit Reporter");
-        getLog().debug(xspecResources.getJUnitReporterUri()+" -> "+srcJUnitReporter.getSystemId());
         Source srcCoverageReporter = resolveSrc(xspecResources.getXSpecCoverageReporterUri(), baseUri, "Coverage Reporter");
         getLog().debug(xspecResources.getXSpecCoverageReporterUri()+" -> "+srcCoverageReporter.getSystemId());
         Source srcSchIsoDsdl = resolveSrc(schematronResources.getSchIsoDsdlIncludeUri(), baseUri, "Schematron Dsdl");
@@ -305,7 +302,6 @@ public class XmlStuff {
         setXspec4xsltCompiler(compileXsl(srcXsltCompiler));
         setXspec4xqueryCompiler(compileXsl(srcXqueryCompiler));
         setReporter(compileReporter(srcReporter));
-        setJUnitReporter(compileXsl(srcJUnitReporter));
         if(isSaxonPEorEE()) {
             setCoverageReporter(compileXsl(srcCoverageReporter));
         }
@@ -528,7 +524,6 @@ public class XmlStuff {
         }
         return extendsClass(toCheck.getSuperclass(), inheritor);
     }
-    private void setJUnitReporter(XsltExecutable xe) { junitReporter = xe ; }
     public XsltExecutable getJUnitReporter() { return junitReporter; }
     private void setCoverageReporter(XsltExecutable xe) { coverageReporter = xe; }
     public XsltExecutable getCoverageReporter() { return coverageReporter; }

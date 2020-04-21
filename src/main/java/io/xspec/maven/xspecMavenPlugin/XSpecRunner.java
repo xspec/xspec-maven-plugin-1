@@ -457,7 +457,8 @@ public class XSpecRunner implements LogProvider {
                 xt.setErrorListener(errorListener);
                 try {
                     xt.setParameter(new QName("baseDir"), new XdmAtomicValue(baseDirectory.toURI().toURL().toExternalForm()));
-                    xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.reportDir.toURI().toURL().toExternalForm()));
+                    // issue #40
+                    xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
                     xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
                     xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
                     xtSurefire = xt;
@@ -614,7 +615,8 @@ public class XSpecRunner implements LogProvider {
                 xt.setErrorListener(errorListener);
                 try {
                     xt.setParameter(new QName("baseDir"), new XdmAtomicValue(baseDirectory.toURI().toURL().toExternalForm()));
-                    xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.reportDir.toURI().toURL().toExternalForm()));
+                    // issue #40
+                    xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
                     xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
                     xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
                     xtSurefire = xt;
