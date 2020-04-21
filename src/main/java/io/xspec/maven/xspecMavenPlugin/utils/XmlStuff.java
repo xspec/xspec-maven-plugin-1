@@ -34,13 +34,11 @@ import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -54,6 +52,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
+import net.sf.saxon.lib.Feature;
 import net.sf.saxon.s9api.DocumentBuilder;
 import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.QName;
@@ -165,6 +164,7 @@ public class XmlStuff {
             } catch(IOException ex) {
                 throw new XSpecPluginException("while constructing URIResolver", ex);
             }
+            processor.setConfigurationProperty(Feature.SOURCE_PARSER_CLASS, XMP_XMLReader.class.getName());
             getLog().info("URI resolver Ok");
             ClassLoader cl = getClass().getClassLoader();
             if(cl instanceof URLClassLoader) {
@@ -220,7 +220,7 @@ public class XmlStuff {
                 Class<ExtensionFunctionDefinition> cle = (Class<ExtensionFunctionDefinition>)clazz;
                 Constructor<ExtensionFunctionDefinition> cc = cle.getConstructor(EMPTY_PARAMS);
                 processor.getUnderlyingConfiguration().registerExtensionFunction(cc.newInstance());
-                log.debug(className+"registered as Saxon extension function");
+                log.debug(className+" registered as Saxon extension function");
             } else {
                 log.warn(className+" does not extends "+ExtensionFunctionDefinition.class.getName());
             }
@@ -252,7 +252,9 @@ public class XmlStuff {
         if(options.keepGeneratedCatalog) {
             getLog().info("keeping generated catalog: "+catalog.toURI().toURL().toExternalForm());
         }
-        return new Resolver(saxonUriResolver, catalog, getLog());
+        Resolver ret = new Resolver(saxonUriResolver, catalog, getLog());
+        XMP_XMLReader.setCommonResolver(ret.getCr());
+        return ret;
     }
     
     private void createXPathExecutables() throws SaxonApiException {

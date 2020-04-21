@@ -76,9 +76,11 @@ public class CatalogWriter {
     /**
      * Generates and write a catalog tha t resolves all resources for XSpec,
      * schematron and plugin implementation. If XSpec execution requires a user
-     * defined catalog, it may be specified in <tt>userCatalogFileName</tt>.<br/>
+     * defined catalog, it may be specified in <tt>userCatalogFileName</tt>.
+     * 
      * <tt>userCatalogFileName</tt> may be null ; no <tt>&lt;nextCatalog&gt;</tt> 
-     * entry will be added to generated catalog.<br/>
+     * entry will be added to generated catalog.
+     * 
      * If a non null value is provided for <tt>userCatalogFileName</tt>, then
      * a non null value <strong>must</strong> be provided for <tt>environment</tt> ;
      * else, a  IllegalArgumentException will be thrown.

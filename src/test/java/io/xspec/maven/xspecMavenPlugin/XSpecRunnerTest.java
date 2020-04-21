@@ -39,6 +39,7 @@ import java.util.Properties;
 import net.sf.saxon.s9api.XdmNode;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 
 /**
@@ -136,7 +137,7 @@ public class XSpecRunnerTest extends TestUtils {
     public void contextWithMissingDtdWithoutCoverageTest() throws Exception {
         contextWithMissingDtdTest(false);
     }
-    @Test
+    @Test @Ignore(value = "Only with Saxon-EE")
     public void contextWithMissingDtdWithCoverageTest() throws Exception {
         contextWithMissingDtdTest(true);
     }

@@ -103,4 +103,12 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
         return cr.resolveEntity(publicId, systemId);
     }
     
+    /**
+     * Returns underlying org.xmlresolver.Resolver.
+     * @return 
+     */
+    public org.xmlresolver.Resolver getCr() {
+        return cr;
+    }
+    
 }
