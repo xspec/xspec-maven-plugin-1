@@ -69,7 +69,7 @@ public class IndexGenerator {
         try {
             if(!options.reportDir.exists()) options.reportDir.mkdirs();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            XMLStreamWriter sw = XMLOutputFactory.newInstance().createXMLStreamWriter(baos);
+            XMLStreamWriter sw = XMLOutputFactory.newInstance().createXMLStreamWriter(baos, "UTF-8");
             sw.writeStartDocument("UTF-8", "1.0");
             sw.writeStartElement("html");
               sw.writeStartElement("head");
@@ -104,12 +104,15 @@ public class IndexGenerator {
             InputStream is = new ByteArrayInputStream(baos.toByteArray());
             StreamSource source = new StreamSource(is);
             XdmNode tree = stuff.getDocumentBuilder().build(source);
-            Serializer ser = stuff.newSerializer(new FileOutputStream(index));
+	    FileOutputStream fos = new FileOutputStream(index);
+            Serializer ser = stuff.newSerializer(fos);
             ser.setOutputProperty(Serializer.Property.INDENT, "true");
             ser.setOutputProperty(Serializer.Property.METHOD, "html");
             ser.setOutputProperty(Serializer.Property.VERSION, "5.0");
             ser.setOutputProperty(Serializer.Property.ENCODING, "UTF-8");
             stuff.getProcessor().writeXdmValue(tree, ser);
+	    fos.flush();
+	    fos.close();
         } catch(IllegalArgumentException | XMLStreamException | SaxonApiException | IOException ex) {
             throw new XSpecPluginException("while generating index: "+index.getAbsolutePath(), ex);
         }        
