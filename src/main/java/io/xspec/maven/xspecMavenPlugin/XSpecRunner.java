@@ -93,6 +93,7 @@ import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
 import java.io.PrintStream;
 import java.util.Iterator;
 import javax.xml.transform.ErrorListener;
+import net.sf.saxon.lib.Feature;
 import net.sf.saxon.lib.TraceListener;
 import net.sf.saxon.s9api.XdmDestination;
 
@@ -502,6 +503,7 @@ public class XSpecRunner implements LogProvider {
             xtXSpec.setDestination(destination);
             xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
             getLog().debug("\tlaunching transform");
+            getLog().debug("source parser class: "+xtXSpec.getUnderlyingController().getConfiguration().getConfigurationProperty(Feature.SOURCE_PARSER_CLASS));
             xtXSpec.transform();
 
             getLog().debug("XSpec run");

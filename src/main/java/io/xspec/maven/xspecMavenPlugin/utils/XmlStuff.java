@@ -138,6 +138,7 @@ public class XmlStuff {
         this.options=options;
         this.executionProperties=executionProperties;
         this.log=log;
+        processor.setConfigurationProperty(Feature.SOURCE_PARSER_CLASS, XMP_XMLReader.class.getName());
         if(saxonOptions!=null) {
             try {
                 SaxonUtils.prepareSaxonConfiguration(this.processor, saxonOptions);
@@ -164,7 +165,6 @@ public class XmlStuff {
             } catch(IOException ex) {
                 throw new XSpecPluginException("while constructing URIResolver", ex);
             }
-            processor.setConfigurationProperty(Feature.SOURCE_PARSER_CLASS, XMP_XMLReader.class.getName());
             getLog().info("URI resolver Ok");
             ClassLoader cl = getClass().getClassLoader();
             if(cl instanceof URLClassLoader) {

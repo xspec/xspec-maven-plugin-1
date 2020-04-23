@@ -27,7 +27,6 @@
 package io.xspec.maven.xspecMavenPlugin.utils;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -40,13 +39,11 @@ import org.xmlresolver.tools.ResolvingXMLReader;
  */
 public class XMP_XMLReader extends ResolvingXMLReader {
     private static Resolver commonResolver;
-//    private static SAXParserFactory saxFactory;
-    private static Logger LOGGER = LoggerFactory.getLogger(XMP_XMLReader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(XMP_XMLReader.class);
     
-//    private final XMLReader innerReader;
-
     public XMP_XMLReader() throws ParserConfigurationException, SAXException {
         super(commonResolver);
+        setEntityResolver(commonResolver);
         System.err.println("XMP_XMLReader init<>()");
     }
     

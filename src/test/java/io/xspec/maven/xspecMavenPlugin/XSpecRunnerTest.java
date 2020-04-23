@@ -143,7 +143,7 @@ public class XSpecRunnerTest extends TestUtils {
     }
     
     public void contextWithMissingDtdTest(boolean coverage) throws Exception {
-        File catalogFile = getProjectDirectory().toPath().resolve("src/test/resources/filesToTest/catalogTestCase/missing-dtd-catalog.xml").normalize().toFile();
+        File catalogFile = getProjectDirectory().toPath().resolve("target/test-classes/filesToTest/catalogTestCase/missing-dtd-catalog.xml").normalize().toFile();
         File testDir = new File(getTestDirectory(), "catalogTestCase");
         RunnerOptions runnerOptions = new RunnerOptions(
                 getProjectDirectory(), 
