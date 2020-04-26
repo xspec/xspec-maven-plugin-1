@@ -858,6 +858,8 @@ public class XSpecRunner implements LogProvider {
                 bos.write(buffer, 0, read);
                 read = is.read(buffer);
             }
+            is.close();
+            bos.close();
         } catch(TransformerException ex) {
             getLog().error("while extracting CSS: ",ex);
         }
