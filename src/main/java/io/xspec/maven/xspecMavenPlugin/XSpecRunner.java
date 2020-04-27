@@ -73,7 +73,6 @@ import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.plugin.logging.Log;
-import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -89,8 +88,8 @@ import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.net.URL;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecType;
+import io.xspec.maven.xspecMavenPlugin.utils.XMP_XMLReader;
 import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
-import java.io.PrintStream;
 import java.util.Iterator;
 import javax.xml.transform.ErrorListener;
 import net.sf.saxon.lib.Feature;
@@ -494,8 +493,7 @@ public class XSpecRunner implements LogProvider {
                             reporter);
             getLog().debug("\tdestination tree constructed");
 
-            XMLReader reader = xmlStuff.PARSER_FACTORY.newSAXParser().getXMLReader();
-            reader.setEntityResolver((EntityResolver)xmlStuff.getUriResolver());
+            XMLReader reader = new XMP_XMLReader();
             Source xspecSource = new SAXSource(reader, new InputSource(new FileInputStream(sourceFile)));
             xspecSource.setSystemId(sourceFile.toURI().toString());
             xtXSpec.setSource(xspecSource);
@@ -503,7 +501,7 @@ public class XSpecRunner implements LogProvider {
             xtXSpec.setDestination(destination);
             xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
             getLog().debug("\tlaunching transform");
-            getLog().debug("source parser class: "+xtXSpec.getUnderlyingController().getConfiguration().getConfigurationProperty(Feature.SOURCE_PARSER_CLASS));
+//            getLog().debug("source parser class: "+xtXSpec.getUnderlyingController().getConfiguration().getConfigurationProperty(Feature.SOURCE_PARSER_CLASS));
             xtXSpec.transform();
 
             getLog().debug("XSpec run");
@@ -575,8 +573,7 @@ public class XSpecRunner implements LogProvider {
             getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
             final File xspecXmlResult = xspecCompiler.getXSpecXmlResultPath(options.reportDir, sourceFile);
 
-            XMLReader reader = xmlStuff.PARSER_FACTORY.newSAXParser().getXMLReader();
-            reader.setEntityResolver((EntityResolver)xmlStuff.getUriResolver());
+            XMLReader reader = new XMP_XMLReader();
             Source xspecSource = new SAXSource(reader, new InputSource(new FileInputStream(sourceFile)));
             xspecSource.setSystemId(sourceFile.toURI().toString());
             xtXSpec.setSource(xspecSource);
@@ -661,13 +658,7 @@ public class XSpecRunner implements LogProvider {
                 File coverageReportFile = xspecCompiler.getCoverageFinalPath(options.reportDir, sourceFile);
                 pf.setCoverageFile(coverageReportFile.toPath());
                 coverage.setDestination(xmlStuff.getProcessor().newSerializer(coverageReportFile));
-//                coverage.setInitialContextNode(xspecResult.getXdmNode());
                 coverage.setSource(new StreamSource(coverageFile));
-//                getLog().info("coverage pwd: "+options.testDir.toURI().toString());
-//                coverage.setParameter(new QName("pwd"),XdmAtomicValue.makeAtomicValue(options.testDir.toURI().toString()));
-//                Path relative = options.testDir.toPath().relativize(sourceFile.toPath());
-//                getLog().info("coverage tests: "+relative.toString());
-//                coverage.setParameter(new QName("tests"), XdmAtomicValue.makeAtomicValue(relative.toString()));
                 coverage.setParameter(INLINE_CSS, XdmAtomicValue.makeAtomicValue("false"));
                 coverage.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
                 coverage.transform();
@@ -819,6 +810,7 @@ public class XSpecRunner implements LogProvider {
     private static Configuration getSaxonConfiguration() {
         Configuration ret = Configuration.newConfiguration();
         ret.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
+        ret.setConfigurationProperty(Feature.SOURCE_PARSER_CLASS, XMP_XMLReader.class.getName());
         return ret;
     }
     

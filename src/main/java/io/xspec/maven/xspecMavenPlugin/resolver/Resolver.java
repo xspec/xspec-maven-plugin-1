@@ -27,11 +27,15 @@
 package io.xspec.maven.xspecMavenPlugin.resolver;
 
 import io.xspec.maven.xspecMavenPlugin.utils.QuietLogger;
+import io.xspec.maven.xspecMavenPlugin.utils.XMP_XMLReader;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
+import javax.xml.transform.sax.SAXSource;
 import org.apache.maven.plugin.logging.Log;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -48,7 +52,7 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
     private final URIResolver saxonResolver;
     private final Log log;
     org.xmlresolver.Resolver cr;
-    private static final boolean LOG_ENABLE = false;
+    private static final boolean LOG_ENABLE = true;
     
     /**
      * Creates a new URI resolver, based on a catalog file and a saxon URI Resolver
@@ -67,7 +71,7 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
 
     @Override
     public Source resolve(String href, String base) throws TransformerException {
-        getLog().debug(String.format("resolve(%s,%s)", href, base));
+        getLog().info(String.format("resolve(%s,%s)", href, base));
         getLog().debug("catalogList="+cr.getCatalog().catalogList());
         getLog().debug("Trying catalog");
         try {
@@ -75,21 +79,32 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
             getLog().debug("source is "+(source==null ? "" : "not ")+"null");
             if(source!=null && source.getSystemId()!=null) {
                 getLog().debug(String.format("resolved from catalog to %s", source.getSystemId()));
-                return source;
+                getLog().debug(String.format("Source is a %s", source.getClass().getName()));
+  //              return source;
             } else {
                 getLog().debug("Trying saxon");
                 source = saxonResolver.resolve(href, base);
                 if(source!=null && source.getSystemId()!=null) {
                     getLog().debug(String.format("resolved from saxon to %s", source.getSystemId()));
-                    return source;
+//                    return source;
                 } else {
                     getLog().error(String.format("fail to resolve (%s, %s)", href, base));
                     return null;
                 }
             }
+            if(source instanceof SAXSource) {
+                String systemId = source.getSystemId();
+                source = new SAXSource(new XMP_XMLReader(), new InputSource(new URL(systemId).openStream()));
+                getLog().warn("comparing resolvers: "+(XMP_XMLReader.commonResolver == cr));
+                source.setSystemId(systemId);
+            }
+            return source;
         } catch(TransformerException ex) {
             getLog().error("Resolver.resolve("+href+","+base+")", ex);
             throw ex;
+        } catch(ParserConfigurationException| SAXException | IOException ex) {
+            getLog().error("Resolver.resolve("+href+","+base+")", ex);
+            throw new TransformerException(ex);
         }
     }
     
@@ -100,7 +115,9 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
 
     @Override
     public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-        return cr.resolveEntity(publicId, systemId);
+        InputSource ret = cr.resolveEntity(publicId, systemId);
+        getLog().debug(String.format("resolveEntity(%s,%s)->%s", publicId, systemId, ret.getSystemId()));
+        return ret;
     }
     
     /**

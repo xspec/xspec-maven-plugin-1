@@ -61,6 +61,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
+import org.xmlresolver.Resolver;
 
 /**
  * A class that compiles XSpec files
@@ -74,12 +75,7 @@ public class XSpecCompiler implements LogProvider {
     
     private final HashMap<File,File> executionReportDirs;
     private final List<File> filesToDelete;
-    // In XSpec 1.3, this has been renamed to stylesheet-uri
-    // https://github.com/xspec/xspec/pull/325
     public static final QName QN_STYLESHEET = new QName("stylesheet-uri");
-    // FIXME: In XSpec 1.3, this will be renamed to test-dir-uri
-    // https://github.com/xspec/xspec/pull/322
-//    public static final QName QN_TEST_DIR = new QName("test_dir");
     public static final QName QN_URI = new QName("uri");
     
     public XSpecCompiler(XmlStuff xmlStuff, RunnerOptions options, Log log) {
@@ -123,8 +119,9 @@ public class XSpecCompiler implements LogProvider {
 
             isXSpec = new FileInputStream(sourceFile);
 
-            final SAXParser parser = XmlStuff.PARSER_FACTORY.newSAXParser();
-            final XMLReader reader = parser.getXMLReader();
+            //final SAXParser parser = XmlStuff.PARSER_FACTORY.newSAXParser();
+            final XMLReader reader = new XMP_XMLReader();
+            //reader.setEntityResolver((Resolver)xmlStuff.getUriResolver());
             final XSpecTestFilter xspecTestFilter = new XSpecTestFilter(
                     reader, 
                     // Bug under Windows
@@ -220,8 +217,6 @@ public class XSpecCompiler implements LogProvider {
         // modifying xspec to point to compiled schematron
         XsltTransformer schut = xmlStuff.getSchematronSchut().load();
         schut.setParameter(QN_STYLESHEET, new XdmAtomicValue(compiledSchematronDest.toURI().toString()));
-        // plus nécessaire à partir de 1.5.0
-//        schut.setParameter(QN_TEST_DIR, new XdmAtomicValue(options.testDir.toURI().toString()));
         schut.setInitialContextNode(xspecDocument);
         File resultFile = getCompiledXspecSchematronPath(options.reportDir, sourceFile);
         // WARNING : we can't use a XdmDestination, the XdmNode generated does not have 
@@ -252,7 +247,7 @@ public class XSpecCompiler implements LogProvider {
             } catch(URISyntaxException ex) {
                 // it can not happens, it is always correct as provided by saxon
                 throw new SaxonApiException("Saxon has generated an invalid URI : ",ex);
-            } catch(Exception ex) {
+            } catch(IOException ex) {
                 getLog().error("while copying Schematron resources...", ex);
             }
         }

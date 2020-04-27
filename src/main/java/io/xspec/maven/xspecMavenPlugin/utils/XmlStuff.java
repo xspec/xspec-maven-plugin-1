@@ -358,8 +358,8 @@ public class XmlStuff {
         long written = 0;
         while(read>0) {
             baos.write(buffer, 0, read);
-            read = is.read(buffer);
             written += read;
+            read = is.read(buffer);
         }
         baos.flush();
         getLog().debug("image is "+written+" bytes long");
