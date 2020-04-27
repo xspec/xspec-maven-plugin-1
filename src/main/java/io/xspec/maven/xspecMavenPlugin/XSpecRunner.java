@@ -95,6 +95,7 @@ import java.util.Iterator;
 import javax.xml.transform.ErrorListener;
 import net.sf.saxon.lib.TraceListener;
 import net.sf.saxon.s9api.XdmDestination;
+import net.sf.saxon.trans.UncheckedXPathException;
 
 /**
  * This class implements the logic of Mojo
@@ -198,9 +199,9 @@ public class XSpecRunner implements LogProvider {
                 if (!processXSpec(xspec)) {
                     failed = true;
                 }
-            } catch(IOException | TransformerException | SaxonApiException ex) {
+            } catch(IOException | TransformerException | SaxonApiException | UncheckedXPathException ex) {
                 failed = true;
-                throw new XSpecFailureException("while processing "+xspec.getAbsolutePath(), ex);
+                getLog().error("while processing "+xspec.getAbsolutePath(), ex);
             }
         }
         
