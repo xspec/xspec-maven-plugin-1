@@ -82,6 +82,10 @@ public class IndexGenerator {
                   sw.writeCharacters("\ttd,th {border: solid black 1px; }\n");
                   sw.writeCharacters("\ttd:not(:first-child) {text-align: right; }\n");
                 sw.writeEndElement();
+                sw.writeEmptyElement("link");
+                  sw.writeAttribute("rel", "stylesheet");
+                  sw.writeAttribute("href", "resources/test-report.css");
+                  sw.writeAttribute("type", "text/css");
                 sw.writeStartElement("title");
                   sw.writeCharacters("XSpec results");
                 sw.writeEndElement();
