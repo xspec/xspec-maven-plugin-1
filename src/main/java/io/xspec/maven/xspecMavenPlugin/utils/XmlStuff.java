@@ -166,11 +166,11 @@ public class XmlStuff {
                 throw new XSpecPluginException("while constructing URIResolver", ex);
             }
             getLog().info("URI resolver Ok");
-            ClassLoader cl = getClass().getClassLoader();
-            if(cl instanceof URLClassLoader) {
-                URLClassLoader ucl = (URLClassLoader)cl;
+//            ClassLoader cl = getClass().getClassLoader();
+//            if(cl instanceof URLClassLoader) {
+//                URLClassLoader ucl = (URLClassLoader)cl;
                 try {
-                    for(Enumeration<URL> enumer = ucl.findResources("META-INF/services/top.marchand.xml.gaulois.xml"); enumer.hasMoreElements();) {
+                    for(Enumeration<URL> enumer = getClass().getClassLoader().getResources("META-INF/services/top.marchand.xml.gaulois.xml"); enumer.hasMoreElements();) {
                         URL url = enumer.nextElement();
                         log.debug("loading service "+url.toExternalForm());
                         XdmNode document = documentBuilder.build(new StreamSource(url.openStream()));
@@ -195,7 +195,7 @@ public class XmlStuff {
                 } catch(IOException | SaxonApiException ex) {
                     log.error("while looking for resources in /META-INF/services/top.marchand.xml.gaulois/", ex);
                 }
-            }
+//            }
             // TODO: for next release of XSpec :
             // add extension function io.xspec.xspec.saxon.funcdefs.LineNumber
 //            processor.getUnderlyingConfiguration().registerExtensionFunction(
