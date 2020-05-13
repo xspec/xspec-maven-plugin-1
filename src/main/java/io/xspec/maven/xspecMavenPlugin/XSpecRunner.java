@@ -45,6 +45,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import javax.xml.parsers.ParserConfigurationException;
@@ -92,6 +93,7 @@ import io.xspec.maven.xspecMavenPlugin.utils.XSpecType;
 import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
 import java.io.PrintStream;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 import javax.xml.transform.ErrorListener;
 import net.sf.saxon.lib.TraceListener;
 import net.sf.saxon.s9api.XdmDestination;
@@ -827,17 +829,15 @@ public class XSpecRunner implements LogProvider {
      * Package private to allow unit tests
      */
     List<File> findAllXSpecs() throws XSpecPluginException {
+        if (!options.testDir.exists()) {
+            return Collections.emptyList();
+        }
         FileFinder finder = new FileFinder(options.testDir, "**/*.xspec", options.excludes, getLog());
         final Path testPath = options.testDir.toPath();
         try {
-            List<Path> found = finder.search();
-            List<File> ret = new ArrayList<>(found.size());
-            found.stream().forEach((p) -> {
-                    File resolved = testPath.resolve(p).toFile();
-                    ret.add(resolved);
-                }
-            );
-            return ret;
+            return finder.search().stream()
+                    .map(p -> testPath.resolve(p).toFile())
+                    .collect(Collectors.toList());
         } catch(IOException ex) {
             throw new XSpecPluginException(ex);
         }
