@@ -131,7 +131,25 @@ public class XSpecRunnerTest extends TestUtils {
         assertEquals("wrong number of XSpecFiles found", 1, xspecFiles.size());
         assertEquals("wrong file found", "xsl1.xspec", xspecFiles.get(0).getName());
     }
-    
+
+    @Test
+    public void findAllXSpecsTestsNonExistingDir() throws Exception {
+        RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
+        runnerOptions.testDir = new File(getTestDirectory(), "unexisting");
+        XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
+        List<File> xspecFiles = runner.findAllXSpecs();
+        assertEquals("wrong number of XSpecFiles found", 0, xspecFiles.size());
+    }
+
+    @Test
+    public void findAllXSpecsTestsDirWithoutXspecFiles() throws Exception {
+        RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
+        runnerOptions.testDir = new File(getTestDirectory(), "samples");
+        XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
+        List<File> xspecFiles = runner.findAllXSpecs();
+        assertEquals("wrong number of XSpecFiles found", 0, xspecFiles.size());
+    }
+
     private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
         XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
         runner.setResources(
