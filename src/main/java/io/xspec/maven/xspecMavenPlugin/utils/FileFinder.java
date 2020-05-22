@@ -87,7 +87,7 @@ public class FileFinder {
         for(String exclude: excludes) {
             PathMatcher pmex = rootPath.getFileSystem().getPathMatcher(getSyntaxAndPattern(exclude));
             for(int i=found.size()-1; i>=0; i--) {
-                Path p = found.get(i);
+                Path p = rootPath.relativize(found.get(i));
                 if(pmex.matches(p)) {
                     found.remove(i);
                 }
@@ -98,7 +98,7 @@ public class FileFinder {
     
     private String getSyntaxAndPattern(String pattern) {
         String syntaxAndPattern = pattern.contains(":") ? pattern : "glob:"+pattern;
-        // fucking windows !
+        // frakin' windows !
         // TODO: FIXME
         if("\\".equals(File.pathSeparator)) {
             syntaxAndPattern = syntaxAndPattern.replaceAll("/", "\\");
