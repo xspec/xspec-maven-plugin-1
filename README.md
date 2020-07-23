@@ -20,13 +20,14 @@ __Plugin declaration__
     <plugin>
       <groupId>io.xspec.maven</groupId>
       <artifactId>xspec-maven-plugin</artifactId>
-      <version>1.5.1</version>
+      <version>2.0.0</version>
       <dependencies>
         <!-- if you have a license, feel free to add Saxon-PE
            or Saxon-EE instead of Saxon-HE -->
         <dependency>
           <groupId>net.sf.saxon</groupId>
           <artifactId>Saxon-HE</artifactId>
+          <!-- Saxon from 9.7.0-14 to 10.1 have been tested and work correctly -->
           <version>10.1</version>
         </dependency>
       </dependencies>
