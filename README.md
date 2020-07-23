@@ -20,20 +20,21 @@ __Plugin declaration__
     <plugin>
       <groupId>io.xspec.maven</groupId>
       <artifactId>xspec-maven-plugin</artifactId>
-      <version>1.5.2</version>
+      <version>1.5.1</version>
       <dependencies>
         <!-- if you have a license, feel free to add Saxon-PE
            or Saxon-EE instead of Saxon-HE -->
         <dependency>
           <groupId>net.sf.saxon</groupId>
           <artifactId>Saxon-HE</artifactId>
-          <version>9.7.0-14</version>
+          <version>10.1</version>
         </dependency>
       </dependencies>
       <configuration>
         <catalogFile>catalog.xml</catalogFile>
         <generateSurefireReport>true</generateSurefireReport>
         <saxonOptions>See https://github.com/xspec/xspec-maven-plugin-1/wiki</saxonOptions>
+      </configuration>
       <executions>
         <execution>
           <phase>test</phase>
