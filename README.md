@@ -27,8 +27,16 @@ __Plugin declaration__
         <dependency>
           <groupId>net.sf.saxon</groupId>
           <artifactId>Saxon-HE</artifactId>
-          <!-- Saxon from 9.7.0-14 to 10.1 have been tested and work correctly -->
+          <!-- Saxon from 9.7.0-14 up until 10.1 have been tested and work correctly -->
           <version>10.1</version>
+        </dependency>
+        <!-- Saxon >= 10.0 requires XSpec 1.6. The bundled XSpec 1.5
+             works correctly with Saxon 9.x, and you don't need this
+             extra dependency -->
+        <dependency>
+          <groupId>io.xspec</groupId>
+          <artifactId>xspec</artifactId>
+          <version>1.6.0</version>
         </dependency>
       </dependencies>
       <configuration>
@@ -105,6 +113,14 @@ If you are doing this in a forked execution such as that used by the Maven Relea
 
 **Yes, you must**. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, if you have licences. As Maven doesn't provide a mecanism for a default dependency, you must specify it. You can also choose another releases of Saxon ; 9.7.0-x works correctly.
 
-* How surefire reports are generated ?
+* Must I define the XSpec dependency ?
+
+The plugin bundles XSpec 1.5, but that isn't compatible with Saxon >= 10.0.
+
+Saxon 10.x requires XSpec >= 1.6, which you need to add as a dependency.
+
+If you're using Saxon 9.x, you don't need to specify the XSpec dependency.
+
+* How are surefire reports generated ?
 
 Surefire report is generated from the XSpec report, via a XSL. At this time, transformation should be improved, to have a good report in Jenkins. Any help will be appreciated.
