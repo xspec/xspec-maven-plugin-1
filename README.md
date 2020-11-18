@@ -111,7 +111,7 @@ If you are doing this in a forked execution such as that used by the Maven Relea
 
 * Must I define the Saxon dependency ?
 
-**Yes, you must**. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, if you have licences. As Maven doesn't provide a mecanism for a default dependency, you must specify it. You can also choose another releases of Saxon ; 9.7.0-x works correctly.
+**Yes, you must**. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, if you have licences. As Maven doesn't provide a mechanism for a default dependency, you must specify it. You can also choose another releases of Saxon ; 9.7.0-x works correctly.
 
 * Must I define the XSpec dependency ?
 
