@@ -100,7 +100,7 @@ public class FileFinderTest {
     @Test
     public void testFilenameWithWildCharBasedExclusions() throws Exception {
         File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest");
-        List<String> excludes = Arrays.asList("**/imported.xspec", "**/schematron2.xspec");
+        List<String> excludes = Arrays.asList("**imported.xspec", "**schematron2.xspec");
         FileFinder finder = new FileFinder(rootDir, "**/*.xspec", excludes, log);
         List<Path> ret = finder.search();
         assertEquals(1, ret.size());
