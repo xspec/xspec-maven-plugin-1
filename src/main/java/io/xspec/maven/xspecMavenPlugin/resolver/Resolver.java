@@ -30,6 +30,8 @@ import io.xspec.maven.xspecMavenPlugin.utils.QuietLogger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
@@ -81,12 +83,14 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
             getLog().debug("source is "+(source==null ? "" : "not ")+"null");
             if(source!=null && source.getSystemId()!=null) {
                 getLog().debug(String.format("resolved from catalog to %s", source.getSystemId()));
+                source.setSystemId(normalizeUrl(source.getSystemId()));
                 return source;
             } else {
                 getLog().debug("Trying saxon");
                 source = saxonResolver.resolve(href, base);
                 if(source!=null && source.getSystemId()!=null) {
                     getLog().debug(String.format("resolved from saxon to %s", source.getSystemId()));
+                    source.setSystemId(normalizeUrl(source.getSystemId()));
                     return source;
                 } else {
                     getLog().error(String.format("fail to resolve (%s, %s)", href, base));
@@ -96,6 +100,19 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
         } catch(TransformerException ex) {
             getLog().error("Resolver.resolve("+href+","+base+")", ex);
             throw ex;
+        }
+    }
+
+    private String normalizeUrl(String systemId) {
+        try {
+            URL url = new URL(systemId);
+            String protocol = url.getProtocol();
+            String path = url.getPath();
+            String host = url.getHost();
+            return new URL(protocol, host, path.replaceAll("\\/\\/", "/")).toExternalForm();
+        } catch(MalformedURLException ex) {
+            // impossible !
+            return systemId;
         }
     }
 
@@ -112,7 +129,9 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
             return null;
         }
         StreamSource ret = new StreamSource(is);
-        ret.setSystemId(getClass().getResource(path).toString());
+        String systemId = getClass().getResource(path).toExternalForm();
+        log.warn(systemId);
+        ret.setSystemId(normalizeUrl(systemId));
         return ret;
     }
 
