@@ -81,18 +81,21 @@ public class XSpecCounterCH extends DefaultHandler2 {
                 (atts.getValue("pendingTests") != null || atts.getValue("pending") != null)) {
             pendingWrapper++;
             pendingScenario = true;
-            if(activateLogs)
+            if(activateLogs) {
                 logProvider.getLog().debug(LOG_PREFIX+"entering pending scenario");
+            }
         } else if(XSPEC_NS.equals(uri) && "expect".equals(localName)) {
-            if(activateLogs)
+            if(activateLogs) {
                 logProvider.getLog().debug(LOG_PREFIX+"entering expect");
+            }
             if(pendingWrapper > 0) {
                 pendingTests++;
             }
             tests++;
         } else if(XSPEC_NS.equals(uri) && "import".equals(localName)) {
-            if(activateLogs)
+            if(activateLogs) {
                 logProvider.getLog().debug(LOG_PREFIX+"[in "+systemId+"] seeing imported XSpec "+atts.getValue("href"));
+            }
             // in this particular case, we must count also in imported xspec
             String importedSystemId = null;
             try {
@@ -104,8 +107,9 @@ public class XSpecCounterCH extends DefaultHandler2 {
             if(importedSystemId!=null) {
                 // We must create a new parser, a new filter, and so on...
                 try {
-                    if(activateLogs) 
+                    if(activateLogs) {
                         logProvider.getLog().warn(LOG_PREFIX+"[in "+systemId+"] parsing imported XSpec "+importedSystemId);
+                    }
                     final Parser parser = XmlStuff.PARSER_FACTORY.newSAXParser().getParser();
                     final XMLReader reader = new ParserAdapter(parser);
                     importedTestFilter = new XSpecCounterCH(importedSystemId, uriResolver, logProvider, activateLogs, XSPEC_NS+importedSystemId+": ");

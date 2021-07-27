@@ -27,6 +27,8 @@
 package io.xspec.maven.xspecMavenPlugin.resolver;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
@@ -34,6 +36,8 @@ import javax.xml.transform.URIResolver;
 import net.sf.saxon.Configuration;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.After;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -47,18 +51,18 @@ import org.junit.Test;
 public class ResolverTest {
 
     private Configuration configuration;
-    private URIResolver SaxonResolver;
+    private URIResolver saxonResolver;
     private Log log = new SystemStreamLog();
     
     @Before
     public void before() {
         configuration = Configuration.newConfiguration();
-        SaxonResolver = configuration.getURIResolver();
+        saxonResolver = configuration.getURIResolver();
     }
     
     @After
     public void after() {
-        SaxonResolver = null;
+        saxonResolver = null;
         configuration = null;
     }
     
@@ -66,27 +70,50 @@ public class ResolverTest {
     public void testSaxonResources() throws TransformerException {
         URL catalogUrl = this.getClass().getResource("/catalogs/empty-catalog.xml");
         assertNotNull("/catalogs/empty-catalog.xml not found in classpath", catalogUrl);
-        log.info("urlCatalog: "+catalogUrl.toExternalForm());
         File catalogFile = new File(catalogUrl.getFile());
-        // A resolver without any catalog
-        Resolver resolver = new Resolver(SaxonResolver, catalogFile, log);
-        log.info("resolver built");
-        Source saxonResolution = SaxonResolver.resolve("http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd", null);
-        log.info("saxon resolution Ok");
+        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        Source saxonResolution = saxonResolver.resolve("http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd", null);
         Source dtd = resolver.resolve("http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd", null);
         assertNotNull("xmlspec.dtd not resolved", dtd);
-        log.info("XMLSpec dtd: "+dtd.getSystemId());
         assertEquals("resolver resolution is not saxon resolution", saxonResolution.getSystemId(), dtd.getSystemId());
     }
     
     @Test
-    public void testOwnCatalog() throws TransformerException {
+    public void given_a_catalog_resolve_should_use_this_catalog() throws TransformerException {
+        // Given
         URL catalogUrl = this.getClass().getResource("/catalogs/rewriteUri-catalog.xml");
         URL log4jUrl = this.getClass().getResource("/log4j.properties");
+        String log4jUrlWithoutProtocol = log4jUrl.toExternalForm().substring("file:".length());
         File catalogFile = new File(catalogUrl.getFile());
-        // a resolver with one catalog
-        Resolver resolver = new Resolver(SaxonResolver, catalogFile, log);
+        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        // When
         Source log4j = resolver.resolve("dependency:/fake+toto/log4j.properties", null);
-        assertEquals(log4jUrl.toExternalForm(), log4j.getSystemId());
+        // Then
+        SoftAssertions softAssert = new SoftAssertions();
+        softAssert.assertThat(log4j.getSystemId()).startsWith("file:/");
+        softAssert.assertThat(log4j.getSystemId()).endsWith(log4jUrlWithoutProtocol);
+        softAssert.assertAll();
+    }
+
+    @Test
+    public void given_a_cp_url_resolver_should_resolve_from_classpath() throws IOException, TransformerException {
+        // Given
+        String toResolver = "cp:/catalogs/rewriteUri-catalog.xml";
+        File projectDir = new File(".").getCanonicalFile();
+        File testClassesDir = new File(projectDir, "target/test-classes");
+        File catalogsDir = new File(testClassesDir, "catalogs");
+        File targetFile = new File(catalogsDir, "rewriteUri-catalog.xml");
+        URL expected = targetFile.toURI().toURL();
+        log.warn(expected.toString());
+        URL catalogUrl = this.getClass().getResource("/catalogs/empty-catalog.xml");
+        File catalogFile = new File(catalogUrl.getFile());
+        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        // When
+        Source actual = resolver.resolve(toResolver, null);
+        // Then
+        SoftAssertions softAssertions = new SoftAssertions();
+        softAssertions.assertThat(actual).isNotNull();
+        softAssertions.assertThat(actual.getSystemId()).isEqualTo(expected.toString());
+        softAssertions.assertAll();
     }
 }

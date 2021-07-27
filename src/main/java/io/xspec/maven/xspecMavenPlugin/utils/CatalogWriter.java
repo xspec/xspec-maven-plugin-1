@@ -48,21 +48,23 @@ import top.marchand.java.classpath.utils.ClasspathUtils;
 import top.marchand.java.classpath.utils.NotFoundCallback;
 
 /**
- * This class writes catalog catalog
+ * This class writes a catalog
  * @author cmarchand
  */
 public class CatalogWriter {
-    private final ClasspathUtils cu;
+//    private final ClasspathUtils cu;
     private CatalogWriterExtender catalogWriterExtender;
     private NotFoundCallback artifactNotFoundCallback;
     
     public CatalogWriter(ClassLoader cl) throws XSpecPluginException {
         super();
+/*
         try {
             cu = new ClasspathUtils(cl);
         } catch(ClasspathException ex) {
             throw new XSpecPluginException("while creating catalogBuilder", ex);
         }
+*/
     }
     public CatalogWriter(ClassLoader cl, CatalogWriterExtender ext) throws XSpecPluginException {
         this(cl);
@@ -74,7 +76,7 @@ public class CatalogWriter {
     }
         
     /**
-     * Generates and write a catalog tha t resolves all resources for XSpec,
+     * Generates and write a catalog that resolves all resources for XSpec,
      * schematron and plugin implementation. If XSpec execution requires a user
      * defined catalog, it may be specified in <tt>userCatalogFileName</tt>.<br/>
      * <tt>userCatalogFileName</tt> may be null ; no <tt>&lt;nextCatalog&gt;</tt> 
@@ -106,21 +108,18 @@ public class CatalogWriter {
             xmlWriter.writeNamespace("", XSpecPluginResources.CATALOG_NS);
             // io.xspec / xspec
             if(catalogWriterExtender!=null) {
-                catalogWriterExtender.beforeWrite(this, cu);
+                catalogWriterExtender.beforeWrite(this);
             }
-            String jarUri = cu.getArtifactJarUri("io.xspec", "xspec");
-//            System.err.println("io.xspec jarUri="+jarUri);
-            writeCatalogEntry(xmlWriter, jarUri, XSpecImplResources.XSPEC_PREFIX);
+//            String jarUri = cu.getArtifactJarUri("io.xspec", "xspec");
+            writeCatalogEntry(xmlWriter, XSpecImplResources.XSPEC_PREFIX);
             // com.schematron / iso-schematron
-            writeCatalogEntry(xmlWriter, jarUri, DefaultSchematronImplResources.SCHEMATRON_PREFIX);
+            writeCatalogEntry(xmlWriter, DefaultSchematronImplResources.SCHEMATRON_PREFIX);
             // io.xspec / xspec-maven-plugin
-            jarUri = cu.getArtifactJarUri("org.mricaud.xml", "xut");
-//            System.err.println("org.mricaud.xml jarUri="+jarUri);
-            writeCatalogEntry(xmlWriter, jarUri, XSpecPluginResources.XML_UTILITIES_PREFIX);
+//            jarUri = cu.getArtifactJarUri("org.mricaud.xml", "xut");
+            writeCatalogEntry(xmlWriter, XSpecPluginResources.XML_UTILITIES_PREFIX);
             // io.xspec.maven / xspec-maven-plugin
-            jarUri = cu.getArtifactJarUri("io.xspec.maven", "xspec-maven-plugin");
-//            System.err.println("io.xspec.maven jarUri="+jarUri);
-            writeCatalogEntry(xmlWriter, jarUri, XSpecPluginResources.LOCAL_PREFIX);
+//            jarUri = cu.getArtifactJarUri("io.xspec.maven", "xspec-maven-plugin");
+            writeCatalogEntry(xmlWriter, XSpecPluginResources.LOCAL_PREFIX);
             if(userCatalogFilename!=null) {
                 xmlWriter.writeEmptyElement("nextCatalog");
                 String catalogFilename = org.codehaus.plexus.util.StringUtils.interpolate(userCatalogFilename, environment);
@@ -138,11 +137,10 @@ public class CatalogWriter {
             xmlWriter.writeEndElement();
             xmlWriter.writeEndDocument();
             if(catalogWriterExtender!=null) {
-                catalogWriterExtender.afterWrite(this, cu);
+                catalogWriterExtender.afterWrite(this);
             }
             osw.flush();
-//            System.err.println("catalog written");
-        } catch(XMLStreamException | ClasspathException ex) {
+        } catch(XMLStreamException ex) {
             System.err.println("while creating catalog, exception thrown: "+ex.getClass().getName());
             throw new XSpecPluginException("while creating catalog", ex);
         } catch(NullPointerException ex) {
@@ -159,16 +157,15 @@ public class CatalogWriter {
     /**
      * Writes a catalog entries for a jar and a URI prefix
      * @param xmlWriter
-     * @param jarUri
      * @param prefix
-     * @throws XMLStreamException 
+     * @throws XMLStreamException
      */
-    private void writeCatalogEntry(final XMLStreamWriter xmlWriter, final String jarUri, String prefix) throws XMLStreamException {
+    private void writeCatalogEntry(final XMLStreamWriter xmlWriter, String prefix) throws XMLStreamException {
         xmlWriter.writeEmptyElement("rewriteURI");
         xmlWriter.writeAttribute("uriStartString", prefix);
-        xmlWriter.writeAttribute("rewritePrefix", jarUri);
+        xmlWriter.writeAttribute("rewritePrefix", "cp:/");
         xmlWriter.writeEmptyElement("rewriteSystem");
         xmlWriter.writeAttribute("uriStartString", prefix);
-        xmlWriter.writeAttribute("rewritePrefix", jarUri);
+        xmlWriter.writeAttribute("rewritePrefix", "cp:/");
     }
 }

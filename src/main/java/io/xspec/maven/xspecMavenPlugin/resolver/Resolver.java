@@ -29,9 +29,12 @@ package io.xspec.maven.xspecMavenPlugin.resolver;
 import io.xspec.maven.xspecMavenPlugin.utils.QuietLogger;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
+import javax.xml.transform.stream.StreamSource;
+
 import org.apache.maven.plugin.logging.Log;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -68,6 +71,9 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
     @Override
     public Source resolve(String href, String base) throws TransformerException {
         getLog().debug(String.format("resolve(%s,%s)", href, base));
+        if(isCpProtocol(href, base)) {
+            return resolveToClasspath(href, base);
+        }
         getLog().debug("catalogList="+cr.getCatalog().catalogList());
         getLog().debug("Trying catalog");
         try {
@@ -92,7 +98,28 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
             throw ex;
         }
     }
-    
+
+    private boolean isCpProtocol(String href, String base) {
+        return (href!=null && href.startsWith("cp:/")) ||
+                (base!=null && base.startsWith("cp:/"));
+    }
+
+    private Source resolveToClasspath(String href, String base) {
+        String fullUrl = base==null ? href : base+href;
+        String path = removeCpPrefix(fullUrl);
+        InputStream is = getClass().getResourceAsStream(path);
+        if(is==null) {
+            return null;
+        }
+        StreamSource ret = new StreamSource(is);
+        ret.setSystemId(getClass().getResource(path).toString());
+        return ret;
+    }
+
+    private String removeCpPrefix(String fullUrl) {
+        return fullUrl.substring(3);
+    }
+
     private Log getLog() {
         if(LOG_ENABLE) return log;
         return QuietLogger.getLogger();

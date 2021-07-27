@@ -3,8 +3,8 @@
 <catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
   <rewriteSystem 
     systemIdStartString="dependency:/fake+toto/"
-    rewritePrefix="${project.baseUri}target/classes/"/>
+    rewritePrefix="${project.baseUri}/target/classes/"/>
   <rewriteURI 
     uriStartString="dependency:/fake+toto/" 
-    rewritePrefix="${project.baseUri}target/classes/"/>
+    rewritePrefix="${project.baseUri}/target/classes/"/>
 </catalog>

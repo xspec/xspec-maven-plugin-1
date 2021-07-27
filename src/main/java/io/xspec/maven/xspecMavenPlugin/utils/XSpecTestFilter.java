@@ -26,14 +26,13 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
-import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
-import io.xspec.maven.xspecMavenPlugin.utils.XSpecCounterCH;
-import javax.xml.transform.URIResolver;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
+
+import javax.xml.transform.URIResolver;
 
 /**
  * Extracts test results from the XSpec Reader

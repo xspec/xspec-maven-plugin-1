@@ -165,41 +165,8 @@ public class XmlStuff {
             } catch(IOException ex) {
                 throw new XSpecPluginException("while constructing URIResolver", ex);
             }
-            getLog().info("URI resolver Ok");
-//            ClassLoader cl = getClass().getClassLoader();
-//            if(cl instanceof URLClassLoader) {
-//                URLClassLoader ucl = (URLClassLoader)cl;
-                try {
-                    for(Enumeration<URL> enumer = getClass().getClassLoader().getResources("META-INF/services/top.marchand.xml.gaulois.xml"); enumer.hasMoreElements();) {
-                        URL url = enumer.nextElement();
-                        log.debug("loading service "+url.toExternalForm());
-                        XdmNode document = documentBuilder.build(new StreamSource(url.openStream()));
-                        XPathSelector selector = xpathCompiler.compile("/gaulois-services/saxon/extensions/function").load();
-                        selector.setContextItem(document);
-                        Object o = selector.evaluate().iterator();
-                        if(o instanceof XdmSequenceIterator) {
-                            // saxon 9.8
-                            XdmSequenceIterator it = (XdmSequenceIterator)o;
-                            while(it.hasNext()) {
-                                String className = it.next().getStringValue();
-                                registerSaxonExtension(className);
-                            }
-                        } else {
-                            Iterator<XdmItem> it = (Iterator<XdmItem>)o;
-                            while(it.hasNext()) {
-                                String className = it.next().getStringValue();
-                                registerSaxonExtension(className);
-                            }
-                        }
-                    }
-                } catch(IOException | SaxonApiException ex) {
-                    log.error("while looking for resources in /META-INF/services/top.marchand.xml.gaulois/", ex);
-                }
-//            }
-            // TODO: for next release of XSpec :
-            // add extension function io.xspec.xspec.saxon.funcdefs.LineNumber
-//            processor.getUnderlyingConfiguration().registerExtensionFunction(
-//                    new io.xspec.xspec.saxon.funcdefs.LineNumber());
+            getLog().debug("URI resolver Ok");
+            loadAllSaxonExtensionFunctions();
             try {
                 createXPathExecutables();
                 getLog().debug("XPath executables created");
@@ -212,7 +179,37 @@ public class XmlStuff {
             throw new XSpecPluginException(ex.getMessage(), ex);
         }
     }
-    
+
+    private void loadAllSaxonExtensionFunctions() {
+        try {
+            for(Enumeration<URL> enumer = getClass().getClassLoader().getResources("META-INF/services/top.marchand.xml.gaulois.xml"); enumer.hasMoreElements();) {
+                URL url = enumer.nextElement();
+                log.debug("loading service "+url.toExternalForm());
+                XdmNode document = documentBuilder.build(new StreamSource(url.openStream()));
+                XPathSelector selector = xpathCompiler.compile("/gaulois-services/saxon/extensions/function").load();
+                selector.setContextItem(document);
+                Object o = selector.evaluate().iterator();
+                if(o instanceof XdmSequenceIterator) {
+                    // saxon 9.8
+                    XdmSequenceIterator it = (XdmSequenceIterator)o;
+                    while(it.hasNext()) {
+                        String className = it.next().getStringValue();
+                        registerSaxonExtension(className);
+                    }
+                } else {
+                    Iterator<XdmItem> it = (Iterator<XdmItem>)o;
+                    while(it.hasNext()) {
+                        String className = it.next().getStringValue();
+                        registerSaxonExtension(className);
+                    }
+                }
+            }
+        } catch(IOException | SaxonApiException ex) {
+            getLog().error("while looking for resources in /META-INF/services/top.marchand.xml.gaulois/", ex);
+        }
+        registerSaxonExtension("io.xspec.xspec.saxon.funcdefs.LineNumber");
+    }
+
     private void registerSaxonExtension(String className) {
         try {
             Class clazz = Class.forName(className);
@@ -239,10 +236,8 @@ public class XmlStuff {
      * dependencies
      * @param saxonUriResolver
      * @return
-     * @throws DependencyResolutionRequiredException
      * @throws IOException
-     * @throws XMLStreamException
-     * @throws MojoFailureException 
+     * @throws XSpecPluginException
      */
     private URIResolver buildUriResolver(final URIResolver saxonUriResolver, CatalogWriterExtender extender) throws IOException, XSpecPluginException {
         getLog().debug("buildUriResolver");
@@ -263,7 +258,7 @@ public class XmlStuff {
                         +   "replace(document-uri(/), '(.*)/.*$', '$1'), "
                         +   "'/', "
                         +   "/*[local-name() = 'description']/@schematron))"));
-        setXpFileSearcher(getXPathCompiler().compile("//file[@dependency-type!='x:description']"));
+        setXpFileSearcher(getXPathCompiler().compile("//file[@dependency-type!='x:description'][not(starts-with(@abs-uri,'jar:file:'))]"));
     }
     private void createXsltExecutables() throws XSpecPluginException, SaxonApiException, IOException, URISyntaxException {
         getLog().debug("Using XSpec Xslt Compiler: " + xspecResources.getXSpecXslCompilerUri());
@@ -331,10 +326,6 @@ public class XmlStuff {
             tr.setInitialContextNode(xslSource);
             tr.setBaseOutputURI(reporterSource.getSystemId());
             tr.transform();
-            // DEBUG
-//            Serializer ser = getProcessor().newSerializer(System.out);
-//            getProcessor().writeXdmValue(dest.getXdmNode(), ser);
-            // DEBUG
             Source transformed = dest.getXdmNode().getUnderlyingNode();
             return getXsltCompiler().compile(transformed);
         } else {
@@ -489,13 +480,7 @@ public class XmlStuff {
      */
     public XsltExecutable getSchematronSvrl() { return schSvrl; }
     private void setXpSchGetXSpecFile(XPathExecutable xe) { xpSchGetXSpec = xe; }
-    /**
-     * Return XPath that get all Schematron files
-     * @return all schematron files XPath
-     */
-    public XPathExecutable getXpSchGetXSpecFile() { return xpSchGetXSpec; }
-//    public void setXpSchGetSchParams(XPathExecutable xe) { xpSchGetParams = xe; }
-//    public XPathExecutable getXpSchGetSchParams() { return xpSchGetParams; }
+
     private void setSchematronSchut(XsltExecutable xe) { schSchut = xe; }
     /**
      * Return XSL for <tt>schut-to-xspec.xsl</tt>

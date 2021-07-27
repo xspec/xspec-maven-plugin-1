@@ -33,7 +33,7 @@ import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
  * @author cmarchand
  */
 public class DefaultSchematronImplResources implements SchematronImplResources {
-    public static final transient String SCHEMATRON_PREFIX = "dependency:/com.schematron+iso-schematron/";
+    public static final transient String SCHEMATRON_PREFIX = "cp:/";
     private String schIsoDsdlInclude;
     private String schIsoAbstractExpand;
     private String schIsoSvrlForXslt2;

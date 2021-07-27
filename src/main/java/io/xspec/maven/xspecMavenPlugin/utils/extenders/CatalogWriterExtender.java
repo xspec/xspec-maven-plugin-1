@@ -40,14 +40,12 @@ public interface CatalogWriterExtender {
     /**
      * Call before catalog is written
      * @param writer The catalog writer
-     * @param cu The ClasspathUtils used by the CatalogWriter
      */
-    void beforeWrite(CatalogWriter writer, ClasspathUtils cu);
+    void beforeWrite(CatalogWriter writer);
     
     /**
      * Call after catalog has been written
      * @param writer The writer
-     * @param cu The ClasspathUtils used by the writer
      */
-    void afterWrite(CatalogWriter writer, ClasspathUtils cu);
+    void afterWrite(CatalogWriter writer);
 }

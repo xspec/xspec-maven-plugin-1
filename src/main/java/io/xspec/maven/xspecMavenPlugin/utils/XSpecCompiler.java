@@ -109,8 +109,6 @@ public class XSpecCompiler implements LogProvider {
 
     /**
      * Compiles an XSpec using the provided XSLT XSpec compiler
-     * @param compiler The XSpec XSLT compiler
-     * @param xspec The XSpec test to compile
      * @return Details of the Compiled XSpec or null if the XSpec could not be
      * compiled
      */
@@ -147,19 +145,19 @@ public class XSpecCompiler implements LogProvider {
             return new CompiledXSpec(xspecTestFilter.getTests(), xspecTestFilter.getPendingTests(), compiledXSpec);
 
         } catch (final SaxonApiException sae) {
-            log.error(sae.getMessage());
-            log.debug(sae);
+            getLog().error(sae.getMessage());
+            getLog().debug(sae);
         } catch (final ParserConfigurationException | FileNotFoundException pce) {
-            log.error(pce);
+            getLog().error(pce);
         } catch (SAXException saxe) {
-            log.error(saxe.getMessage());
-            log.debug(saxe);
+            getLog().error(saxe.getMessage());
+            getLog().debug(saxe);
         } finally {
             if (isXSpec != null) {
                 try {
                     isXSpec.close();
                 } catch (final IOException ioe) {
-                    log.warn(ioe);
+                    getLog().warn(ioe);
                 }
             }
         }
@@ -237,6 +235,7 @@ public class XSpecCompiler implements LogProvider {
         // copy resources referenced from XSpec
         getLog().info("Copying resource files referenced from XSpec for Schematron");
         XsltTransformer xslDependencyScanner = xmlStuff.getXmlDependencyScanner().load();
+        xslDependencyScanner.setURIResolver(xmlStuff.getXsltCompiler().getURIResolver());
         XdmDestination xdmDest = new XdmDestination();
         xslDependencyScanner.setDestination(xdmDest);
         xslDependencyScanner.setInitialContextNode(xspecDocument);
@@ -246,6 +245,7 @@ public class XSpecCompiler implements LogProvider {
         XdmValue ret = xpFile.evaluate();
         for(int i=0;i<ret.size();i++) {
             XdmNode node = (XdmNode)(ret.itemAt(i));
+            getLog().debug("inspecting "+node.toString());
             String uri = node.getAttributeValue(QN_URI);
             try {
                 copyFile(xspecDocument.getUnderlyingNode().getSystemId(), uri, resultFile);
@@ -302,6 +302,15 @@ public class XSpecCompiler implements LogProvider {
      */
     protected void copyFile(String baseUri, String referencedFile, File resultBase) throws IOException, URISyntaxException {
         getLog().debug("copyFile("+baseUri+", "+referencedFile+", "+resultBase.getAbsolutePath()+")");
+        try {
+            URI destUri = new URI(referencedFile);
+            if(destUri.isAbsolute()) {
+                getLog().debug(referencedFile+" is absolute, do not replace it, do not copy file");
+                return;
+            }
+        } catch(Exception ex) {
+            getLog().debug(referencedFile+" is not a URI, try to resolve it as a relative path", ex);
+        }
         Path basePath = new File(new URI(baseUri)).getParentFile().toPath();
         File source = basePath.resolve(referencedFile).toFile();
         File dest = resultBase.getParentFile().toPath().resolve(referencedFile).normalize().toFile();

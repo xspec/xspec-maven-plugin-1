@@ -45,7 +45,8 @@ public class TestCatalogWriterExtender implements CatalogWriterExtender {
     }
     
     @Override
-    public void beforeWrite(CatalogWriter writer, ClasspathUtils cu) {
+    public void beforeWrite(CatalogWriter writer) {
+/*
         cu.setCallback((String groupId, String artifactId) -> {
             System.err.println("callback call with ("+groupId+","+artifactId+")");
             if("io.xspec.maven".equals(groupId) && "xspec-maven-plugin".equals(artifactId)) {
@@ -56,10 +57,11 @@ public class TestCatalogWriterExtender implements CatalogWriterExtender {
                 throw new ClasspathException("No resource found for ("+groupId+","+artifactId+") in callback");
             }
         });
+*/
     }
     
     @Override
-    public void afterWrite(CatalogWriter writer, ClasspathUtils cu) {
-        cu.removeCallback();
+    public void afterWrite(CatalogWriter writer) {
+        //cu.removeCallback();
     }
 }

@@ -31,8 +31,8 @@ package io.xspec.maven.xspecMavenPlugin.resources;
  * @author cmarchand
  */
 public interface XSpecPluginResources {
-    public static final String XML_UTILITIES_PREFIX = "dependency://org.mricaud+xml-utilities/";
-    public static final String LOCAL_PREFIX = "dependency://io.xspec.maven+xspec-maven-plugin/";
+    public static final String XML_UTILITIES_PREFIX = "cp:/";
+    public static final String LOCAL_PREFIX = "cp:/";
     public static final String CATALOG_NS = "urn:oasis:names:tc:entity:xmlns:xml:catalog";
     
     /**

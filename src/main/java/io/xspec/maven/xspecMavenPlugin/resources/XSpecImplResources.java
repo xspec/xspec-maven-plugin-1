@@ -31,7 +31,7 @@ package io.xspec.maven.xspecMavenPlugin.resources;
  * @author cmarchand
  */
 public interface XSpecImplResources {
-    public static final String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
+    public static final String XSPEC_PREFIX = "cp:/";
 
     /**
      * Usually, generate-xspec-tests.xsl

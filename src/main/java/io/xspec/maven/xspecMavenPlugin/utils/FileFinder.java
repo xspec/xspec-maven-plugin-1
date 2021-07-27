@@ -26,6 +26,8 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
+import org.apache.maven.plugin.logging.Log;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,11 +36,9 @@ import java.nio.file.PathMatcher;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import org.apache.maven.plugin.logging.Log;
 
 /**
- * This class find in a directory files that match a pettern, and are not
+ * This class finds in a directory all files that match a pattern, and are not
  * excluded by other patterns
  * Behind the scene, it uses {@link PathMatcher}, so syntax is quite comparable
  * to ant syntax for patterns

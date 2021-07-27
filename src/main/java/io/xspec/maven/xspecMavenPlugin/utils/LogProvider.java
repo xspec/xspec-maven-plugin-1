@@ -34,5 +34,5 @@ import org.apache.maven.plugin.logging.Log;
  * @author <a href="mailto:adam.retter@googlemail.com">Adam Retter</a>
  */
 public interface LogProvider {
-    public Log getLog();
+    Log getLog();
 }

@@ -36,7 +36,6 @@ import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
 import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
-import io.xspec.maven.xspecMavenPlugin.utils.XSpecFailureException;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
 import io.xspec.maven.xspecMavenPlugin.utils.XmlStuff;
 import org.apache.maven.plugin.AbstractMojo;
@@ -152,7 +151,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     public static final transient String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
     public static final transient String LOCAL_PREFIX = "dependency://io.xspec.maven+xspec-maven-plugin/";
 
-    @Component
+    @Parameter( defaultValue = "${session}", readonly = true )
     private MavenSession session;
     
     @Parameter( defaultValue = "${project}", readonly = true, required = true )
@@ -374,8 +373,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
             } else {
                 getLog().warn("Some XSpec tests failed or were missed, but build will not fail!");
             }
-        } catch(XSpecFailureException ex) {
-            throw new MojoExecutionException("While running XSpecs", ex);
         } finally {
             try {
                 runner.generateIndex();
