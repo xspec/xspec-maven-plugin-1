@@ -27,55 +27,31 @@
 package io.xspec.maven.xspecMavenPlugin.utils;
 
 import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
-import uk.org.adamretter.maven.XSpecMojo;
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
-import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Base64;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Properties;
+import net.sf.saxon.lib.ExtensionFunctionDefinition;
+import net.sf.saxon.s9api.*;
+import net.sf.saxon.trans.XPathException;
+import org.apache.maven.plugin.logging.Log;
+import top.marchand.maven.saxon.utils.SaxonOptions;
+import top.marchand.maven.saxon.utils.SaxonUtils;
+import uk.org.adamretter.maven.XSpecMojo;
+
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
-import net.sf.saxon.lib.ExtensionFunctionDefinition;
-import net.sf.saxon.s9api.DocumentBuilder;
-import net.sf.saxon.s9api.Processor;
-import net.sf.saxon.s9api.QName;
-import net.sf.saxon.s9api.SaxonApiException;
-import net.sf.saxon.s9api.Serializer;
-import net.sf.saxon.s9api.XPathCompiler;
-import net.sf.saxon.s9api.XPathExecutable;
-import net.sf.saxon.s9api.XPathSelector;
-import net.sf.saxon.s9api.XQueryCompiler;
-import net.sf.saxon.s9api.XdmAtomicValue;
-import net.sf.saxon.s9api.XdmDestination;
-import net.sf.saxon.s9api.XdmItem;
-import net.sf.saxon.s9api.XdmNode;
-import net.sf.saxon.s9api.XdmSequenceIterator;
-import net.sf.saxon.s9api.XdmValue;
-import net.sf.saxon.s9api.XsltCompiler;
-import net.sf.saxon.s9api.XsltExecutable;
-import net.sf.saxon.s9api.XsltTransformer;
-import net.sf.saxon.trans.XPathException;
-import org.apache.maven.plugin.logging.Log;
-import top.marchand.maven.saxon.utils.SaxonOptions;
-import top.marchand.maven.saxon.utils.SaxonUtils;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Base64;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Properties;
 
 /**
  * This class holds all utility variables need to process XSPec (XsltCompiler, XPathCompiler, compiled Xslt, and so on...)
@@ -128,8 +104,7 @@ public class XmlStuff {
             SchematronImplResources schematronResources,
             File baseDir,
             RunnerOptions options,
-            Properties executionProperties,
-            CatalogWriterExtender extender) throws XSpecPluginException {
+            Properties executionProperties) throws XSpecPluginException {
         super();
         this.processor = processor;
         this.xspecResources = xspecResources;
@@ -161,7 +136,7 @@ public class XmlStuff {
                 throw new XSpecPluginException(ex);
             }
             try {
-                xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver(), extender));
+                xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver()));
             } catch(IOException ex) {
                 throw new XSpecPluginException("while constructing URIResolver", ex);
             }
@@ -239,9 +214,9 @@ public class XmlStuff {
      * @throws IOException
      * @throws XSpecPluginException
      */
-    private URIResolver buildUriResolver(final URIResolver saxonUriResolver, CatalogWriterExtender extender) throws IOException, XSpecPluginException {
+    private URIResolver buildUriResolver(final URIResolver saxonUriResolver) throws IOException, XSpecPluginException {
         getLog().debug("buildUriResolver");
-        CatalogWriter cw = new CatalogWriter(this.getClass().getClassLoader(), extender);
+        CatalogWriter cw = new CatalogWriter(this.getClass().getClassLoader());
         getLog().debug("CatalogWriter instanciated");
         File catalog = cw.writeCatalog(options.catalogFile, executionProperties, options.keepGeneratedCatalog);
         if(options.keepGeneratedCatalog) {

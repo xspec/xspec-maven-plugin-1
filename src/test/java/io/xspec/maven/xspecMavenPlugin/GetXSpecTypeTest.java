@@ -29,25 +29,21 @@ package io.xspec.maven.xspecMavenPlugin;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultSchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
-import io.xspec.maven.xspecMavenPlugin.utils.CatalogWriter;
 import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import javax.xml.transform.stream.StreamSource;
+import io.xspec.maven.xspecMavenPlugin.utils.XSpecType;
 import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XdmNode;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
-import org.junit.Assert;
+import org.assertj.core.api.Assertions;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import top.marchand.maven.saxon.utils.SaxonOptions;
-import io.xspec.maven.xspecMavenPlugin.utils.XSpecType;
-import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
-import java.net.URL;
+
+import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.util.Properties;
-import top.marchand.java.classpath.utils.ClasspathException;
-import top.marchand.java.classpath.utils.ClasspathUtils;
 
 /**
  * Tests the getXSpecType from XSPecMojo
@@ -81,41 +77,56 @@ public class GetXSpecTypeTest {
         options.keepGeneratedCatalog = true;
         runner.setEnvironment(new Properties(), options);
         SaxonOptions saxonOptions = new SaxonOptions();
-        URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
-        File classesDir = new File(url.toURI()).getParentFile();
-        String classesUri = classesDir.toURI().toURL().toExternalForm();
-        CatalogWriterExtender extender = new TestCatalogWriterExtender(classesUri);
-        runner.setCatalogWriterExtender(extender);
         runner.init(saxonOptions);
     }
     
     @Test
-    public void testSchematron() throws SaxonApiException {
+    public void given_a_xspec_on_schematron_document_should_return_SCH() throws SaxonApiException {
+        // Given
         String document = "<x:description xmlns:x='http://www.jenitennison.com/xslt/xspec' "+
                 "schematron='pouet.sch'><x:content/></x:description>";
-        XdmNode doc = runner.getXmlStuff().getDocumentBuilder().build(new StreamSource(new ByteArrayInputStream(document.getBytes())));
-        Assert.assertEquals(XSpecType.SCH, runner.getXSpecType(doc));
+        XdmNode doc = parseDocument(document);
+        // when
+        XSpecType actual = runner.getXSpecType(doc);
+        // then
+        Assertions.assertThat(actual).isEqualTo(XSpecType.SCH);
     }
+
     @Test
-    public void testXQueryAt() throws SaxonApiException {
+    public void given_a_xspec_on_xquery_at_should_return_XQ() throws SaxonApiException {
+        // Given
         String document = "<x:description xmlns:x='http://www.jenitennison.com/xslt/xspec' "+
                 "query-at='top:marchand:xml:xspec:xquery'><x:content/></x:description>";
-        XdmNode doc = runner.getXmlStuff().getDocumentBuilder().build(new StreamSource(new ByteArrayInputStream(document.getBytes())));
-        Assert.assertEquals(XSpecType.XQ, runner.getXSpecType(doc));
+        XdmNode doc = parseDocument(document);
+        // When
+        XSpecType actual = runner.getXSpecType(doc);
+        // Then
+        Assertions.assertThat(actual).isEqualTo(XSpecType.XQ);
     }
     @Test
-    public void testXQuery() throws SaxonApiException {
+    public void given_a_xspec_on_xsquery_should_return_XQ() throws SaxonApiException {
+        // Given
         String document = "<x:description xmlns:x='http://www.jenitennison.com/xslt/xspec' "+
                 "query='pouet.xq'><x:content/></x:description>";
-        XdmNode doc = runner.getXmlStuff().getDocumentBuilder().build(new StreamSource(new ByteArrayInputStream(document.getBytes())));
-        Assert.assertEquals(XSpecType.XQ, runner.getXSpecType(doc));
+        XdmNode doc = parseDocument(document);
+        // When
+        XSpecType actual = runner.getXSpecType(doc);
+        // Then
+        Assertions.assertThat(actual).isEqualTo(XSpecType.XQ);
     }
     @Test
-    public void testXslt() throws SaxonApiException {
+    public void given_a_xspec_on_xslt_should_return_XSL() throws SaxonApiException {
+        // Given
         String document = "<x:description xmlns:x='http://www.jenitennison.com/xslt/xspec' "+
                 "stylesheet='pouet.xslt'><x:content/></x:description>";
-        XdmNode doc = runner.getXmlStuff().getDocumentBuilder().build(new StreamSource(new ByteArrayInputStream(document.getBytes())));
-        Assert.assertEquals(XSpecType.XSL, runner.getXSpecType(doc));
+        XdmNode doc = parseDocument(document);
+        // When
+        XSpecType actual = runner.getXSpecType(doc);
+        // Then
+        Assertions.assertThat(actual).isEqualTo(XSpecType.XSL);
     }
-    
+
+    private XdmNode parseDocument(String document) throws SaxonApiException {
+        return runner.getXmlStuff().getDocumentBuilder().build(new StreamSource(new ByteArrayInputStream(document.getBytes())));
+    }
 }

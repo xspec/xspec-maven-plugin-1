@@ -65,8 +65,7 @@ public class IndexGeneratorTest extends TestUtils {
                     new DefaultSchematronImplResources(), 
                     getBaseDirectory(), 
                     options, 
-                    new Properties(), 
-                    newExtender());
+                    new Properties());
         } catch(Exception ex) {
             // ignore
         }

@@ -31,7 +31,6 @@ import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.utils.*;
-import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.TraceListener;
 import net.sf.saxon.s9api.*;
@@ -90,7 +89,6 @@ public class XSpecRunner implements LogProvider {
     private boolean initDone;
     private List<ProcessedFile> processedFiles;
     private XSpecCompiler xspecCompiler;
-    private CatalogWriterExtender catalogWriterExtender;
 
     public static final QName INITIAL_TEMPLATE_NAME=new QName(XSPEC_NS, "main");
     public static final QName INLINE_CSS = new QName("inline-css");
@@ -138,8 +136,7 @@ public class XSpecRunner implements LogProvider {
                     schResources,
                     baseDirectory,
                     options,
-                    executionProperties,
-                    catalogWriterExtender
+                    executionProperties
             );
         } catch(XSpecPluginException ex) {
             getLog().error("Exception while creating XmlStuff", ex);
@@ -733,7 +730,7 @@ public class XSpecRunner implements LogProvider {
     }
 
     /**
-     * Set the implementation resources to use. <b>Must be call before {@link #init() }</b>.
+     * Set the implementation resources to use. <b>Must be call before {@link #init(SaxonOptions) }</b>.
      * @param xspecResources XSpec implementation resources
      * @param schResources Schematron implementation resource
      * @param pluginResources Plugin-specific implementation resources
@@ -829,14 +826,6 @@ public class XSpecRunner implements LogProvider {
     // for UT only
     XmlStuff getXmlStuff() { return xmlStuff; }
 
-    public CatalogWriterExtender getCatalogWriterExtender() {
-        return catalogWriterExtender;
-    }
-
-    public void setCatalogWriterExtender(CatalogWriterExtender catalogWriterExtender) {
-        this.catalogWriterExtender = catalogWriterExtender;
-    }
-    
     /**
      * expose this to package to let unit tests initialize PF, 
      * when running outside of {@link #execute()} method.

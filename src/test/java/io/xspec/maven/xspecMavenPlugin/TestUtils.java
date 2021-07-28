@@ -26,15 +26,12 @@
  */
 package io.xspec.maven.xspecMavenPlugin;
 
-import io.xspec.maven.xspecMavenPlugin.utils.CatalogWriter;
 import io.xspec.maven.xspecMavenPlugin.utils.LogProvider;
-import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
+
+import java.io.File;
+import java.net.URISyntaxException;
 
 /**
  *
@@ -72,10 +69,4 @@ public class TestUtils implements LogProvider {
         return LOG;
     }
     
-    public CatalogWriterExtender newExtender() throws URISyntaxException, MalformedURLException {
-        URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
-        File classesDir = new File(url.toURI()).getParentFile();
-        String classesUri = classesDir.toURI().toURL().toExternalForm();
-        return new TestCatalogWriterExtender(classesUri);
-    }
 }

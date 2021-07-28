@@ -26,22 +26,17 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
-import io.xspec.maven.xspecMavenPlugin.TestCatalogWriterExtender;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Properties;
 import net.sf.saxon.Configuration;
-import net.sf.saxon.s9api.DocumentBuilder;
-import net.sf.saxon.s9api.Processor;
-import net.sf.saxon.s9api.QName;
-import net.sf.saxon.s9api.XPathCompiler;
-import net.sf.saxon.s9api.XPathSelector;
-import net.sf.saxon.s9api.XdmItem;
-import net.sf.saxon.s9api.XdmNode;
-import net.sf.saxon.s9api.XdmValue;
+import net.sf.saxon.s9api.*;
+
 import static org.junit.Assert.*;
+
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 /**
@@ -57,7 +52,7 @@ public class CatalogWriterTest {
         URL url = CatalogWriter.class.getClassLoader().getResource("xspec-maven-plugin.properties");
         File classesDir = new File(url.toURI()).getParentFile();
         String classesUri = classesDir.toURI().toURL().toExternalForm();
-        return new CatalogWriter(this.getClass().getClassLoader(), new TestCatalogWriterExtender(classesUri));
+        return new CatalogWriter(this.getClass().getClassLoader());
     }
     
     private static Processor getProc() {
@@ -75,26 +70,53 @@ public class CatalogWriterTest {
     }
     
     @Test
-    public void testNoNextCatalog() throws Exception {
+    public void given_no_user_catalog_generated_catalog_shouldnt_contain_a_next_catalog() throws Exception {
+        // Given
         CatalogWriter writer = getWriter();
+        XPathSelector sel = compileXPath("/cat:catalog/cat:nextCatalog");
+        // When
         File ret = writer.writeCatalog(null, null, true);
-        XdmNode document = getDocBuilder().build(ret);
-        XPathCompiler compiler = getProc().newXPathCompiler();
-        compiler.declareNamespace("cat", "urn:oasis:names:tc:entity:xmlns:xml:catalog");
-        XPathSelector sel = compiler.compile("/cat:catalog/cat:nextCatalog").load();
+        // Then
+        System.out.println("given_no_user_catalog_generated_catalog_shouldnt_contain_a_next_catalog");
+        System.out.println("Generated catalog: "+ret.getAbsolutePath());
+        XdmNode document = parseFile(ret);
         sel.setContextItem(document);
         XdmValue result = sel.evaluate();
-        assertTrue("A nextCatalog has been found, it shouldn't", result.size()==0);
+        Assertions.assertThat(result.size()).isEqualTo(0);
     }
-    
+
+    private XdmNode parseFile(File ret) throws SaxonApiException {
+        return getDocBuilder().build(ret);
+    }
+
+    @Test
+    public void given_no_user_catalog_catalog_should_be_empty() throws Exception {
+        // Given
+        CatalogWriter writer = getWriter();
+        XPathSelector sel = compileXPath("/cat:catalog/*");
+        // When
+        File ret = writer.writeCatalog(null, null, true);
+        System.out.println("given_no_user_catalog_catalog_should_be_empty");
+        System.out.println("Generated catalog: "+ret.getAbsolutePath());
+        XdmNode document = parseFile(ret);
+        // Then
+        sel.setContextItem(document);
+        XdmValue result = sel.evaluate();
+        Assertions.assertThat(result.size()).isEqualTo(0);
+    }
+
+    private XPathSelector compileXPath(String s) throws SaxonApiException {
+        XPathCompiler compiler = getProc().newXPathCompiler();
+        compiler.declareNamespace("cat", "urn:oasis:names:tc:entity:xmlns:xml:catalog");
+        return compiler.compile(s).load();
+    }
+
     @Test
     public void testHasNextCatalog()  throws Exception {
         CatalogWriter writer = getWriter();
         File ret = writer.writeCatalog("http://fake.org/catalog.xml", new Properties(), true);
-        XdmNode document = getDocBuilder().build(ret);
-        XPathCompiler compiler = getProc().newXPathCompiler();
-        compiler.declareNamespace("cat", "urn:oasis:names:tc:entity:xmlns:xml:catalog");
-        XPathSelector sel = compiler.compile("/cat:catalog/cat:nextCatalog").load();
+        XdmNode document = parseFile(ret);
+        XPathSelector sel = compileXPath("/cat:catalog/cat:nextCatalog");
         sel.setContextItem(document);
         XdmValue result = sel.evaluate();
         assertTrue("No nextCatalog has been found, it should", result.size()==1);
@@ -111,5 +133,6 @@ public class CatalogWriterTest {
         File ret = writer.writeCatalog("http://fake.org/catalog.xml", null, true);
         fail("A IllegalArgumentException is expected if userCatalogFilename is not null and environment is null");
     }
-    
+
+
 }

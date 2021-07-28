@@ -26,10 +26,12 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
-import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
-import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultSchematronImplResources;
-import io.xspec.maven.xspecMavenPlugin.utils.extenders.CatalogWriterExtender;
+import javanet.staxutils.IndentingXMLStreamWriter;
+
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,42 +41,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Properties;
-import javanet.staxutils.IndentingXMLStreamWriter;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-import top.marchand.java.classpath.utils.ClasspathException;
-import top.marchand.java.classpath.utils.ClasspathUtils;
-import top.marchand.java.classpath.utils.NotFoundCallback;
 
 /**
  * This class writes a catalog
  * @author cmarchand
  */
 public class CatalogWriter {
-//    private final ClasspathUtils cu;
-    private CatalogWriterExtender catalogWriterExtender;
-    private NotFoundCallback artifactNotFoundCallback;
-    
+
     public CatalogWriter(ClassLoader cl) throws XSpecPluginException {
         super();
-/*
-        try {
-            cu = new ClasspathUtils(cl);
-        } catch(ClasspathException ex) {
-            throw new XSpecPluginException("while creating catalogBuilder", ex);
-        }
-*/
     }
-    public CatalogWriter(ClassLoader cl, CatalogWriterExtender ext) throws XSpecPluginException {
-        this(cl);
-        this.catalogWriterExtender = ext;
-    }
-    
-    public void setNotFoundCallback(NotFoundCallback artifactNotFoundCallback) {
-        this.artifactNotFoundCallback=artifactNotFoundCallback;
-    }
-        
+
     /**
      * Generates and write a catalog that resolves all resources for XSpec,
      * schematron and plugin implementation. If XSpec execution requires a user
@@ -106,20 +83,6 @@ public class CatalogWriter {
             xmlWriter.writeStartElement("catalog");
             xmlWriter.setDefaultNamespace(XSpecPluginResources.CATALOG_NS);
             xmlWriter.writeNamespace("", XSpecPluginResources.CATALOG_NS);
-            // io.xspec / xspec
-            if(catalogWriterExtender!=null) {
-                catalogWriterExtender.beforeWrite(this);
-            }
-//            String jarUri = cu.getArtifactJarUri("io.xspec", "xspec");
-            writeCatalogEntry(xmlWriter, XSpecImplResources.XSPEC_PREFIX);
-            // com.schematron / iso-schematron
-            writeCatalogEntry(xmlWriter, DefaultSchematronImplResources.SCHEMATRON_PREFIX);
-            // io.xspec / xspec-maven-plugin
-//            jarUri = cu.getArtifactJarUri("org.mricaud.xml", "xut");
-            writeCatalogEntry(xmlWriter, XSpecPluginResources.XML_UTILITIES_PREFIX);
-            // io.xspec.maven / xspec-maven-plugin
-//            jarUri = cu.getArtifactJarUri("io.xspec.maven", "xspec-maven-plugin");
-            writeCatalogEntry(xmlWriter, XSpecPluginResources.LOCAL_PREFIX);
             if(userCatalogFilename!=null) {
                 xmlWriter.writeEmptyElement("nextCatalog");
                 String catalogFilename = org.codehaus.plexus.util.StringUtils.interpolate(userCatalogFilename, environment);
@@ -136,9 +99,6 @@ public class CatalogWriter {
             }
             xmlWriter.writeEndElement();
             xmlWriter.writeEndDocument();
-            if(catalogWriterExtender!=null) {
-                catalogWriterExtender.afterWrite(this);
-            }
             osw.flush();
         } catch(XMLStreamException ex) {
             System.err.println("while creating catalog, exception thrown: "+ex.getClass().getName());
@@ -153,19 +113,4 @@ public class CatalogWriter {
         return tmpCatalog;
     }
 
-
-    /**
-     * Writes a catalog entries for a jar and a URI prefix
-     * @param xmlWriter
-     * @param prefix
-     * @throws XMLStreamException
-     */
-    private void writeCatalogEntry(final XMLStreamWriter xmlWriter, String prefix) throws XMLStreamException {
-        xmlWriter.writeEmptyElement("rewriteURI");
-        xmlWriter.writeAttribute("uriStartString", prefix);
-        xmlWriter.writeAttribute("rewritePrefix", "cp:/");
-        xmlWriter.writeEmptyElement("rewriteSystem");
-        xmlWriter.writeAttribute("uriStartString", prefix);
-        xmlWriter.writeAttribute("rewritePrefix", "cp:/");
-    }
 }

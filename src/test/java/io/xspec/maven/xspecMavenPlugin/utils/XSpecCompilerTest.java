@@ -70,8 +70,7 @@ public class XSpecCompilerTest extends TestUtils {
                 new DefaultSchematronImplResources(), 
                 getBaseDirectory(), 
                 runnerOptions, 
-                new Properties(), 
-                newExtender());
+                new Properties());
     }
     
     @Test

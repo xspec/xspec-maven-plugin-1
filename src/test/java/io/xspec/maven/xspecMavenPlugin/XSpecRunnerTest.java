@@ -57,7 +57,6 @@ public class XSpecRunnerTest extends TestUtils {
                 new DefaultXSpecPluginResources());
         RunnerOptions options = new RunnerOptions(getBaseDirectory());
         runner.setEnvironment(new Properties(), options);
-        runner.setCatalogWriterExtender(newExtender());
 
         runner.init(new SaxonOptions());
         runner.extractCssResource();
@@ -156,7 +155,6 @@ public class XSpecRunnerTest extends TestUtils {
                 new DefaultXSpecImplResources(), 
                 new DefaultSchematronImplResources(), 
                 new DefaultXSpecPluginResources());
-        runner.setCatalogWriterExtender(newExtender());
         runner.setEnvironment(new Properties(), runnerOptions);
         runner.init(saxonOptions);
         return runner;
