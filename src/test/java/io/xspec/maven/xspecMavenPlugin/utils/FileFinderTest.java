@@ -36,6 +36,9 @@ import java.util.List;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import static org.junit.Assert.*;
+
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
 /**
@@ -46,65 +49,88 @@ public class FileFinderTest {
     private final Log log = new SystemStreamLog();
     
     @Test
-    public void testAllFiles() throws URISyntaxException, IOException {
+    public void given_5_files_in_a_dir_tree_including_all_excluding_none_filefinder_should_find_5() throws Exception {
+        // Given
         File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
-        System.out.println("Searching in "+rootDir.getAbsolutePath());
         FileFinder finder = new FileFinder(rootDir, "**/*", null, log);
-        List<Path> ret = finder.search();
-        assertEquals("we expect 5 regular files", 5, ret.size());
-    }
-    @Test
-    public void testAllButBak() throws URISyntaxException, IOException {
-        File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
-        System.out.println("Searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/*bak*"), log);
-        List<Path> ret = finder.search();
-        assertEquals("we expect 4 regular files", 4, ret.size());
-    }
-    @Test
-    public void testAllButEn() throws URISyntaxException, IOException {
-        File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
-        System.out.println("Searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**"), log);
-        List<Path> ret = finder.search();
-        assertEquals("we expect 4 regular files", 4, ret.size());
-    }
-    @Test
-    public void testAllButEnAndBak() throws URISyntaxException, IOException {
-        File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
-        System.out.println("Searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**", "**/*bak*"), log);
-        List<Path> ret = finder.search();
-        assertEquals("we expect 3 regular files", 3, ret.size());
-    }
-    
-    @Test
-    public void testXSpecFiles() throws URISyntaxException, IOException {
-        File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
-        System.out.println("searching in "+rootDir.getAbsolutePath());
-        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", new ArrayList<>(), log);
-        List<Path> ret = finder.search();
-        assertEquals(1, ret.size());
-        assertTrue(ret.get(0).toString().endsWith("xsl1.xspec"));
-    }
-    
-    @Test
-    public void testFilenameWithoutWildCharBasedExclusions() throws Exception {
-        File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest");
-        List<String> excludes = Arrays.asList("imported.xspec", "schematron2.xspec");
-        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", excludes, log);
-        List<Path> ret = finder.search();
-        assertEquals(3, ret.size());
+        // When
+        List<Path> actual = finder.search();
+        // Then
+        Assertions.assertThat(actual.size()).isEqualTo(5);
     }
 
     @Test
-    public void testFilenameWithWildCharBasedExclusions() throws Exception {
+    public void given_5_files_in_a_dir_tree_including_all_excluding_bak_filefinder_should_find_4() throws Exception {
+        // Given
+        File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
+        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/*bak*"), log);
+        // When
+        List<Path> actual = finder.search();
+        // Then
+        Assertions.assertThat(actual.size()).isEqualTo(4);
+    }
+
+    @Test
+    public void given_5_files_in_a_dir_tree_including_all_excluding_en_subdir_filefinder_should_find_4() throws Exception {
+        // Given
+        File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
+        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**"), log);
+        // When
+        List<Path> actual = finder.search();
+        // Then
+        Assertions.assertThat(actual.size()).isEqualTo(4);
+    }
+
+    @Test
+    public void given_5_files_in_a_dir_tree_including_all_excluding_en_subdir_and_bak_filefinder_should_find_3() throws Exception {
+        // Given
+        File rootDir = new File(getProjectDirectory(), "src/test/resources/FileFinder");
+        FileFinder finder = new FileFinder(rootDir, "**/*", Arrays.asList("**/en/**", "**/*bak*"), log);
+        // When
+        List<Path> actual = finder.search();
+        // Then
+        Assertions.assertThat(actual.size()).isEqualTo(3);
+    }
+    
+    @Test
+    public void given_a_dir_tree_with_1_xspec_file_should_return_1() throws Exception {
+        // Given
+        File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
+        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", new ArrayList<>(), log);
+        // When
+        List<Path> actual = finder.search();
+        // Then
+        SoftAssertions softAssertions = new SoftAssertions();
+        softAssertions.assertThat(actual.size()).isEqualTo(1);
+        softAssertions.assertThat(actual.get(0).toString()).endsWith("xsl1.xspec");
+        softAssertions.assertAll();
+    }
+    
+    @Test
+    public void given_exclusion_without_wildChar_should_return_4() throws Exception {
+        // Given
         File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest");
-        List<String> excludes = Arrays.asList("**/imported.xspec", "**/schematron2.xspec");
+        List<String> excludes = Arrays.asList("imported.xspec", "schematron2.xspec");
         FileFinder finder = new FileFinder(rootDir, "**/*.xspec", excludes, log);
-        List<Path> ret = finder.search();
-        assertEquals(1, ret.size());
-        assertTrue(ret.get(0).toString().endsWith("xsl1.xspec"));
+        // When
+        List<Path> actual = finder.search();
+        // Then
+        Assertions.assertThat(actual.size()).isEqualTo(4);
+    }
+
+    @Test
+    public void given_exclusion_with_wildChar_should_return_1() throws Exception {
+        // Given
+        File rootDir = new File(getProjectDirectory(), "src/test/resources/filesToTest");
+        List<String> excludes = Arrays.asList("**/imported.xspec", "**/schematron2.xspec", "**/*.control.xspec");
+        FileFinder finder = new FileFinder(rootDir, "**/*.xspec", excludes, log);
+        // When
+        List<Path> actual = finder.search();
+        // Then
+        SoftAssertions softAssertions = new SoftAssertions();
+        softAssertions.assertThat(actual.size()).isEqualTo(1);
+        softAssertions.assertThat(actual.get(0).toString()).endsWith("xsl1.xspec");
+        softAssertions.assertAll();
     }
     
     

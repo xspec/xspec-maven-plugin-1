@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<x:description
+    xmlns:x="http://www.jenitennison.com/xslt/xspec"
+    schematron="../../../../main/resources/el/EL_TEE_actu/EL_TEE_actu.ActualisationZoom.control.sch" 
+    xmlns:xf="http://www.lefebvre-sarrut.eu/ns/xmlfirst">
+    
+  <x:scenario label="Contrôle règle sur la meta EL_META_actuCategorieActualite">
+    <x:context>
+        <xf:editorialEntity xmlns:xf="http://www.lefebvre-sarrut.eu/ns/xmlfirst">
+            <xf:metadata>
+               <xf:meta label="Catégorie" group="IDENTIFICATION" code="EL_META_actuCategorieActualite" as="xf:referenceItemRef">
+                  <xf:value as="xf:referenceItemRef">
+                      <xf:ref xf:targetResId="Rubriques_actu_VP_EL" idRef="ZOOM" xf:targetResType="referenceTable" xf:refType="xf:referenceItemRef" />
+                  </xf:value>
+                  <xf:verbalization>
+                      <xf:span xmlns="http://www.w3.org/1999/xhtml">Zoom</xf:span>
+                  </xf:verbalization>
+               </xf:meta>
+            </xf:metadata>
+            
+            <xf:metadata>
+                <xf:meta label="Catégorie" group="IDENTIFICATION" code="EL_META_actuCategorieActualite" as="xf:referenceItemRef">
+                    <xf:value as="xf:referenceItemRef">
+                        <xf:ref xf:targetResId="Rubriques_actu_VP_EL" idRef="OTHER" xf:targetResType="referenceTable" xf:refType="xf:referenceItemRef" />
+                    </xf:value>
+                    <xf:verbalization>
+                        <xf:span xmlns="http://www.w3.org/1999/xhtml">Other</xf:span>
+                    </xf:verbalization>
+                </xf:meta>
+            </xf:metadata>
+        </xf:editorialEntity>
+    </x:context>
+
+      <x:scenario label="règle sur valeur de xf:value/xf:ref/@idRef">
+          <x:expect-not-assert id="meta-actu-categorie" location="xf:editorialEntity[1]/xf:metadata[1]/xf:meta[1]" label="[vérification règle ok]" />
+          <x:expect-assert id="meta-actu-categorie" location="xf:editorialEntity[1]/xf:metadata[2]/xf:meta[1]" label="[règle en échec 1]" />
+      </x:scenario>
+  </x:scenario>
+    
+    
+    <x:scenario label="Contrôle nombre de références actives">
+        <x:context>
+            <editorialEntity xmlns="http://www.lefebvre-sarrut.eu/ns/xmlfirst">
+                <metadata>
+                    <meta label="Catégorie" group="IDENTIFICATION" code="EL_META_actuCategorieActualite" as="xf:referenceItemRef">
+                        <value as="xf:referenceItemRef">
+                            <ref xf:targetResId="Rubriques_actu_VP_EL" idRef="ZOOM" xf:targetResType="referenceTable" xf:refType="xf:referenceItemRef" />
+                        </value>
+                        <verbalization>
+                            <span xmlns="http://www.w3.org/1999/xhtml">Zoom</span>
+                        </verbalization>
+                    </meta>
+                    <meta label="Référence(s) active(s)" group="IDENTIFICATION"
+                        code="EL_META_actuPJ" as="xf:mediaEntityRef+"><value as="xf:mediaEntityRef"
+                                ><ref xf:targetResId="f8d13471d-4652-4807-8ee8-d0647e77a00c"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                1</span></verbalization>
+                        <value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f7086f03c-11cd-4ac4-bf6a-b6dfb05002eb"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                2</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f7a73176c-1cf7-4739-8f3f-4c664e96d895"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                3</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f8730a22d-6979-4993-85dc-c7fd358ae211"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                4</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f46b60982-14f0-4086-aa6f-3ab8f850b7fe"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                5</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f1743f28c-9ee1-4aa7-82a5-b35e13ae734d"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                6</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f05ba59e6-4e4e-4736-9e6f-8c9518ebba35"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                7</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f3c2d6d89-7dd0-49e3-9c93-087505742ef7"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                8</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="fb665ef11-2b6e-4cfb-a869-2d1bd30371fd"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                9</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f47eb58eb-b0a4-4402-8cb2-d7612b26afeb"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                10</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="fefe5bb56-185f-4b5f-ac9e-ad0254a3843b"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                11</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f5bdb10ce-ccfa-4800-a5cf-a48cda140124"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                12</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="ff08ba9d3-40f6-4b7b-addc-f4004fa22974"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                13</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f8876e2df-37e3-4cb0-aafc-36ede249c832"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                14</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f77802858-ab94-46b4-aee2-ca398e4b9f9e"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                15</span></verbalization><value as="xf:mediaEntityRef"><ref
+                                xf:targetResId="f1ac33867-54c2-49e5-84aa-dc81ca949681"
+                                xf:targetResType="mediaEntity" xf:refType="xf:mediaEntityRef"
+                            /></value><verbalization><span xmlns="http://www.w3.org/1999/xhtml">ref
+                                16</span></verbalization></meta>
+                </metadata>
+            </editorialEntity>
+        </x:context>
+        <x:scenario label="règle de comptage des références">
+            <x:expect-not-assert id="meta-number-of-refs" location="/xf:editorialEntity[1]/xf:metadata[1]/xf:meta[2]/xf:value[15]" label="[vérification règle ok]" />
+            <x:expect-assert id="meta-number-of-refs" location="/xf:editorialEntity[1]/xf:metadata[1]/xf:meta[2]/xf:value[16]" label="[règle en échec 1]" />
+        </x:scenario>
+    </x:scenario>
+
+
+</x:description>
