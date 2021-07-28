@@ -26,22 +26,23 @@
  */
 package io.xspec.maven.xspecMavenPlugin.resolver;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
 import net.sf.saxon.Configuration;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
-import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.After;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.URIResolver;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 
 /**
@@ -110,6 +111,28 @@ public class ResolverTest {
         Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
         // When
         Source actual = resolver.resolve(toResolver, null);
+        // Then
+        SoftAssertions softAssertions = new SoftAssertions();
+        softAssertions.assertThat(actual).isNotNull();
+        softAssertions.assertThat(actual.getSystemId()).isEqualTo(expected.toString());
+        softAssertions.assertAll();
+    }
+
+    @Test
+    public void given_a_cp_url_and_a_base_uri_resolver_should_resolve_from_classpath() throws Exception {
+        // Given
+        String toResolve = "cp:/catalogs/rewriteUri-catalog.xml";
+        File projectDir = new File(".").getCanonicalFile();
+        File testClassesDir = new File(projectDir, "target/test-classes");
+        File catalogsDir = new File(testClassesDir, "catalogs");
+        File targetFile = new File(catalogsDir, "rewriteUri-catalog.xml");
+        URL expected = targetFile.toURI().toURL();
+        log.warn(expected.toString());
+        URL catalogUrl = this.getClass().getResource("/catalogs/empty-catalog.xml");
+        File catalogFile = new File(catalogUrl.getFile());
+        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        // When
+        Source actual = resolver.resolve(toResolve, projectDir.toURI().toURL().toExternalForm());
         // Then
         SoftAssertions softAssertions = new SoftAssertions();
         softAssertions.assertThat(actual).isNotNull();

@@ -26,12 +26,14 @@
  */
 package io.xspec.maven.xspecMavenPlugin.resolver;
 
+import com.google.common.base.CharMatcher;
 import io.xspec.maven.xspecMavenPlugin.utils.QuietLogger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.regex.Pattern;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
@@ -54,7 +56,8 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
     private final Log log;
     org.xmlresolver.Resolver cr;
     private static final boolean LOG_ENABLE = false;
-    
+    private final Pattern protocolPattern;
+
     /**
      * Creates a new URI resolver, based on a catalog file and a saxon URI Resolver
      * @param saxonResolver
@@ -65,6 +68,7 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
         super();
         this.saxonResolver=saxonResolver;
         this.log=log;
+        protocolPattern = Pattern.compile("^[\\w\\d]+:/.*");
         // issue #11 : Resolver() initializes and uses a static Catalog. We must not do this
         cr = new org.xmlresolver.Resolver(new Catalog());
         cr.getCatalog().addSource(new CatalogSource.UriCatalogSource(catalog.toURI().toString()));
@@ -122,7 +126,7 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
     }
 
     private Source resolveToClasspath(String href, String base) {
-        String fullUrl = base==null ? href : base+href;
+        String fullUrl = isAbsolute(href) ? href : base+href;
         String path = removeCpPrefix(fullUrl);
         InputStream is = getClass().getResourceAsStream(path);
         if(is==null) {
@@ -133,6 +137,10 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
         log.warn(systemId);
         ret.setSystemId(normalizeUrl(systemId));
         return ret;
+    }
+
+    private boolean isAbsolute(String href) {
+        return protocolPattern.matcher(href).matches();
     }
 
     private String removeCpPrefix(String fullUrl) {
