@@ -69,8 +69,7 @@ public class XSpecRunner implements LogProvider {
     public static final String TRACE_SYS_PROP_XSPEC_FILE = "xspec.xspecfile";
     // technical
     private final Log log;
-    private final Configuration saxonConfiguration;
-    
+
     // environment
     /**
      * project directory, in a maven use case
@@ -81,7 +80,7 @@ public class XSpecRunner implements LogProvider {
     private XSpecImplResources xspecResources;
     private SchematronImplResources schResources;
     private XSpecPluginResources pluginResources;
-    private XmlStuff xmlStuff;
+    XmlStuff xmlStuff;
     private final Properties executionProperties;
     private RunnerOptions options;
     
@@ -99,7 +98,6 @@ public class XSpecRunner implements LogProvider {
         super();
         this.log = log;
         this.baseDirectory = baseDirectory;
-        saxonConfiguration = getSaxonConfiguration();
         executionProperties = new Properties();
     }
     
@@ -128,7 +126,6 @@ public class XSpecRunner implements LogProvider {
         }
         try {
             xmlStuff = new XmlStuff(
-                    new Processor(saxonConfiguration),
                     saxonOptions,
                     getLog(), 
                     xspecResources,
@@ -184,21 +181,24 @@ public class XSpecRunner implements LogProvider {
      */
     final boolean processXSpec(final File xspec) throws SaxonApiException, TransformerException, IOException {
         getLog().info("Processing XSpec: " + xspec.getAbsolutePath());
-
         XdmNode xspecDocument = xmlStuff.getDocumentBuilder().build(xspec);
-        XSpecType type = getXSpecType(xspecDocument);
+        XSpecType type = xmlStuff.getXSpecType(xspecDocument);
+        getLog().debug(xspec.getName()+" is a "+type.name()+" XSpec file");
         switch(type) {
             case XQ: return processXQueryXSpec(xspecDocument);
-            case SCH: {
-                XdmNode compiledSchXSpec = xspecCompiler.prepareSchematronDocument(xspecDocument);
-                // it will have a problem in report with filename.
-                return processXsltXSpec(compiledSchXSpec);
-            }
-            default: return processXsltXSpec(xspecDocument);
-            
+            case SCH: return processSchematronXSpec(xspecDocument);
+            case XSL: return processXsltXSpec(xspecDocument);
         }
+        getLog().error("Unsupported XSpec type: "+type.name());
+        return false;
     }
-    
+
+    private boolean processSchematronXSpec(XdmNode xspecDocument) throws SaxonApiException, TransformerException, IOException {
+        XdmNode compiledSchXSpec = xspecCompiler.prepareSchematronDocument(xspecDocument);
+        // it will have a problem in report with filename.
+        return processXsltXSpec(compiledSchXSpec);
+    }
+
     /**
      * Process an XSpec on XQuery Test
      * @param xspec The path to the XSpec test file
@@ -676,58 +676,6 @@ public class XSpecRunner implements LogProvider {
             return true;
         }
     }
-    /**
-     * Returns the XSpec tested file kind
-     * @param doc
-     * @return XSpecType
-     * @throws SaxonApiException If file is not a XSpec one
-     */
-    XSpecType getXSpecType(XdmNode doc) throws SaxonApiException {
-        XPathSelector xps = xmlStuff.getXpExecGetXSpecType().load();
-        xps.setContextItem(doc);
-        XdmValue values = xps.evaluate();
-        Object o = values.iterator();
-        if(o instanceof XdmSequenceIterator) {
-            for(XdmSequenceIterator it=(XdmSequenceIterator)o; it.hasNext();) {
-                XdmNode item=(XdmNode)(it.next());
-                if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
-                    String nodeName = item.getNodeName().getLocalName();
-                    switch(nodeName) {
-                        case "query": 
-                        case "query-at": {
-                            return XSpecType.XQ;
-                        }
-                        case "schematron": {
-                            return XSpecType.SCH;
-                        }
-                        case "stylesheet": {
-                            return XSpecType.XSL;
-                        }
-                    }
-                }
-            }
-        } else {
-            for(Iterator<XdmItem> it=(Iterator<XdmItem>)o; it.hasNext();) {
-                XdmNode item=(XdmNode)(it.next());
-                if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
-                    String nodeName = item.getNodeName().getLocalName();
-                    switch(nodeName) {
-                        case "query": 
-                        case "query-at": {
-                            return XSpecType.XQ;
-                        }
-                        case "schematron": {
-                            return XSpecType.SCH;
-                        }
-                        case "stylesheet": {
-                            return XSpecType.XSL;
-                        }
-                    }
-                }
-            }
-        }
-        throw new SaxonApiException("This file does not seem to be a valid XSpec file: "+doc.getBaseURI().toString());
-    }
 
     /**
      * Set the implementation resources to use. <b>Must be call before {@link #init(SaxonOptions) }</b>.
@@ -772,16 +720,7 @@ public class XSpecRunner implements LogProvider {
         generator.generateIndex();
     }
         
-    /**
-     * We want to be sure that external-functions are allowed
-     * @return 
-     */
-    private static Configuration getSaxonConfiguration() {
-        Configuration ret = Configuration.newConfiguration();
-        ret.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
-        return ret;
-    }
-    
+
     /**
      * Package private to allow unit tests
      */

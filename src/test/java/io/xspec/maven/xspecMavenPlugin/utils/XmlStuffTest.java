@@ -26,6 +26,7 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
+import io.xspec.maven.xspecMavenPlugin.TestUtils;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultSchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
@@ -53,16 +54,15 @@ import static org.junit.Assert.fail;
  */
 public class XmlStuffTest {
     private final RunnerOptions runnerOptions;
-    private final Processor proc;
     private final SaxonOptions saxonOptions;
     private final DefaultSchematronImplResources schematronResources;
     private final DefaultXSpecImplResources xspecResources;
     private final DefaultXSpecPluginResources pluginResources;
+    private final File baseDirectory;
     private Log log = new SystemStreamLog();
 
     public XmlStuffTest() throws URISyntaxException {
         super();
-        proc = new Processor(Configuration.newConfiguration());
         runnerOptions = new RunnerOptions(getBaseDirectory());
         runnerOptions.reportDir = new File(getBaseDirectory(), "target/xspec-reports");
         runnerOptions.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/");
@@ -70,19 +70,19 @@ public class XmlStuffTest {
         schematronResources = new DefaultSchematronImplResources();
         xspecResources = new DefaultXSpecImplResources();
         pluginResources = new DefaultXSpecPluginResources();
+        baseDirectory = TestUtils.getBaseDirectory();
     }
     
     @Test(expected = NullPointerException.class)
     public void compileXslTest() throws Exception {
         XmlStuff stuff = new XmlStuff(
-                proc, 
-                saxonOptions, 
+                saxonOptions,
                 getLog(),
                 xspecResources, 
                 pluginResources, 
-                schematronResources, 
-                null,
-                runnerOptions, 
+                schematronResources,
+                baseDirectory,
+                runnerOptions,
                 new Properties());
         XsltExecutable ret = stuff.compileXsl(null);
         fail("An exception should have been thrown");
@@ -95,14 +95,13 @@ public class XmlStuffTest {
     @Test
     public void getXtReporterTest() throws Exception {
         XmlStuff stuff = new XmlStuff(
-                proc, 
-                saxonOptions, 
+                saxonOptions,
                 getLog(),
-                xspecResources, 
-                pluginResources, 
-                schematronResources, 
-                null,
-                runnerOptions, 
+                xspecResources,
+                pluginResources,
+                schematronResources,
+                baseDirectory,
+                runnerOptions,
                 new Properties());
         XsltTransformer ret = stuff.getXtReporter();
         assertNotNull(ret);
