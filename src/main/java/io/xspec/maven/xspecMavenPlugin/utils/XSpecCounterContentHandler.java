@@ -27,10 +27,14 @@
 package io.xspec.maven.xspecMavenPlugin.utils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
+
+import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
 import org.xml.sax.Attributes;
 import org.xml.sax.Parser;
 import org.xml.sax.SAXException;
@@ -44,22 +48,23 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * A ContentHandler, to count and log with parameters...
  * @author cmarchand
  */
-public class XSpecCounterCH extends DefaultHandler2 {
-    public final static String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
+public class XSpecCounterContentHandler extends DefaultHandler2 {
+    public final static String XSPEC_NS = XSpecRunner.XSPEC_NS;
 
-    private int tests = 0;
-    private int pendingTests = 0;
-    private int pendingWrapper = 0;
+    private final Counters globalCounters;
+    private Counters currentCounters;
+
     private boolean pendingScenario = true;
     private final LogProvider logProvider;
     private final String systemId;
     private final URIResolver uriResolver;
+    private final Map<String, Counters> sharedScenarios;
     
     private final boolean activateLogs;
     private final String LOG_PREFIX;
-    private XSpecCounterCH importedTestFilter;
+    private XSpecCounterContentHandler importedTestFilter;
     
-    public XSpecCounterCH(final String systemId, final URIResolver uriResolver, final LogProvider logProvider, boolean activateLogs, String... prefix) {
+    public XSpecCounterContentHandler(final String systemId, final URIResolver uriResolver, final LogProvider logProvider, boolean activateLogs, String... prefix) {
         super();
         this.systemId=systemId;
         this.uriResolver=uriResolver;
@@ -68,6 +73,9 @@ public class XSpecCounterCH extends DefaultHandler2 {
         if(prefix.length>0) {
             LOG_PREFIX=prefix[0];
         } else LOG_PREFIX="";
+        globalCounters = new Counters();
+        currentCounters = globalCounters;
+        sharedScenarios = new HashMap<>();
     }
 
     @Override
@@ -75,23 +83,35 @@ public class XSpecCounterCH extends DefaultHandler2 {
         if(activateLogs)
             logProvider.getLog().debug(LOG_PREFIX+"startElement("+uri+","+localName+","+qName+",...)");
         if(XSPEC_NS.equals(uri) && ("pendingTests".equals(localName) || "pending".equals(localName))) {
-            pendingWrapper++;
-        } else if(XSPEC_NS.equals(uri) && 
-                "scenario".equals(localName) && 
-                (atts.getValue("pendingTests") != null || atts.getValue("pending") != null)) {
-            pendingWrapper++;
-            pendingScenario = true;
-            if(activateLogs) {
-                logProvider.getLog().debug(LOG_PREFIX+"entering pending scenario");
+            currentCounters.pendingWrapper++;
+        } else if(XSPEC_NS.equals(uri) && "scenario".equals(localName)) {
+            if(isTrue((atts.getValue("shared")))) {
+                String scenarioName = atts.getValue("label");
+                Counters scenarioCounters = new Counters();
+                sharedScenarios.put(scenarioName, scenarioCounters);
+                currentCounters = scenarioCounters;
+            }
+            if((atts.getValue("pendingTests") != null || atts.getValue("pending") != null)) {
+                currentCounters.pendingWrapper++;
+                pendingScenario = true;
+                if (activateLogs) {
+                    logProvider.getLog().debug(LOG_PREFIX + "entering pending scenario");
+                }
             }
         } else if(XSPEC_NS.equals(uri) && "expect".equals(localName)) {
-            if(activateLogs) {
-                logProvider.getLog().debug(LOG_PREFIX+"entering expect");
+            if (activateLogs) {
+                logProvider.getLog().debug(LOG_PREFIX + "entering expect");
             }
-            if(pendingWrapper > 0) {
-                pendingTests++;
+            if (currentCounters.pendingWrapper > 0) {
+                currentCounters.pendingTests++;
             }
-            tests++;
+            currentCounters.tests++;
+        } else if(XSPEC_NS.equals(uri) && "like".equals(localName)) {
+            String scenarioName = atts.getValue("label");
+            Counters scenarioCounters = sharedScenarios.get(scenarioName);
+            currentCounters.pendingTests+=scenarioCounters.pendingTests;
+            currentCounters.tests+=scenarioCounters.tests;
+            currentCounters.pendingWrapper+=scenarioCounters.pendingWrapper;
         } else if(XSPEC_NS.equals(uri) && "import".equals(localName)) {
             if(activateLogs) {
                 logProvider.getLog().debug(LOG_PREFIX+"[in "+systemId+"] seeing imported XSpec "+atts.getValue("href"));
@@ -112,7 +132,7 @@ public class XSpecCounterCH extends DefaultHandler2 {
                     }
                     final Parser parser = XmlStuff.PARSER_FACTORY.newSAXParser().getParser();
                     final XMLReader reader = new ParserAdapter(parser);
-                    importedTestFilter = new XSpecCounterCH(importedSystemId, uriResolver, logProvider, activateLogs, XSPEC_NS+importedSystemId+": ");
+                    importedTestFilter = new XSpecCounterContentHandler(importedSystemId, uriResolver, logProvider, activateLogs, XSPEC_NS+importedSystemId+": ");
                     XMLFilter filter = new XMLFilterImpl(reader) {
                         @Override
                         public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
@@ -136,21 +156,31 @@ public class XSpecCounterCH extends DefaultHandler2 {
     @Override
     public void endElement(final String uri, final String localName, final String qName) throws SAXException {
         if(XSPEC_NS.equals(uri) && ("pendingTests".equals(localName) || "pending".equals(localName))) {
-            pendingWrapper--;
-        } else if(XSPEC_NS.equals(uri) && "scenario".equals(localName) && pendingScenario == true) {
-            pendingWrapper--;
-            pendingScenario = false;
-            if(activateLogs)
-                logProvider.getLog().debug(LOG_PREFIX+"exiting pending scenario");
+            currentCounters.pendingWrapper--;
+        } else if(XSPEC_NS.equals(uri) && "scenario".equals(localName)) {
+            if(pendingScenario == true) {
+                currentCounters.pendingWrapper--;
+                pendingScenario = false;
+                if (activateLogs)
+                    logProvider.getLog().debug(LOG_PREFIX + "exiting pending scenario");
+            }
+            currentCounters = globalCounters;
         } else if(XSPEC_NS.equals(uri) && "import".equals(localName)) {
             if(activateLogs) {
                 logProvider.getLog().debug(LOG_PREFIX+"Adding "+importedTestFilter.getTests()+" tests");
                 logProvider.getLog().debug(LOG_PREFIX+"Adding "+importedTestFilter.getPendingTests()+" pending tests");
             }
-            this.tests+=importedTestFilter.getTests();
-            this.pendingTests+=importedTestFilter.getPendingTests();
+            this.currentCounters.tests = this.currentCounters.tests + importedTestFilter.getTests();
+            this.currentCounters.pendingTests = this.currentCounters.pendingTests + importedTestFilter.getPendingTests();
             importedTestFilter = null;
         }
+    }
+    private boolean isTrue(String value) {
+        if(value==null) return false;
+        if("true".equals(value)) return true;
+        if("yes".equals(value)) return true;
+        if("1".equals(value)) return true;
+        return false;
     }
     /**
      * The total number of test expectations in the provided XSpec
@@ -159,7 +189,7 @@ public class XSpecCounterCH extends DefaultHandler2 {
      * @return The number of tests
      */
     public int getTests() {
-        return tests;
+        return globalCounters.tests;
     }
 
     /**
@@ -168,7 +198,15 @@ public class XSpecCounterCH extends DefaultHandler2 {
      * @return The number of pending tests
      */
     public int getPendingTests() {
-        return pendingTests;
+        return globalCounters.pendingTests;
     }
-    
+
+    public static class Counters {
+        private int tests = 0;
+        private int pendingTests = 0;
+        private int pendingWrapper = 0;
+
+        public Counters() {
+        }
+    }
 }

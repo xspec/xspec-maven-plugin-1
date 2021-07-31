@@ -34,6 +34,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Properties;
 import net.sf.saxon.Configuration;
@@ -42,6 +43,8 @@ import net.sf.saxon.s9api.Processor;
 import net.sf.saxon.s9api.QName;
 import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import top.marchand.maven.saxon.utils.SaxonOptions;
@@ -155,24 +158,31 @@ public class XSpecCompilerTest extends TestUtils {
         XdmNode xspecDoc = stuff.getDocumentBuilder().build(new File(getTestDirectory(), "schematronTestCase/schematron2.xspec"));
         XSpecCompiler compiler = new XSpecCompiler(stuff, runnerOptions, getLog());
         XdmNode ret = compiler.prepareSchematronDocument(xspecDoc);
-        assertNotNull("prepareSchematronDocument return a null result", ret);
+        Assertions.assertThat(ret).isNotNull();
         // Vérification des fichiers créés
         File workDir = new File(runnerOptions.reportDir, "schematronTestCase/schematron2.xspec");
         File schCompiledAsXsl = new File(workDir, "schematron/schematron2.xspec.xslt");
         File compiledXspec = new File(workDir, "schematron2/schematron2.xspec-compiled.xspec");
-        assertTrue(workDir.getAbsolutePath()+" does not exists", workDir.exists());
-        assertTrue(workDir.getAbsolutePath()+" is not a directory", workDir.isDirectory());
-        assertTrue(schCompiledAsXsl.getAbsolutePath()+" does not exist", schCompiledAsXsl.exists());
-        assertTrue(schCompiledAsXsl.getAbsolutePath()+" is not a regular file", schCompiledAsXsl.isFile());
-        assertTrue(compiledXspec.getAbsolutePath()+" does not exist", compiledXspec.exists());
-        assertTrue(compiledXspec.getAbsolutePath()+" is not a regular file", compiledXspec.isFile());
+        SoftAssertions softAssertions = new SoftAssertions();
+        softAssertions.assertThat(workDir).as(workDir.getAbsolutePath()+" does not exists").exists();
+        softAssertions.assertThat(workDir).as(workDir.getAbsolutePath()+" is not a directory").isDirectory();
+        softAssertions.assertThat(schCompiledAsXsl).as(schCompiledAsXsl.getAbsolutePath()+" does not exist").exists();
+        softAssertions.assertThat(schCompiledAsXsl).as(schCompiledAsXsl.getAbsolutePath()+" is not a regular file").isFile();
+        softAssertions.assertThat(compiledXspec).as(compiledXspec.getAbsolutePath()+" does not exist").exists();
+        softAssertions.assertThat(compiledXspec).as(compiledXspec.getAbsolutePath()+" is not a regular file").isFile();
+        softAssertions.assertAll();
         // now check the generated XSpec points to generated XSL
         XdmNode generatedXspec = stuff.getDocumentBuilder().build(compiledXspec);
-        XdmItem rootItem = generatedXspec.axisIterator(Axis.CHILD, new QName(XSpecCounterCH.XSPEC_NS, "description")).next();
+        XdmItem rootItem = generatedXspec.axisIterator(Axis.CHILD, new QName(XSpecCounterContentHandler.XSPEC_NS, "description")).next();
         XdmNode rootNode = (XdmNode)rootItem;
         XdmItem attrItem = rootNode.axisIterator(Axis.ATTRIBUTE, new QName("stylesheet")).next();
         String fileUri = attrItem.getStringValue();
         URI uri = new URI(fileUri);
-        assertEquals("generated XSpec does not reference generated XSLT", schCompiledAsXsl.toURI(), uri);
+        getLog().debug("uri: "+uri.toString());
+        File referencedFile = new File(uri);
+        Assertions
+                .assertThat(Files.isSameFile(schCompiledAsXsl.toPath(), referencedFile.toPath()))
+                .as("generated XSpec does not reference generated XSLT")
+                .isTrue();
     }
 }

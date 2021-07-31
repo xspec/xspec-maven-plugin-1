@@ -224,7 +224,9 @@ public class XSpecCompiler implements LogProvider {
         File resultFile = getCompiledXspecSchematronPath(options.reportDir, sourceFile);
         // WARNING : we can't use a XdmDestination, the XdmNode generated does not have 
         // an absolute systemId, which is used in processXsltXSpec(XdmNode xspec)
-        schut.setDestination(xmlStuff.newSerializer(new FileOutputStream(resultFile)));
+        Serializer schutSerializer = xmlStuff.newSerializer(new FileOutputStream(resultFile));
+        schut.setDestination(schutSerializer);
+        schut.setBaseOutputURI(resultFile.toURI().toString());
         schut.transform();
         getLog().debug("XSpec for schematron compiled: "+resultFile.getAbsolutePath());
         XdmNode result = xmlStuff.getDocumentBuilder().build(resultFile);

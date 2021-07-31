@@ -42,7 +42,7 @@ import javax.xml.transform.URIResolver;
  */
 public class XSpecTestFilter extends XMLFilterImpl implements ContentHandler {
 
-    final XSpecCounterCH innerCH;
+    final XSpecCounterContentHandler innerCH;
 
     public XSpecTestFilter(
             final XMLReader parent,
@@ -52,7 +52,7 @@ public class XSpecTestFilter extends XMLFilterImpl implements ContentHandler {
             boolean activateLogs,
             final String... logPrefix) {
         super(parent);
-        this.innerCH = new XSpecCounterCH(systemId, uriResolver, logProvider, activateLogs, logPrefix);
+        this.innerCH = new XSpecCounterContentHandler(systemId, uriResolver, logProvider, activateLogs, logPrefix);
     }
 
     @Override

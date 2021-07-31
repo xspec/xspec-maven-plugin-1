@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2018, Christophe Marchand, XSpec organization
  * All rights reserved.
  *
@@ -27,14 +27,25 @@
 package io.xspec.maven.xspecMavenPlugin.utils;
 
 import io.xspec.maven.xspecMavenPlugin.TestUtils;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
+
+import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
 import org.apache.maven.plugin.logging.Log;
 import static org.junit.Assert.*;
+
+import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -46,17 +57,17 @@ import org.xmlresolver.Resolver;
  * Tests XSpecCounterCH
  * @author cmarchand
  */
-public class XSpecCounterCHTest {
+public class XSpecCounterContentHandlerTest {
     
     @Test
     public void testNoLog() throws SAXException {
         LogMock log =  new LogMock();
-        XSpecCounterCH counter = new XSpecCounterCH(
+        XSpecCounterContentHandler counter = new XSpecCounterContentHandler(
                 "file:/home/fake/pouet.xspec", 
                 new Resolver(), 
                 createLogProvider(log), 
                 false); // false de-activates logs
-        counter.startElement("http://www.jenitennison.com/xslt/xspec", "description", "x:description", new Attributes2Impl());
+        counter.startElement(XSpecRunner.XSPEC_NS, "description", "x:description", new Attributes2Impl());
         assertEquals(0, log.getDebugCount());
         assertEquals(0, log.getInfoCount());
         assertEquals(0, log.getWarnCount());
@@ -67,13 +78,13 @@ public class XSpecCounterCHTest {
     @Test
     public void testLogExists() throws SAXException {
         LogMock log =  new LogMock();
-        XSpecCounterCH counter = new XSpecCounterCH(
+        XSpecCounterContentHandler counter = new XSpecCounterContentHandler(
                 "file:/home/fake/pouet.xspec", 
                 new Resolver(), 
                 createLogProvider(log), 
                 true,    // true activates logs
                 "[XSpec] ");
-        counter.startElement("http://www.jenitennison.com/xslt/xspec", "description", "x:description", new Attributes2Impl());
+        counter.startElement(XSpecRunner.XSPEC_NS, "description", "x:description", new Attributes2Impl());
         assertEquals(1, log.getDebugCount());
         assertEquals(0, log.getInfoCount());
         assertEquals(0, log.getWarnCount());
@@ -84,19 +95,19 @@ public class XSpecCounterCHTest {
     @Test
     public void testOneExpect() throws SAXException {
         LogMock log = new LogMock();
-        XSpecCounterCH counter = new XSpecCounterCH(
+        XSpecCounterContentHandler counter = new XSpecCounterContentHandler(
                 "file:/home/fake/test.xspec", 
                 new Resolver(), 
                 createLogProvider(log), 
                 true, "[Counter] ");
         Attributes emptyAttrs = new Attributes2Impl();
         counter.startDocument();
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "description", "x:description", emptyAttrs);
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "scenario", "x:scenario", emptyAttrs);
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "expect", "x:expect", emptyAttrs);
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "expect", "x:expect");
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "scenario", "x:scenario");
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "description", "x:description");
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description", emptyAttrs);
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "scenario", "x:scenario", emptyAttrs);
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "expect", "x:expect", emptyAttrs);
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "expect", "x:expect");
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "scenario", "x:scenario");
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description");
         counter.endDocument();
         assertEquals(1, counter.getTests());
         assertEquals(0, counter.getPendingTests());
@@ -105,29 +116,7 @@ public class XSpecCounterCHTest {
     @Test
     public void testOneExpectPendingAttr() throws SAXException {
         LogMock log = new LogMock();
-        XSpecCounterCH counter = new XSpecCounterCH(
-                "file:/home/fake/test.xspec", 
-                new Resolver(), 
-                createLogProvider(log), 
-                true, "[Counter] ");
-        Attributes emptyAttrs = new Attributes2Impl();
-        AttributesImpl pendingAttrs = new AttributesImpl();
-        pendingAttrs.addAttribute(null, "pending", "pending", "pouet", "wainting for implementation");
-        counter.startDocument();
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "description", "x:description", emptyAttrs);
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "scenario", "x:scenario", pendingAttrs);
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "expect", "x:expect", emptyAttrs);
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "expect", "x:expect");
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "scenario", "x:scenario");
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "description", "x:description");
-        counter.endDocument();
-        assertEquals(1, counter.getTests());
-        assertEquals(1, counter.getPendingTests());
-    }
-    @Test
-    public void testOneExpectPendingElement() throws SAXException {
-        LogMock log = new LogMock();
-        XSpecCounterCH counter = new XSpecCounterCH(
+        XSpecCounterContentHandler counter = new XSpecCounterContentHandler(
                 "file:/home/fake/test.xspec", 
                 new Resolver(), 
                 createLogProvider(log), 
@@ -136,14 +125,36 @@ public class XSpecCounterCHTest {
         AttributesImpl pendingAttrs = new AttributesImpl();
         pendingAttrs.addAttribute(null, "pending", "pending", "pouet", "waiting for implementation");
         counter.startDocument();
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "description", "x:description", emptyAttrs);
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "pending", "x:pending", emptyAttrs);
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "scenario", "x:scenario", emptyAttrs);
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "expect", "x:expect", emptyAttrs);
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "expect", "x:expect");
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "scenario", "x:scenario");
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "pending", "x:pending");
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "description", "x:description");
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description", emptyAttrs);
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "scenario", "x:scenario", pendingAttrs);
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "expect", "x:expect", emptyAttrs);
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "expect", "x:expect");
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "scenario", "x:scenario");
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description");
+        counter.endDocument();
+        assertEquals(1, counter.getTests());
+        assertEquals(1, counter.getPendingTests());
+    }
+    @Test
+    public void testOneExpectPendingElement() throws SAXException {
+        LogMock log = new LogMock();
+        XSpecCounterContentHandler counter = new XSpecCounterContentHandler(
+                "file:/home/fake/test.xspec", 
+                new Resolver(), 
+                createLogProvider(log), 
+                true, "[Counter] ");
+        Attributes emptyAttrs = new Attributes2Impl();
+        AttributesImpl pendingAttrs = new AttributesImpl();
+        pendingAttrs.addAttribute(null, "pending", "pending", "pouet", "waiting for implementation");
+        counter.startDocument();
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description", emptyAttrs);
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "pending", "x:pending", emptyAttrs);
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "scenario", "x:scenario", emptyAttrs);
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "expect", "x:expect", emptyAttrs);
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "expect", "x:expect");
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "scenario", "x:scenario");
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "pending", "x:pending");
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description");
         counter.endDocument();
         assertEquals(1, counter.getTests());
         assertEquals(1, counter.getPendingTests());
@@ -153,7 +164,7 @@ public class XSpecCounterCHTest {
     public void testXSpecImport() throws Exception {
         LogMock log = new LogMock();
         URIResolver uriResolver = new LocalUriResolver();
-         XSpecCounterCH counter = new XSpecCounterCH(
+         XSpecCounterContentHandler counter = new XSpecCounterContentHandler(
                 "file:/home/fake/test.xspec", 
                 uriResolver, 
                 createLogProvider(log), 
@@ -162,19 +173,87 @@ public class XSpecCounterCHTest {
         AttributesImpl hrefAttrs = new AttributesImpl();
         hrefAttrs.addAttribute(null, "href", "href", "pouet", "imported.xspec");
         counter.startDocument();
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "description", "x:description", emptyAttrs);
-        counter.startElement(XSpecCounterCH.XSPEC_NS, "import", "x:import", hrefAttrs);
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "import", "x:import");
-        counter.endElement(XSpecCounterCH.XSPEC_NS, "description", "x:description");
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description", emptyAttrs);
+        counter.startElement(XSpecCounterContentHandler.XSPEC_NS, "import", "x:import", hrefAttrs);
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "import", "x:import");
+        counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description");
         counter.endDocument();
         assertEquals(1, counter.getTests());
     }
 
+    @Test
+    public void given_a_unused_shared_scenario_counters_should_be_at_zero() throws Exception {
+        // Given
+        String xml = "<x:description xmlns:x='"+ XSpecCounterContentHandler.XSPEC_NS+"'>" +
+                "<x:scenario shared='yes' label='shared passing assertion'>" +
+                "<x:expect label=\"passing assertion\" test=\"true()\"/>"+
+                "</x:scenario>"+
+                "</x:description>";
+        XSpecCounterContentHandler xspecCounterCH = new XSpecCounterContentHandler(
+                "file:/home/fake/pouet.xspec",
+                new Resolver(),
+                createLogProvider(new LogMock()),
+                false);
+        SAXParser parser = createSaxParser();
+        InputStream is = createInputStream(xml);
+        // When
+        parser.parse(is, xspecCounterCH);
+        // Then
+        SoftAssertions softAssertions = new SoftAssertions();
+        softAssertions.assertThat(xspecCounterCH.getTests()).as("tests count").isEqualTo(0);
+        softAssertions.assertThat(xspecCounterCH.getPendingTests()).as("pending tests count").isEqualTo(0);
+        softAssertions.assertAll();
+    }
+
+    @Test
+    public void given_a_shared_scenario_liked_twice_couters_should_be_doubled() throws Exception {
+        // Given
+        String xml = "<x:description xmlns:x='"+ XSpecCounterContentHandler.XSPEC_NS+"'>" +
+                "<x:scenario shared='yes' label='shared passing assertion'>" +
+                "<x:expect label=\"passing assertion\" test=\"true()\"/>"+
+                "</x:scenario>"+
+                "<x:scenario label=\"case 1\">\n" +
+                "      <x:call function=\"string\">\n" +
+                "        <x:param select=\"'a'\"/>\n" +
+                "      </x:call>\n" +
+                "      <x:like label=\"shared passing assertion\"/>"+
+                "</x:scenario>\n" +
+                "    <x:scenario label=\"case 2\">\n" +
+                "      <x:call function=\"string\">\n" +
+                "        <x:param select=\"'z'\"/>\n" +
+                "      </x:call>\n" +
+                "      <x:like label=\"shared passing assertion\"/>\n" +
+                "    </x:scenario>"+
+                "</x:description>";
+        XSpecCounterContentHandler xSpecCounterContentHandler = new XSpecCounterContentHandler(
+                "file:/home/fake/pouet.xspec",
+                new Resolver(),
+                createLogProvider(new LogMock()),
+                false);
+        SAXParser parser = createSaxParser();
+        InputStream is = createInputStream(xml);
+        // When
+        parser.parse(is, xSpecCounterContentHandler);
+        // Then
+        SoftAssertions softAssertions = new SoftAssertions();
+        softAssertions.assertThat(xSpecCounterContentHandler.getTests()).as("counting tests").isEqualTo(2);
+        softAssertions.assertThat(xSpecCounterContentHandler.getPendingTests()).as("counting pending tests").isEqualTo(0);
+        softAssertions.assertAll();
+    }
     private LogProvider createLogProvider(final Log log) {
         return () -> log;
     }
-    
-    public class LogMock implements Log {
+    private SAXParser createSaxParser() throws ParserConfigurationException, SAXException {
+        SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
+        saxParserFactory.setNamespaceAware(true);
+        SAXParser parser = saxParserFactory.newSAXParser();
+        return parser;
+    }
+    private ByteArrayInputStream createInputStream(String xml) {
+        return new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static class LogMock implements Log {
         private long debugCount = 0;
         private long infoCount = 0;
         private long warnCount = 0;
@@ -241,7 +320,7 @@ public class XSpecCounterCHTest {
         
     }
     
-    private class LocalUriResolver implements URIResolver {
+    private static class LocalUriResolver implements URIResolver {
         @Override
         public Source resolve(String href, String base) throws TransformerException {
             try {
