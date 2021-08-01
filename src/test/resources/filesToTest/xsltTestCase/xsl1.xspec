@@ -2,6 +2,7 @@
 <x:description 
   xmlns:x="http://www.jenitennison.com/xslt/xspec"
   xmlns:private="io:xspec:xspec-maven-plugin:tests"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
   stylesheet="xsl1.xsl">
   
   <x:scenario label="Testing function add">

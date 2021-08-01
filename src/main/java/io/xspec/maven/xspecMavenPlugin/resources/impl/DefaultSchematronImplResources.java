@@ -28,6 +28,8 @@ package io.xspec.maven.xspecMavenPlugin.resources.impl;
 
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 
+import static io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources.XSPEC_PACKAGE;
+
 /**
  * Default implementation
  * @author cmarchand
@@ -40,9 +42,9 @@ public class DefaultSchematronImplResources implements SchematronImplResources {
     
     public DefaultSchematronImplResources() {
         super();
-        this.schIsoDsdlInclude = SCHEMATRON_PREFIX+"schematron/iso-schematron/iso_dsdl_include.xsl";
-        this.schIsoAbstractExpand = SCHEMATRON_PREFIX+"schematron/iso-schematron/iso_abstract_expand.xsl";
-        this.schIsoSvrlForXslt2 = SCHEMATRON_PREFIX+"schematron/iso-schematron/iso_svrl_for_xslt2.xsl";
+        this.schIsoDsdlInclude = SCHEMATRON_PREFIX+XSPEC_PACKAGE+"lib/iso-schematron/iso_dsdl_include.xsl";
+        this.schIsoAbstractExpand = SCHEMATRON_PREFIX+XSPEC_PACKAGE+"lib/iso-schematron/iso_abstract_expand.xsl";
+        this.schIsoSvrlForXslt2 = SCHEMATRON_PREFIX+XSPEC_PACKAGE+"lib/iso-schematron/iso_svrl_for_xslt2.xsl";
     }
 
     @Override

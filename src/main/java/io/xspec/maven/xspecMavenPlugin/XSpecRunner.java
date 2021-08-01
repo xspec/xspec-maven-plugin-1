@@ -204,7 +204,7 @@ public class XSpecRunner implements LogProvider {
      * @param xspec The path to the XSpec test file
      * @return true if all tests in XSpec pass, false otherwise
      */
-    final boolean processXQueryXSpec(XdmNode xspec) throws SaxonApiException, FileNotFoundException, IOException {
+    private boolean processXQueryXSpec(XdmNode xspec) throws IOException {
         File sourceFile = new File(xspec.getBaseURI());
         /* compile the test stylesheet */
         final CompiledXSpec compiledXSpec = xspecCompiler.compileXSpecForXQuery(sourceFile);
@@ -381,7 +381,7 @@ public class XSpecRunner implements LogProvider {
             File actualSourceFile,
             XsltTransformer xtXSpec,
             CompiledXSpec compiledXSpec,
-            ErrorListener errorListener) throws SaxonApiException, FileNotFoundException {
+            ErrorListener errorListener) {
         boolean processedFileAdded = false;
         final XSpecResultsHandler resultsHandler = new XSpecResultsHandler();
         try {
@@ -510,7 +510,7 @@ public class XSpecRunner implements LogProvider {
             File actualSourceFile,
             XsltTransformer xtXSpec,
             CompiledXSpec compiledXSpec,
-            ErrorListener errorListener) throws SaxonApiException, FileNotFoundException {
+            ErrorListener errorListener) {
         boolean processedFileAdded = false;
         final XSpecResultsHandler resultsHandler = new XSpecResultsHandler();
         try {
@@ -728,6 +728,7 @@ public class XSpecRunner implements LogProvider {
         if (!options.testDir.exists()) {
             return Collections.emptyList();
         }
+        // FIXME : why **/*.xspec is defined here ???
         FileFinder finder = new FileFinder(options.testDir, "**/*.xspec", options.excludes, getLog());
         final Path testPath = options.testDir.toPath();
         try {

@@ -33,7 +33,6 @@ import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
  * @author cmarchand
  */
 public class DefaultXSpecImplResources implements XSpecImplResources {
-
     private String xspecXslCompilerUri;
     private String xspecXQueryCompilerUri;
     private String schematronUnitTestConverter;
@@ -44,13 +43,13 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     
     public DefaultXSpecImplResources() {
         super();
-        xspecXslCompilerUri = XSPEC_PREFIX+"compiler/generate-xspec-tests.xsl";
-        xspecXQueryCompilerUri = XSPEC_PREFIX+"compiler/generate-query-tests.xsl";
-        schematronUnitTestConverter = XSPEC_PREFIX+"schematron/schut-to-xspec.xsl";
-        xspecReporter = XSPEC_PREFIX+"reporter/format-xspec-report.xsl";
-        xspecFoldingReporter = XSPEC_PREFIX+"reporter/format-xspec-report-folding.xsl";
-        xspecCoverageReporter = XSPEC_PREFIX+"reporter/coverage-report.xsl";
-        testReportCss = XSPEC_PREFIX+"reporter/test-report.css";
+        xspecXslCompilerUri = XSPEC_PREFIX+XSPEC_PACKAGE+"src/compiler/compile-xslt-tests.xsl";
+        xspecXQueryCompilerUri = XSPEC_PREFIX+XSPEC_PACKAGE+"src/compiler/compile-xquery-tests.xsl";
+        schematronUnitTestConverter = XSPEC_PREFIX+XSPEC_PACKAGE+"src/schematron/schut-to-xspec.xsl";
+        xspecReporter = XSPEC_PREFIX+XSPEC_PACKAGE+"src/reporter/format-xspec-report.xsl";
+        xspecFoldingReporter = XSPEC_PREFIX+XSPEC_PACKAGE+"src/reporter/format-xspec-report-folding.xsl";
+        xspecCoverageReporter = XSPEC_PREFIX+XSPEC_PACKAGE+"src/reporter/coverage-report.xsl";
+        testReportCss = XSPEC_PREFIX+XSPEC_PACKAGE+"src/reporter/test-report.css";
     }
 
     @Override
