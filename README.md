@@ -74,14 +74,14 @@ This is the path to a folder containing your XSpec tests. The tests are expected
 By default the folder `src/test/xspec` is used.
 
 * excludes
-You may specify one or more filenames (or partial filenames), which when matached against XSpec paths in *testDir* are excluded from being executed.
+You may specify one or more filenames (or partial filenames), which when matched against XSpec paths in *testDir* are excluded from being executed.
 
 * reportDir
 This is the path to a folder where the XSpec tests reports will be stored.
 By default the folder `target/xspec-reports` is used.
 
 * catalogFile
-This is the path to a catalog file, as defined in https://www.oasis-open.org/committees/entity/spec-2001-08-06.html. There is no default value, and is ignored if empty or if catalog file does not exists.
+This is the path to a catalog file, as defined in https://www.oasis-open.org/committees/entity/spec-2001-08-06.html. There is no default value, and is ignored if empty or if catalog file does not exist.
 
 * surefireReportDir
 This is the path where to write surefire reports, if '${generateSurefireReports} is 'true'. Default value is '${project.build.directory}/surefire-report'.
@@ -95,7 +95,7 @@ Allows to specify saxon configuration options. See [Wiki](https://github.com/xsp
 ### FAQ
 * Where should I put my XSLT?
 
-You can put it anywhere you like, although within `src/` would make the most sense! We would suggest keeping your XSLT files in `src/main/xsl/`. If you do that, then to reference the XSLT from your XSpec, you should set the `@template` attribute use relative path to that folder. For example, given `src/main/xsl/some.xslt` and `src/test/xspec/some.xspec`, your `some.xspec` would reference `some.xslt` like so:
+You can put it anywhere you like, although within `src/` would make the most sense! We would suggest keeping your XSLT files in `src/main/xsl/`. If you do that, then to reference the XSLT from your XSpec, you should set the `@stylesheet` attribute to a relative path to that folder. For example, given `src/main/xsl/some.xslt` and `src/test/xspec/some.xspec`, your `some.xspec` would reference `some.xslt` like so:
 
 ```xml
 <x:description xmlns:x="http://www.jenitennison.com/xslt/xspec"
