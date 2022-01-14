@@ -25,7 +25,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
-        
+
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:local="com:oxiane:common:local"
@@ -33,88 +33,81 @@
     xmlns:x="http://www.jenitennison.com/xslt/xspec"
     version="2.0">
     <!-- converts a XSpec report to a surefire report -->
-    
+
     <xsl:output indent="yes"/>
-    
+
     <xsl:param name="baseDir" as="xs:string" required="yes"/>
     <xsl:param name="outputDir" as="xs:string" required="yes"/>
-    <xsl:param name="reportFileName" select="tokenize(document-uri(/),'/')[last()]" as="xs:string"/>
-    <xsl:variable name="classname" select="replace($reportFileName,'.xml','.xspec')"/>
-    
+    <xsl:param name="xspecUri" as="xs:string" required="yes"/>
+
     <xsl:template match="/">
-            <!-- fro XQuery, use @query-at -->
-            <xsl:variable name="xslUrl" select="/x:report/(@stylesheet,@query-at)[1]" as="xs:string"/>
-            <xsl:comment>xslUrl=<xsl:value-of select="$xslUrl"/></xsl:comment>
-            <xsl:variable name="relativeUri" select="substring-after($xslUrl, $baseDir)" as="xs:string"/>
-            <xsl:comment>relativeUrl=<xsl:value-of select="$relativeUri"/></xsl:comment>
-            <xsl:variable name="pathElements" select="tokenize($relativeUri, '/')" as="xs:string*"/>
-            <xsl:variable name="startingPos" as="xs:integer">
-                <xsl:choose>
-                    <xsl:when test="contains($pathElements[1],':')">2</xsl:when>
-                    <xsl:otherwise>1</xsl:otherwise>
-                </xsl:choose>
-            </xsl:variable>
-            <xsl:variable name="package" select="string-join($pathElements[position() &gt;= ($startingPos+3) and position() lt last()],'.')"></xsl:variable>
-            <xsl:comment>package=<xsl:value-of select="$package"/></xsl:comment>
-            
-        <xsl:result-document href="{concat($outputDir,'/TEST-',if(string-length($package) gt 0) then concat($package,'.') else '', $pathElements[last()],'.xml')}">
-        <testsuites>
-            <xsl:apply-templates>
-                <xsl:with-param name="package" tunnel="yes" select="$package"/>
-            </xsl:apply-templates>
-        </testsuites>
+        <xsl:variable name="relativePath" select="substring-after($xspecUri, $baseDir)" as="xs:string"/>
+        <xsl:variable name="pathElements" select="tokenize($relativePath, '/')" as="xs:string*"/>
+        <xsl:variable name="package" select="string-join($pathElements[position() lt last()], '.')" as="xs:string"/>
+        <xsl:variable name="xspecFileName" select="$pathElements[last()]" as="xs:string"/>
+
+        <xsl:result-document href="{concat($outputDir, '/TEST-', $package, if(string-length($package) gt 0) then '.' else '', $xspecFileName, '.xml')}">
+            <testsuites>
+                <xsl:apply-templates>
+                    <xsl:with-param name="xspecFileName" tunnel="yes" select="$xspecFileName"/>
+                </xsl:apply-templates>
+            </testsuites>
         </xsl:result-document>
     </xsl:template>
-    
+
     <xsl:template match="x:report">
         <xsl:apply-templates select="x:scenario"/>
     </xsl:template>
-    
+
     <xsl:template match="x:scenario">
-        <xsl:param name="package" tunnel="yes" required="yes" as="xs:string"/>
-        <xsl:param name="libelle" required="no" as="xs:string?" select="''"/>
+        <xsl:param name="name" required="no" as="xs:string?" select="''"/>
         <xsl:variable name="testsCount" select="count(.//x:test)"/>
         <xsl:variable name="failuresCount" select="count(.//x:test[@successful='false'])"/>
         <xsl:variable name="errorsCount" select="0">
-            <!-- it can not have any error, errors are compilation problem -->
+        <!-- it can not have any error, errors are compilation problem -->
         </xsl:variable>
         <xsl:variable name="skippedCount" select="count(.//x:test[@pending])"/>
         <xsl:if test="./x:test">
-        <testsuite tests="{$testsCount}" failures="{$failuresCount}" errors="{$errorsCount}" skipped="{$skippedCount}" package="{$package}" name="{concat($libelle,./x:label/text())}">
-            <xsl:apply-templates select="x:test"/>
-        </testsuite>
+            <testsuite tests="{$testsCount}" failures="{$failuresCount}" errors="{$errorsCount}" skipped="{$skippedCount}" name="{concat($name,./x:label/text())}">
+                <xsl:apply-templates select="x:test">
+                    <xsl:with-param name="parentResult" select="x:result"/>
+                </xsl:apply-templates>
+            </testsuite>
         </xsl:if>
         <xsl:apply-templates select="x:scenario">
-            <xsl:with-param name="libelle" select="concat($libelle,x:label/text(),': ')"/>
+            <xsl:with-param name="name" select="concat($name,x:label/text(),': ')"/>
         </xsl:apply-templates>
     </xsl:template>
     <xsl:template match="x:scenario[@pending]">
-        <xsl:param name="package" tunnel="yes" required="yes" as="xs:string"/>
-        <testsuite tests="0" failures="0" errors="0" skipped="1" package="{$package}"/>
+        <testsuite tests="0" failures="0" errors="0" skipped="1"/>
     </xsl:template>
-    
+
     <xsl:template match="x:test[@successful='false']">
-        <testcase classname="{$classname}" name="{./x:label/text() | ./@label}" time="0">
-            <failure message="{x:label/text() | ./@label}" type="unexpected result">
+        <xsl:param name="xspecFileName" tunnel="yes" required="yes" as="xs:string"/>
+        <xsl:param name="parentResult" as="element()"/>
+        <testcase classname="{$xspecFileName}" name="{x:label/text() | @label}" time="0">
+            <failure message="{x:label/text() | @label}" type="unexpected result">
+                <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text><xsl:text>&#xA;</xsl:text>
                 <xsl:apply-templates select="x:expect"/>
-                <xsl:apply-templates select="x:result"/>
+                <xsl:text>&#xA;</xsl:text>
+                <xsl:choose>
+                    <xsl:when test="x:result"><xsl:apply-templates select="x:result"/></xsl:when>
+                    <xsl:otherwise><xsl:apply-templates select="$parentResult"/></xsl:otherwise>
+                </xsl:choose>
+                <xsl:text>&#xA;</xsl:text><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
             </failure>
         </testcase>
     </xsl:template>
-    
+
     <xsl:template match="x:test[@succesful='false']/x:label"/>
-    
+
     <xsl:template match="x:test[@successful='true']">
-        <testcase classname="{$classname}" name="{./x:label/text() | ./@label}" time="0"/>
+        <xsl:param name="xspecFileName" tunnel="yes" required="yes" as="xs:string"/>
+        <testcase classname="{$xspecFileName}" name="{x:label/text() | @label}" time="0"/>
     </xsl:template>
-    
+
     <xsl:template match="x:expect | x:result">
-        <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text>&#xA;<xsl:value-of select="local:nomPropre(local-name(.))"/><xsl:if test="x:label"><xsl:value-of select="concat(' ',x:label)"/></xsl:if>&#xA;<xsl:copy-of select="./(node() except x:label)"/><xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
+        <xsl:value-of select="upper-case(local-name(.))"/><xsl:if test="x:label"><xsl:value-of select="concat(' ',x:label)"/></xsl:if><xsl:text>:&#xA;</xsl:text><xsl:copy-of select="./(node() except x:label)"/>
     </xsl:template>
-    
-    <xsl:function name="local:nomPropre" as="xs:string">
-        <xsl:param name="s" as="xs:string"/>
-        <xsl:value-of select="concat(upper-case(substring($s,1,1)),lower-case(substring($s,2)))"/>
-    </xsl:function>
-    
+
 </xsl:stylesheet>

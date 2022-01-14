@@ -245,9 +245,9 @@ public class XSpecRunner implements LogProvider {
                 if(xmlStuff.getXeSurefire()!=null) {
                     XsltTransformer xt = xmlStuff.getXeSurefire().load();
                     try {
-                        xt.setParameter(new QName("baseDir"), new XdmAtomicValue(baseDirectory.toURI().toURL().toExternalForm()));
+                        xt.setParameter(new QName("baseDir"), new XdmAtomicValue(options.testDir.toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
-                        xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
+                        xt.setParameter(new QName("xspecUri"), new XdmAtomicValue(sourceFile.toURI().toURL().toExternalForm()));
                         xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
                         xtSurefire = xt;
                     } catch(MalformedURLException ex) {
@@ -416,10 +416,9 @@ public class XSpecRunner implements LogProvider {
                 XsltTransformer xt = xmlStuff.getXeSurefire().load();
                 xt.setErrorListener(errorListener);
                 try {
-                    xt.setParameter(new QName("baseDir"), new XdmAtomicValue(baseDirectory.toURI().toURL().toExternalForm()));
-                    // issue #40
+                    xt.setParameter(new QName("baseDir"), new XdmAtomicValue(options.testDir.toURI().toURL().toExternalForm()));
                     xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
-                    xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
+                    xt.setParameter(new QName("xspecUri"), new XdmAtomicValue(sourceFile.toURI().toURL().toExternalForm()));
                     xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
                     xtSurefire = xt;
                 } catch(MalformedURLException ex) {
@@ -574,10 +573,9 @@ public class XSpecRunner implements LogProvider {
                 XsltTransformer xt = xmlStuff.getXeSurefire().load();
                 xt.setErrorListener(errorListener);
                 try {
-                    xt.setParameter(new QName("baseDir"), new XdmAtomicValue(baseDirectory.toURI().toURL().toExternalForm()));
-                    // issue #40
+                    xt.setParameter(new QName("baseDir"), new XdmAtomicValue(options.testDir.toURI().toURL().toExternalForm()));
                     xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
-                    xt.setParameter(new QName("reportFileName"), new XdmAtomicValue(xspecXmlResult.getName()));
+                    xt.setParameter(new QName("xspecUri"), new XdmAtomicValue(sourceFile.toURI().toURL().toExternalForm()));
                     xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
                     xtSurefire = xt;
                 } catch(MalformedURLException ex) {
