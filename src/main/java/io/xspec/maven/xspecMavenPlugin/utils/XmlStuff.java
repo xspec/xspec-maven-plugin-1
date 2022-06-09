@@ -30,6 +30,7 @@ import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
+import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
 import net.sf.saxon.s9api.*;
 import net.sf.saxon.trans.XPathException;
@@ -96,7 +97,6 @@ public class XmlStuff {
 
     
     public XmlStuff(
-            Processor processor,
             SaxonOptions saxonOptions,
             Log log, 
             XSpecImplResources xspecResources, 
@@ -106,7 +106,7 @@ public class XmlStuff {
             RunnerOptions options,
             Properties executionProperties) throws XSpecPluginException {
         super();
-        this.processor = processor;
+        this.processor = new Processor(getSaxonConfiguration());
         this.xspecResources = xspecResources;
         this.pluginResources = pluginResources;
         this.schematronResources = schematronResources;
@@ -487,4 +487,67 @@ public class XmlStuff {
     public XsltExecutable getJUnitReporter() { return junitReporter; }
     private void setCoverageReporter(XsltExecutable xe) { coverageReporter = xe; }
     public XsltExecutable getCoverageReporter() { return coverageReporter; }
+
+    /**
+     * Returns the XSpec tested file kind
+     * @param doc
+     * @return XSpecType
+     * @throws SaxonApiException If file is not a XSpec one
+     */
+    public XSpecType getXSpecType(XdmNode doc) throws SaxonApiException {
+        XPathSelector xps = getXpExecGetXSpecType().load();
+        xps.setContextItem(doc);
+        XdmValue values = xps.evaluate();
+        Object o = values.iterator();
+        if(o instanceof XdmSequenceIterator) {
+            for(XdmSequenceIterator it=(XdmSequenceIterator)o; it.hasNext();) {
+                XdmNode item=(XdmNode)(it.next());
+                if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
+                    String nodeName = item.getNodeName().getLocalName();
+                    switch(nodeName) {
+                        case "query":
+                        case "query-at": {
+                            return XSpecType.XQ;
+                        }
+                        case "schematron": {
+                            return XSpecType.SCH;
+                        }
+                        case "stylesheet": {
+                            return XSpecType.XSL;
+                        }
+                    }
+                }
+            }
+        } else {
+            for(Iterator<XdmItem> it=(Iterator<XdmItem>)o; it.hasNext();) {
+                XdmNode item=(XdmNode)(it.next());
+                if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
+                    String nodeName = item.getNodeName().getLocalName();
+                    switch(nodeName) {
+                        case "query":
+                        case "query-at": {
+                            return XSpecType.XQ;
+                        }
+                        case "schematron": {
+                            return XSpecType.SCH;
+                        }
+                        case "stylesheet": {
+                            return XSpecType.XSL;
+                        }
+                    }
+                }
+            }
+        }
+        throw new SaxonApiException("This file does not seem to be a valid XSpec file: "+doc.getBaseURI().toString());
+    }
+    /**
+     * We want to be sure that external-functions are allowed
+     * @return
+     */
+    private static Configuration getSaxonConfiguration() {
+        Configuration ret = Configuration.newConfiguration();
+        ret.setConfigurationProperty("http://saxon.sf.net/feature/allow-external-functions", Boolean.TRUE);
+        return ret;
+    }
+
 }

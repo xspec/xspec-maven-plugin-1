@@ -57,8 +57,7 @@ public class IndexGeneratorTest extends TestUtils {
         Processor proc = new Processor(saxonConfiguration);
         try {
             xmlStuff = new XmlStuff(
-                    proc, 
-                    new SaxonOptions(), 
+                    new SaxonOptions(),
                     getLog(), 
                     new DefaultXSpecImplResources(), 
                     new DefaultXSpecPluginResources(), 
