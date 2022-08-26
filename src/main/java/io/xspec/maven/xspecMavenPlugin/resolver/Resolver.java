@@ -134,7 +134,7 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
         }
         StreamSource ret = new StreamSource(is);
         String systemId = getClass().getResource(path).toExternalForm();
-        log.warn(systemId);
+        log.debug(systemId);
         ret.setSystemId(normalizeUrl(systemId));
         return ret;
     }
