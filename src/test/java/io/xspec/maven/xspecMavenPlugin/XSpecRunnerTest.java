@@ -82,7 +82,9 @@ public class XSpecRunnerTest extends TestUtils {
 
     @Test
     public void processXsltXspecTest() throws Exception {
-        XSpecRunner runner = getNewRunner(new SaxonOptions());
+        RunnerOptions options = new RunnerOptions(getBaseDirectory());
+        options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
+        XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
         File xspecFile = new File(getBaseDirectory().getParentFile().getParentFile().getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1.xspec");
         XdmNode node = runner.getXmlStuff().getDocumentBuilder().build(xspecFile);
         assertNotNull("node is null", node);
@@ -94,6 +96,7 @@ public class XSpecRunnerTest extends TestUtils {
     @Test
     public void generateIndexWithXsltTest() throws Exception {
         RunnerOptions options = new RunnerOptions(getBaseDirectory());
+        options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
         XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
         File xspecFile = new File(getBaseDirectory().getParentFile().getParentFile().getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1.xspec");
         XdmNode node = runner.getXmlStuff().getDocumentBuilder().build(xspecFile);
