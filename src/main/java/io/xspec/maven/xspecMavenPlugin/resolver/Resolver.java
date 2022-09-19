@@ -26,25 +26,24 @@
  */
 package io.xspec.maven.xspecMavenPlugin.resolver;
 
-import com.google.common.base.CharMatcher;
 import io.xspec.maven.xspecMavenPlugin.utils.QuietLogger;
+import org.apache.maven.plugin.logging.Log;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xmlresolver.ResolverFeature;
+
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.URIResolver;
+import javax.xml.transform.stream.StreamSource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.regex.Pattern;
-import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
-import javax.xml.transform.stream.StreamSource;
-
-import org.apache.maven.plugin.logging.Log;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xmlresolver.Catalog;
-import org.xmlresolver.CatalogSource;
 
 /**
  * A URI resolver that relies actually on catalogs, but can fall back on saxon.
@@ -70,8 +69,11 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
         this.log=log;
         protocolPattern = Pattern.compile("^[\\w\\d]+:/.*");
         // issue #11 : Resolver() initializes and uses a static Catalog. We must not do this
-        cr = new org.xmlresolver.Resolver(new Catalog());
-        cr.getCatalog().addSource(new CatalogSource.UriCatalogSource(catalog.toURI().toString()));
+        cr = new org.xmlresolver.Resolver();
+        cr.getConfiguration().setFeature(
+            ResolverFeature.CATALOG_FILES,
+            Collections.singletonList(catalog.toURI().toString())
+        );
     }
 
     @Override
@@ -80,7 +82,7 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
         if(isCpProtocol(href, base)) {
             return resolveToClasspath(href, base);
         }
-        getLog().debug("catalogList="+cr.getCatalog().catalogList());
+//        getLog().debug("catalogList="+cr.getConfiguration().);
         getLog().debug("Trying catalog");
         try {
             Source source = cr.resolve(href, base);
