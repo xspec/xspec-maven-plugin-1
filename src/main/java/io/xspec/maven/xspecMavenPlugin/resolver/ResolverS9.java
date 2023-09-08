@@ -50,7 +50,7 @@ import java.util.regex.Pattern;
  * Saxon URI Resolver should never be used.
  * @author cmarchand
  */
-public class Resolver implements javax.xml.transform.URIResolver, EntityResolver {
+public class ResolverS9 implements javax.xml.transform.URIResolver, EntityResolver {
     private final URIResolver saxonResolver;
     private final Log log;
     org.xmlresolver.Resolver cr;
@@ -63,7 +63,7 @@ public class Resolver implements javax.xml.transform.URIResolver, EntityResolver
      * @param catalog 
      * @param log 
      */
-    public Resolver(final URIResolver saxonResolver, final File catalog, final Log log) {
+    public ResolverS9(final URIResolver saxonResolver, final File catalog, final Log log) {
         super();
         this.saxonResolver=saxonResolver;
         this.log=log;

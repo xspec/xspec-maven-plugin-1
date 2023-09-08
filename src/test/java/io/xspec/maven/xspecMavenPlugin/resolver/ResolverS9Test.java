@@ -26,7 +26,7 @@
  */
 package io.xspec.maven.xspecMavenPlugin.resolver;
 
-import net.sf.saxon.Configuration;
+import net.sf.saxon.lib.StandardURIResolver;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.assertj.core.api.SoftAssertions;
@@ -49,22 +49,19 @@ import static org.junit.Assert.assertNotNull;
  * Tests Resolver class
  * @author cmarchand
  */
-public class ResolverTest {
+public class ResolverS9Test {
 
-    private Configuration configuration;
     private URIResolver saxonResolver;
     private Log log = new SystemStreamLog();
     
     @Before
     public void before() {
-        configuration = Configuration.newConfiguration();
-        saxonResolver = configuration.getURIResolver();
+        saxonResolver = new StandardURIResolver();
     }
     
     @After
     public void after() {
         saxonResolver = null;
-        configuration = null;
     }
     
     @Test
@@ -72,7 +69,7 @@ public class ResolverTest {
         URL catalogUrl = this.getClass().getResource("/catalogs/empty-catalog.xml");
         assertNotNull("/catalogs/empty-catalog.xml not found in classpath", catalogUrl);
         File catalogFile = new File(catalogUrl.getFile());
-        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        ResolverS9 resolver = new ResolverS9(saxonResolver, catalogFile, log);
         Source saxonResolution = saxonResolver.resolve("http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd", null);
         Source dtd = resolver.resolve("http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd", null);
         assertNotNull("xmlspec.dtd not resolved", dtd);
@@ -86,7 +83,7 @@ public class ResolverTest {
         URL log4jUrl = this.getClass().getResource("/log4j.properties");
         String log4jUrlWithoutProtocol = log4jUrl.toExternalForm().substring("file:".length());
         File catalogFile = new File(catalogUrl.getFile());
-        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        ResolverS9 resolver = new ResolverS9(saxonResolver, catalogFile, log);
         // When
         Source log4j = resolver.resolve("dependency:/fake+toto/log4j.properties", null);
         // Then
@@ -108,7 +105,7 @@ public class ResolverTest {
         log.warn(expected.toString());
         URL catalogUrl = this.getClass().getResource("/catalogs/empty-catalog.xml");
         File catalogFile = new File(catalogUrl.getFile());
-        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        ResolverS9 resolver = new ResolverS9(saxonResolver, catalogFile, log);
         // When
         Source actual = resolver.resolve(toResolver, null);
         // Then
@@ -130,7 +127,7 @@ public class ResolverTest {
         log.warn(expected.toString());
         URL catalogUrl = this.getClass().getResource("/catalogs/empty-catalog.xml");
         File catalogFile = new File(catalogUrl.getFile());
-        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        ResolverS9 resolver = new ResolverS9(saxonResolver, catalogFile, log);
         // When
         Source actual = resolver.resolve(toResolve, projectDir.toURI().toURL().toExternalForm());
         // Then

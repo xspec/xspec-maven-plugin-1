@@ -1,9 +1,9 @@
 package io.xspec.maven.xspecMavenPlugin.resources.impl;
 
-import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
+import io.xspec.maven.xspecMavenPlugin.resolver.ResolverS9;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.utils.CatalogWriter;
-import net.sf.saxon.Configuration;
+import net.sf.saxon.lib.StandardURIResolver;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.assertj.core.api.SoftAssertions;
@@ -22,7 +22,7 @@ public class DefaultXSpecImplResourceResolveTest {
         // Given
         CatalogWriter catalogWriter = new CatalogWriter(DefaultXSpecImplResources.class.getClassLoader());
         File catalogFile = catalogWriter.writeCatalog(null, null, false);
-        Resolver resolver = new Resolver(saxonResolver, catalogFile, log);
+        ResolverS9 resolver = new ResolverS9(saxonResolver, catalogFile, log);
         XSpecImplResources resources = new DefaultXSpecImplResources();
 
         // When
@@ -34,19 +34,16 @@ public class DefaultXSpecImplResourceResolveTest {
     }
 
 
-    private Configuration configuration;
     private URIResolver saxonResolver;
     private Log log = new SystemStreamLog();
 
     @Before
     public void before() {
-        configuration = Configuration.newConfiguration();
-        saxonResolver = configuration.getURIResolver();
+        saxonResolver = new StandardURIResolver();
     }
 
     @After
     public void after() {
         saxonResolver = null;
-        configuration = null;
     }
 }
