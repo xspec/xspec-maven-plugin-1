@@ -50,11 +50,14 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
 public class IndexGeneratorTest extends TestUtils {
     private final RunnerOptions options = new RunnerOptions(new File("target/tests"));
     private XmlStuff xmlStuff;
+    private boolean isDoctypeAndHtmlTagOnSameLine;
     
     @Before
     public void before() {
         Configuration saxonConfiguration = Configuration.newConfiguration();
         Processor proc = new Processor(saxonConfiguration);
+        isDoctypeAndHtmlTagOnSameLine = proc.getSaxonProductVersion().startsWith("10.")
+                || proc.getSaxonProductVersion().startsWith("11.");
         try {
             xmlStuff = new XmlStuff(
                     new SaxonOptions(),
@@ -86,6 +89,10 @@ public class IndexGeneratorTest extends TestUtils {
         assertTrue("index file is not a file", expected.isFile());
         // WARNING: with Saxon 9.8, there are only 38 lines
         long nbLines = 41;
+        if (isDoctypeAndHtmlTagOnSameLine) {
+            // Saxon 10 and 11 have DOCTYPE on same line as <html> tag
+            nbLines--;
+        }
         assertEquals("index should have "+nbLines+" lines", nbLines, Files.lines(expected.toPath()).count());
     }
     
@@ -102,6 +109,10 @@ public class IndexGeneratorTest extends TestUtils {
         File expected = new File(options.reportDir, "index.html");
         // WARNING : with Saxon 9.8, there are only 39 lines
         long nbLines = 42 + 3 + 8;
+        if (isDoctypeAndHtmlTagOnSameLine) {
+            // Saxon 10 and 11 have DOCTYPE on same line as <html> tag
+            nbLines--;
+        }
         assertEquals("index should have "+nbLines+" lines", nbLines, Files.lines(expected.toPath()).count());
         assertEquals("table should contain 1 red row", 1, Files.lines(expected.toPath()).filter(l -> l.contains("class=\"error\"")).count());
     }

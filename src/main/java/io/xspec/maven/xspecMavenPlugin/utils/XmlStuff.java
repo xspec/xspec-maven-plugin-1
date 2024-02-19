@@ -26,7 +26,8 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
-import io.xspec.maven.xspecMavenPlugin.resolver.Resolver;
+import io.xspec.maven.xspecMavenPlugin.resolver.ResolverDecorator;
+import io.xspec.maven.xspecMavenPlugin.resolver.ResolverDecoratorProvider;
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
@@ -64,6 +65,7 @@ public class XmlStuff {
     private final XsltCompiler xsltCompiler;
     private final XQueryCompiler xqueryCompiler;
     private final XPathCompiler xpathCompiler;
+    private final ResolverDecorator resolverDecorator;
     
     private XsltExecutable xspec4xsltCompiler;
     private XsltExecutable xspec4xqueryCompiler;
@@ -122,6 +124,7 @@ public class XmlStuff {
                 throw new XSpecPluginException("Illegal value in Saxon configuration property", ex);
             }
         }
+        resolverDecorator = new ResolverDecoratorProvider().getDecorator(processor);
         documentBuilder = processor.newDocumentBuilder();
         try {
             xsltCompiler = processor.newXsltCompiler();
@@ -136,7 +139,7 @@ public class XmlStuff {
                 throw new XSpecPluginException(ex);
             }
             try {
-                xsltCompiler.setURIResolver(buildUriResolver(xsltCompiler.getURIResolver()));
+                decorateXsltCompiler();
             } catch(IOException ex) {
                 throw new XSpecPluginException("while constructing URIResolver", ex);
             }
@@ -207,14 +210,12 @@ public class XmlStuff {
     }
     
     /**
-     * Creates the URI Resolver. It also generates the catalog with all
+     * Decorates the XsltCompiler with a custom resolver. It also generates the catalog with all
      * dependencies
-     * @param saxonUriResolver
-     * @return
      * @throws IOException
      * @throws XSpecPluginException
      */
-    private URIResolver buildUriResolver(final URIResolver saxonUriResolver) throws IOException, XSpecPluginException {
+    private void decorateXsltCompiler() throws IOException, XSpecPluginException {
         getLog().debug("buildUriResolver");
         CatalogWriter cw = new CatalogWriter(this.getClass().getClassLoader());
         getLog().debug("CatalogWriter instanciated");
@@ -222,7 +223,7 @@ public class XmlStuff {
         if(options.keepGeneratedCatalog) {
             getLog().info("keeping generated catalog: "+catalog.toURI().toURL().toExternalForm());
         }
-        return new Resolver(saxonUriResolver, catalog, getLog());
+        resolverDecorator.decorate(xsltCompiler, catalog, getLog());
     }
     
     private void createXPathExecutables() throws SaxonApiException {
