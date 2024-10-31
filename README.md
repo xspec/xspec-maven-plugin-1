@@ -20,7 +20,7 @@ __Plugin declaration__
     <plugin>
       <groupId>io.xspec.maven</groupId>
       <artifactId>xspec-maven-plugin</artifactId>
-      <version>2.0.0</version>
+      <version>2.2.0</version>
       <dependencies>
         <!-- if you have a license, feel free to add Saxon-PE
            or Saxon-EE instead of Saxon-HE -->
@@ -28,15 +28,17 @@ __Plugin declaration__
           <groupId>net.sf.saxon</groupId>
           <artifactId>Saxon-HE</artifactId>
           <!-- Saxon from 9.7.0-14 up until 10.1 have been tested and work correctly -->
-          <version>10.1</version>
+          <version>10.9</version>
         </dependency>
-        <!-- Saxon >= 10.0 requires XSpec 1.6. The bundled XSpec 1.5
-             works correctly with Saxon 9.x, and you don't need this
-             extra dependency -->
         <dependency>
           <groupId>io.xspec</groupId>
           <artifactId>xspec</artifactId>
-          <version>1.6.0</version>
+          <version>2.3.2</version>
+        </dependency>
+        <dependency>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+          <version>2.11.0</version>
         </dependency>
       </dependencies>
       <configuration>
@@ -46,6 +48,7 @@ __Plugin declaration__
       </configuration>
       <executions>
         <execution>
+          <id>xspec-tests</id>
           <phase>test</phase>
           <goals>
             <goal>run-xspec</goal>
