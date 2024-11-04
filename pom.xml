@@ -5,7 +5,7 @@
 
   <groupId>io.xspec.maven</groupId>
   <artifactId>xspec-maven-plugin</artifactId>
-  <version>2.2.0</version>
+  <version>3.0.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
 
@@ -71,7 +71,7 @@
     <dependency>
       <groupId>net.sf.saxon</groupId>
       <artifactId>Saxon-HE</artifactId>
-      <version>9.9.1-7</version>
+      <version>10.9</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -393,9 +393,9 @@
           </execution>
         </executions>
         <configuration>
-          <systemPropertyVariables>
+          <!--systemPropertyVariables>
             <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
-          </systemPropertyVariables>
+          </systemPropertyVariables-->
         </configuration>
       </plugin>
     </plugins>
