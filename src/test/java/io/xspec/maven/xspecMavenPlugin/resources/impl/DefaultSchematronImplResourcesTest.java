@@ -28,6 +28,8 @@ package io.xspec.maven.xspecMavenPlugin.resources.impl;
 
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import static org.junit.Assert.*;
+
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 /**
@@ -39,26 +41,8 @@ public class DefaultSchematronImplResourcesTest {
     @Test
     public void testClassImplementsInterface() {
         DefaultSchematronImplResources impl = new DefaultSchematronImplResources();
-        assertTrue("Class does not implement interface", (impl instanceof SchematronImplResources));
+        Assertions.assertThat(impl).isInstanceOf(SchematronImplResources.class);
     }
     
-    @Test
-    public void testDefaultvaluesPrefixes() {
-        DefaultSchematronImplResources impl = new DefaultSchematronImplResources();
-        assertTrue("schIsoAbstractExpand is not from Schematron implementation",impl.getSchIsoAbstractExpandUri().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
-        assertTrue("schIsoDsdlInclude is not from Schematron implementation",impl.getSchIsoDsdlIncludeUri().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
-        assertTrue("schIsoSvrlForXslt2 is not from Schematron implementation",impl.getSchIsoSvrlForXslt2Uri().startsWith(DefaultSchematronImplResources.SCHEMATRON_PREFIX));
-    }
-    
-    @Test
-    public void testAccessorsEfficients() {
-        DefaultSchematronImplResources impl = new DefaultSchematronImplResources();
-        impl.setSchIsoAbstractExpand("");
-        impl.setSchIsoDsdlInclude("");
-        impl.setSchIsoSvrlForXslt2("");
-        assertEquals("setSchIsoAbstractExpand is not efficient", "", impl.getSchIsoAbstractExpandUri());
-        assertEquals("setSchIsoDsdlInclude is not efficient", "", impl.getSchIsoDsdlIncludeUri());
-        assertEquals("setSchIsoSvrlForXslt2 is not efficient", "", impl.getSchIsoSvrlForXslt2Uri());
-    }
-    
+
 }

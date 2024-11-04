@@ -73,9 +73,6 @@ public class XmlStuff {
     private XsltExecutable junitReporter;
     private XsltExecutable coverageReporter;
     private XsltExecutable xeSurefire;
-    private XsltExecutable schDsdl;
-    private XsltExecutable schExpand;
-    private XsltExecutable schSvrl;
     private XsltExecutable xmlDependencyScanner;
     private XPathExecutable xpExecGetXSpecType;
     private XPathExecutable xpFileSearcher;
@@ -83,6 +80,7 @@ public class XmlStuff {
     public final static QName QN_REPORT_CSS = new QName("report-css-uri");
     public static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
     private XPathExecutable xpSchGetXSpec;
+  private XsltExecutable schematronCompiler;
     private XsltExecutable schSchut;
     private final Log log;
     private final XSpecImplResources xspecResources;
@@ -97,8 +95,8 @@ public class XmlStuff {
     public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
     private static final Class[] EMPTY_PARAMS = new Class[]{};
 
-    
-    public XmlStuff(
+
+  public XmlStuff(
             SaxonOptions saxonOptions,
             Log log, 
             XSpecImplResources xspecResources, 
@@ -241,13 +239,14 @@ public class XmlStuff {
         getLog().debug("Using XSpec Xquery Compiler: " + xspecResources.getXSpecXQueryCompilerUri());
         getLog().debug("Using XSpec Reporter: " + xspecResources.getXSpecReporterUri(options.folding));
         getLog().debug("Using Coverage Reporter: " + xspecResources.getXSpecCoverageReporterUri());
-        getLog().debug("Using Schematron Dsdl include: " + schematronResources.getSchIsoDsdlIncludeUri());
-        getLog().debug("Using Schematron expander: " + schematronResources.getSchIsoAbstractExpandUri());
-        getLog().debug("Using Schematrong Svrl: " + schematronResources.getSchIsoSvrlForXslt2Uri());
+        getLog().debug("Using Schematron step1: " + schematronResources.getSchStep1Uri());
+        getLog().debug("Using Schematron step2: " + schematronResources.getSchStep2Uri());
+        getLog().debug("Using Schematrong step3: " + schematronResources.getSchStep3Uri());
         getLog().debug("Using Schematron schut: " + xspecResources.getSchematronSchutConverterUri());
         getLog().debug("Using XML dependency scanner: " + pluginResources.getDependencyScannerUri());
         String baseUri = baseDir!=null ? baseDir.toURI().toURL().toExternalForm() : null;
 
+        // compilers
         Source srcXsltCompiler = resolveSrc(xspecResources.getXSpecXslCompilerUri(), baseUri, "XSpec XSL Compiler");
         getLog().debug(xspecResources.getXSpecXslCompilerUri()+" -> "+srcXsltCompiler.getSystemId());
         Source srcXqueryCompiler = resolveSrc(xspecResources.getXSpecXQueryCompilerUri(), baseUri, "XSpec XQuery Compiler");
@@ -256,14 +255,14 @@ public class XmlStuff {
         getLog().debug(xspecResources.getXSpecReporterUri(options.folding)+" -> "+srcReporter.getSystemId());
         Source srcCoverageReporter = resolveSrc(xspecResources.getXSpecCoverageReporterUri(), baseUri, "Coverage Reporter");
         getLog().debug(xspecResources.getXSpecCoverageReporterUri()+" -> "+srcCoverageReporter.getSystemId());
-        Source srcSchIsoDsdl = resolveSrc(schematronResources.getSchIsoDsdlIncludeUri(), baseUri, "Schematron Dsdl");
-        getLog().debug(schematronResources.getSchIsoDsdlIncludeUri()+" -> "+srcSchIsoDsdl.getSystemId());
-        Source srcSchExpand = resolveSrc(schematronResources.getSchIsoAbstractExpandUri(), baseUri, "Schematron expander");
-        getLog().debug(schematronResources.getSchIsoAbstractExpandUri()+" -> "+srcSchExpand.getSystemId());
-        Source srcSchSvrl = resolveSrc(schematronResources.getSchIsoSvrlForXslt2Uri(), baseUri, "Schematron Svrl");
-        getLog().debug(schematronResources.getSchIsoSvrlForXslt2Uri()+" -> "+srcSchSvrl.getSystemId());
-        Source srcSchSchut = resolveSrc(xspecResources.getSchematronSchutConverterUri(), baseUri, "Schematron Schut");
+
+        // Schematron
+        Source srcSchematronCompiler = resolveSrc(xspecResources.getSchematronCompilerUri(), baseUri, "Schematron compiler");
+        getLog().debug(xspecResources.getSchematronCompilerUri()+" -> "+srcSchematronCompiler.getSystemId());
+        Source srcSchSchut = resolveSrc(xspecResources.getSchematronSchutConverterUri(), baseUri, "Schematron unit-test to XSpec converter");
         getLog().debug(xspecResources.getSchematronSchutConverterUri()+" -> "+srcSchSchut.getSystemId());
+
+        // dependency scanner
         Source srcXmlDependencyScanner = resolveSrc(pluginResources.getDependencyScannerUri(), baseUri, "Xml dependency scanner");
         getLog().debug(pluginResources.getDependencyScannerUri()+" -> "+srcXmlDependencyScanner.getSystemId());
         
@@ -276,15 +275,22 @@ public class XmlStuff {
         if(isSaxonPEorEE()) {
             setCoverageReporter(compileXsl(srcCoverageReporter));
         }
-        setSchematronDsdl(compileXsl(srcSchIsoDsdl));
-        setSchematronExpand(compileXsl(srcSchExpand));
-        setSchematronSvrl(compileXsl(srcSchSvrl));
+        setSchematronCompiler(compileXsl(srcSchematronCompiler));
         setSchematronSchut(compileXsl(srcSchSchut));
         setXmlDependencyScanner(compileXsl(srcXmlDependencyScanner));
 
         setXeSurefire(compileXsl(new StreamSource(getClass().getResourceAsStream("/surefire-reporter.xsl"))));
     }
-    public boolean isSaxonPEorEE() {
+
+  private void setSchematronCompiler(XsltExecutable xsltExecutable) {
+    schematronCompiler = xsltExecutable;
+  }
+
+  public XsltExecutable getSchematronCompiler() {
+    return schematronCompiler;
+  }
+
+  public boolean isSaxonPEorEE() {
         String configurationClassName = processor.getUnderlyingConfiguration().getClass().getName();
         return "com.saxonica.config.ProfessionalConfiguration".equals(configurationClassName) ||
                 "com.saxonica.config.EnterpriseConfiguration".equals(configurationClassName);
@@ -437,24 +443,6 @@ public class XmlStuff {
         }
     }
     
-    private void setSchematronDsdl(XsltExecutable xe) { schDsdl = xe; }
-    private void setSchematronExpand(XsltExecutable xe) { schExpand = xe; }
-    private void setSchematronSvrl(XsltExecutable xe) { schSvrl = xe; }
-    /**
-     * Return XSL for <tt>iso_dsdl_include.xsl</tt>
-     * @return iso_dsdl_include.xsl XSL
-     */
-    public XsltExecutable getSchematronDsdl() { return schDsdl; }
-    /**
-     * Return XSL for <tt>iso_abstract_expand.xsl</tt>
-     * @return iso_abstract_expand.xsl XSL
-     */
-    public XsltExecutable getSchematronExpand() { return schExpand; }
-    /**
-     * Return XSL for <tt>iso_svrl_for_xslt2.xsl</tt>
-     * @return iso_svrl_for_xslt2.xsl XSL
-     */
-    public XsltExecutable getSchematronSvrl() { return schSvrl; }
     private void setXpSchGetXSpecFile(XPathExecutable xe) { xpSchGetXSpec = xe; }
 
     private void setSchematronSchut(XsltExecutable xe) { schSchut = xe; }

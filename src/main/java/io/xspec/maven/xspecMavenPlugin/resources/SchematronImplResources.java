@@ -31,23 +31,22 @@ package io.xspec.maven.xspecMavenPlugin.resources;
  * @author cmarchand
  */
 public interface SchematronImplResources {
-    
-    /**
-     * Usually iso_dsdl_include.xsl
-     * @return Schematron ISO dsdl include URI
-     */
-    public String getSchIsoDsdlIncludeUri();
-    
-    /**
-     * Usually iso_abstract_expand.xsl
-     * @return Schematron ISO abstract expand URI
-     */
-    public String getSchIsoAbstractExpandUri();
-    
-    /**
-     * Usuall iso_svrl_for_xslt2.xsl
-     * @return Schematron ISO Svrl for XSLT includes URI
-     */
-    public String getSchIsoSvrlForXslt2Uri();
-    
+
+  /**
+   * Return Schxslt step1 URI
+   * @return
+   */
+  String getSchStep1Uri();
+
+  /**
+   * Return Schxslt step2 URI
+   * @return
+   */
+  String getSchStep2Uri();
+
+  /**
+   * Return Schxslt step3 URI
+   * @return
+   */
+  String getSchStep3Uri();
 }

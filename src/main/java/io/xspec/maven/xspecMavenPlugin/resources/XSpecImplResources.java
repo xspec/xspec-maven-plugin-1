@@ -70,5 +70,6 @@ public interface XSpecImplResources {
      * @return 
      */
     public String getXSpecCssReportUri();
-    
+
+  String getSchematronCompilerUri();
 }

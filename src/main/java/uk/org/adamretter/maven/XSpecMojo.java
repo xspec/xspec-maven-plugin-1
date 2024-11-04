@@ -177,27 +177,6 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      */
     @Parameter()
     public String xspecXQueryCompiler;
-    
-    /**
-     * Path to schematron/iso-schematron/iso_dsdl_include.xsl.
-     * This parameter is only available for developement purposes, and should never be overriden.
-     */
-    @Parameter()
-    public String schIsoDsdlInclude;
-    
-    /**
-     * Path to schematron/iso-schematron/iso_abstract_expand.xsl.
-     * This parameter is only available for developement purposes, and should never be overriden.
-     */
-    @Parameter()
-    public String schIsoAbstractExpand;
-    
-    /**
-     * Path to schematron/iso-schematron/iso_svrl_for_xslt2.xsl.
-     * This parameter is only available for developement purposes, and should never be overriden.
-     */
-    @Parameter()
-    public String schIsoSvrlForXslt2;
 
     /**
      * Path to schematron/schut-to-xspec.xsl.
@@ -408,17 +387,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     }
 
     private SchematronImplResources getSchematronResources() {
-        DefaultSchematronImplResources ret = new DefaultSchematronImplResources();
-        if(schIsoDsdlInclude!=null && !schIsoDsdlInclude.isEmpty()) {
-            ret.setSchIsoDsdlInclude(schIsoDsdlInclude);
-        }
-        if(schIsoAbstractExpand!=null && !schIsoAbstractExpand.isEmpty()) {
-            ret.setSchIsoAbstractExpand(schIsoAbstractExpand);
-        }
-        if(schIsoSvrlForXslt2!=null&&!schIsoSvrlForXslt2.isEmpty()) {
-            ret.setSchIsoSvrlForXslt2(schIsoSvrlForXslt2);
-        }
-        return ret;
+      return new DefaultSchematronImplResources();
     }
 
     private XSpecPluginResources getXSpecPluginResources() {

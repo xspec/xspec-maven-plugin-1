@@ -40,16 +40,18 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     private final String xspecFoldingReporter;
     private String xspecCoverageReporter;
     private String testReportCss;
-    
-    public DefaultXSpecImplResources() {
+  private String schematronCompiler;
+
+  public DefaultXSpecImplResources() {
         super();
-        xspecXslCompilerUri = XSPEC_PREFIX+XSPEC_PACKAGE+"src/compiler/compile-xslt-tests.xsl";
-        xspecXQueryCompilerUri = XSPEC_PREFIX+XSPEC_PACKAGE+"src/compiler/compile-xquery-tests.xsl";
-        schematronUnitTestConverter = XSPEC_PREFIX+XSPEC_PACKAGE+"src/schematron/schut-to-xspec.xsl";
-        xspecReporter = XSPEC_PREFIX+XSPEC_PACKAGE+"src/reporter/format-xspec-report.xsl";
-        xspecFoldingReporter = XSPEC_PREFIX+XSPEC_PACKAGE+"src/reporter/format-xspec-report-folding.xsl";
-        xspecCoverageReporter = XSPEC_PREFIX+XSPEC_PACKAGE+"src/reporter/coverage-report.xsl";
-        testReportCss = XSPEC_PREFIX+XSPEC_PACKAGE+"src/reporter/test-report.css";
+        xspecXslCompilerUri         = XSPEC_PREFIX + XSPEC_PACKAGE + "src/compiler/compile-xslt-tests.xsl";
+        xspecXQueryCompilerUri      = XSPEC_PREFIX + XSPEC_PACKAGE + "src/compiler/compile-xquery-tests.xsl";
+        schematronUnitTestConverter = XSPEC_PREFIX + XSPEC_PACKAGE + "src/schematron/schut-to-xspec.xsl";
+        schematronCompiler          = XSPEC_PREFIX + XSPEC_PACKAGE + "src/schematron/schut-to-xslt.xsl";
+        xspecReporter               = XSPEC_PREFIX + XSPEC_PACKAGE + "src/reporter/format-xspec-report.xsl";
+        xspecFoldingReporter        = XSPEC_PREFIX + XSPEC_PACKAGE + "src/reporter/format-xspec-report-folding.xsl";
+        xspecCoverageReporter       = XSPEC_PREFIX + XSPEC_PACKAGE + "src/reporter/coverage-report.xsl";
+        testReportCss               = XSPEC_PREFIX + XSPEC_PACKAGE + "src/reporter/test-report.css";
     }
 
     @Override
@@ -75,7 +77,12 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
     @Override
     public String getXSpecCssReportUri() { return testReportCss; }
 
-    /**
+  @Override
+  public String getSchematronCompilerUri() {
+    return schematronCompiler;
+  }
+
+  /**
      * Defines the XSpec compiler for XSL URI
      * @param xspecXslCompilerUri 
      */

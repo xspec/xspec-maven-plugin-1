@@ -69,7 +69,7 @@ public class IndexGeneratorTest extends TestUtils {
                     options, 
                     new Properties());
         } catch(Exception ex) {
-            // ignore
+            throw new RuntimeException("while creating xmlStuff", ex);
         }
     }
 

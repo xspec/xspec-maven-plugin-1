@@ -36,6 +36,7 @@ import net.sf.saxon.s9api.XsltExecutable;
 import net.sf.saxon.s9api.XsltTransformer;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 
@@ -71,6 +72,20 @@ public class XmlStuffTest {
         xspecResources = new DefaultXSpecImplResources();
         pluginResources = new DefaultXSpecPluginResources();
         baseDirectory = TestUtils.getBaseDirectory();
+    }
+
+    @Test
+    public void xmlStuff_should_be_instanciated_without_exception() throws XSpecPluginException {
+      Assertions.assertThat(new XmlStuff(
+          saxonOptions,
+          getLog(),
+          xspecResources,
+          pluginResources,
+          schematronResources,
+          baseDirectory,
+          runnerOptions,
+          new Properties())
+      ).isNotNull();
     }
     
     @Test(expected = NullPointerException.class)

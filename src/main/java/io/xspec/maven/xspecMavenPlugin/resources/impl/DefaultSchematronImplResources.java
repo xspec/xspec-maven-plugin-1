@@ -35,43 +35,30 @@ import static io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources.XSPEC
  * @author cmarchand
  */
 public class DefaultSchematronImplResources implements SchematronImplResources {
-    public static final transient String SCHEMATRON_PREFIX = "cp:/";
-    private String schIsoDsdlInclude;
-    private String schIsoAbstractExpand;
-    private String schIsoSvrlForXslt2;
+    public static final String SCHEMATRON_PREFIX = "cp:/";
+    private String schStep1;
+    private String schStep2;
+    private String schStep3;
     
     public DefaultSchematronImplResources() {
         super();
-        this.schIsoDsdlInclude = SCHEMATRON_PREFIX+XSPEC_PACKAGE+"lib/iso-schematron/iso_dsdl_include.xsl";
-        this.schIsoAbstractExpand = SCHEMATRON_PREFIX+XSPEC_PACKAGE+"lib/iso-schematron/iso_abstract_expand.xsl";
-        this.schIsoSvrlForXslt2 = SCHEMATRON_PREFIX+XSPEC_PACKAGE+"lib/iso-schematron/iso_svrl_for_xslt2.xsl";
+        this.schStep1 = "#none";
+        this.schStep2 = "#none";
+        this.schStep3 = "#none";
     }
 
-    @Override
-    public String getSchIsoDsdlIncludeUri() {
-        return schIsoDsdlInclude;
-    }
+  @Override
+  public String getSchStep1Uri() {
+    return schStep1;
+  }
 
-    public void setSchIsoDsdlInclude(String schIsoDsdlInclude) {
-        this.schIsoDsdlInclude = schIsoDsdlInclude;
-    }
+  @Override
+  public String getSchStep2Uri() {
+    return schStep2;
+  }
 
-    @Override
-    public String getSchIsoAbstractExpandUri() {
-        return schIsoAbstractExpand;
-    }
-
-    public void setSchIsoAbstractExpand(String schIsoAbstractExpand) {
-        this.schIsoAbstractExpand = schIsoAbstractExpand;
-    }
-
-    @Override
-    public String getSchIsoSvrlForXslt2Uri() {
-        return schIsoSvrlForXslt2;
-    }
-
-    public void setSchIsoSvrlForXslt2(String schIsoSvrlForXslt2) {
-        this.schIsoSvrlForXslt2 = schIsoSvrlForXslt2;
-    }
-    
+  @Override
+  public String getSchStep3Uri() {
+    return schStep3;
+  }
 }
