@@ -69,7 +69,7 @@ public class FileFinder {
         super();
         this.directoryToSearch = directoryToSearch;
         this.matchPattern = matchPattern;
-        this.excludes = (excludes!=null ? excludes : Collections.EMPTY_LIST);
+        this.excludes = (excludes!=null ? excludes : Collections.emptyList());
         this.log = log;
     }
     

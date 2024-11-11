@@ -145,11 +145,11 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  */
 @Mojo(name = "run-xspec", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.TEST)
 public class XSpecMojo extends AbstractMojo implements LogProvider {
-    public static final transient String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
-    public static final transient String XML_UTILITIES_PREFIX = "dependency://org.mricaud+xml-utilities/";
-    public static final transient String CATALOG_NS = "urn:oasis:names:tc:entity:xmlns:xml:catalog";
-    public static final transient String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
-    public static final transient String LOCAL_PREFIX = "dependency://io.xspec.maven+xspec-maven-plugin/";
+    public static final String XSPEC_PREFIX = "dependency://io.xspec+xspec/";
+    public static final String XML_UTILITIES_PREFIX = "dependency://org.mricaud+xml-utilities/";
+    public static final String CATALOG_NS = "urn:oasis:names:tc:entity:xmlns:xml:catalog";
+    public static final String XSPEC_NS = "http://www.jenitennison.com/xslt/xspec";
+    public static final String LOCAL_PREFIX = "dependency://io.xspec.maven+xspec-maven-plugin/";
 
     @Parameter( defaultValue = "${session}", readonly = true )
     private MavenSession session;
@@ -213,7 +213,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     
     /**
      * The global Saxon options. 
-     * See https://github.com/cmarchand/saxonOptions-mvn-plug-utils/wiki for full documentation.
+     * See <a href="https://github.com/cmarchand/saxonOptions-mvn-plug-utils/wiki">...</a> for full documentation.
      * It allows to configure Saxon as it'll be used by plugin to run XSpecs. 
      * The main option that might be configured is xi, to activate or not XInclude.
      * <pre>
@@ -268,7 +268,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * The catalog file to use.
      * It must conform to OASIS catalog specification. 
-     * See https://www.oasis-open.org/committees/entity/spec-2001-08-06.html. 
+     * See <a href="https://www.oasis-open.org/committees/entity/spec-2001-08-06.html">...</a>.
      * If defined, this catalog must be provided, or generated before xspec-maven-plugin execution.
      * It can be an absolute or relative path. All relative pathes are relative to ${project.basedir}.
      */

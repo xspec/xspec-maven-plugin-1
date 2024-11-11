@@ -1,7 +1,7 @@
 /**
  * Copyright © 2017, Christophe Marchand
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the <organization> nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- *
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,13 +26,14 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
-import io.xspec.maven.xspecMavenPlugin.resolver.ResolverDecorator;
-import io.xspec.maven.xspecMavenPlugin.resolver.ResolverDecoratorProvider;
+import io.xspec.maven.xspecMavenPlugin.resolver.XSpecResourceResolver;
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.ExtensionFunctionDefinition;
+import net.sf.saxon.lib.ResourceRequest;
+import net.sf.saxon.lib.ResourceResolver;
 import net.sf.saxon.s9api.*;
 import net.sf.saxon.trans.XPathException;
 import org.apache.maven.plugin.logging.Log;
@@ -65,9 +66,8 @@ public class XmlStuff {
     private final XsltCompiler xsltCompiler;
     private final XQueryCompiler xqueryCompiler;
     private final XPathCompiler xpathCompiler;
-    private final ResolverDecorator resolverDecorator;
-    
-    private XsltExecutable xspec4xsltCompiler;
+  private final ResourceResolver xspecResourceResolver;
+  private XsltExecutable xspec4xsltCompiler;
     private XsltExecutable xspec4xqueryCompiler;
     private XsltExecutable reporter;
     private XsltExecutable junitReporter;
@@ -79,7 +79,6 @@ public class XmlStuff {
 
     public final static QName QN_REPORT_CSS = new QName("report-css-uri");
     public static final String RESOURCES_TEST_REPORT_CSS = "resources/test-report.css";
-    private XPathExecutable xpSchGetXSpec;
   private XsltExecutable schematronCompiler;
     private XsltExecutable schSchut;
     private final Log log;
@@ -89,10 +88,7 @@ public class XmlStuff {
     private final File baseDir;
     private final RunnerOptions options;
     private final Properties executionProperties;
-    // for code coverage
-    private String generateXspecUtilsUri;
-    private String schLocationCompareUri;
-    public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
+  public static final SAXParserFactory PARSER_FACTORY = SAXParserFactory.newInstance();
     private static final Class[] EMPTY_PARAMS = new Class[]{};
 
 
@@ -122,11 +118,18 @@ public class XmlStuff {
                 throw new XSpecPluginException("Illegal value in Saxon configuration property", ex);
             }
         }
-        resolverDecorator = new ResolverDecoratorProvider().getDecorator(processor);
-        documentBuilder = processor.newDocumentBuilder();
+    documentBuilder = processor.newDocumentBuilder();
+    try {
+      File catalogFile = generateCatalog();
+      xspecResourceResolver = new XSpecResourceResolver(catalogFile, getLog());
+    } catch(IOException ex) {
+      throw new XSpecPluginException("while constructing URIResolver", ex);
+    }
+    getLog().debug("URI resolver Ok");
         try {
             xsltCompiler = processor.newXsltCompiler();
             xsltCompiler.setCompileWithTracing(true);
+            xsltCompiler.setResourceResolver(xspecResourceResolver);
             xpathCompiler = processor.newXPathCompiler();
             xpathCompiler.declareNamespace("x", XSpecMojo.XSPEC_NS);
             xqueryCompiler = processor.newXQueryCompiler();
@@ -136,12 +139,6 @@ public class XmlStuff {
             } catch(XPathException ex) {
                 throw new XSpecPluginException(ex);
             }
-            try {
-                decorateXsltCompiler();
-            } catch(IOException ex) {
-                throw new XSpecPluginException("while constructing URIResolver", ex);
-            }
-            getLog().debug("URI resolver Ok");
             loadAllSaxonExtensionFunctions();
             try {
                 createXPathExecutables();
@@ -164,20 +161,11 @@ public class XmlStuff {
                 XdmNode document = documentBuilder.build(new StreamSource(url.openStream()));
                 XPathSelector selector = xpathCompiler.compile("/gaulois-services/saxon/extensions/function").load();
                 selector.setContextItem(document);
-                Object o = selector.evaluate().iterator();
-                if(o instanceof XdmSequenceIterator) {
-                    // saxon 9.8
-                    XdmSequenceIterator it = (XdmSequenceIterator)o;
-                    while(it.hasNext()) {
-                        String className = it.next().getStringValue();
-                        registerSaxonExtension(className);
-                    }
-                } else {
-                    Iterator<XdmItem> it = (Iterator<XdmItem>)o;
-                    while(it.hasNext()) {
-                        String className = it.next().getStringValue();
-                        registerSaxonExtension(className);
-                    }
+                Iterator<XdmItem> o = selector.evaluate().iterator();
+                XdmSequenceIterator it = (XdmSequenceIterator)o;
+                while(it.hasNext()) {
+                    String className = it.next().getStringValue();
+                    registerSaxonExtension(className);
                 }
             }
         } catch(IOException | SaxonApiException ex) {
@@ -186,9 +174,10 @@ public class XmlStuff {
         registerSaxonExtension("io.xspec.xspec.saxon.funcdefs.LineNumber");
     }
 
+    @SuppressWarnings("unchecked")
     private void registerSaxonExtension(String className) {
         try {
-            Class clazz = Class.forName(className);
+            Class<?> clazz = Class.forName(className);
             if(extendsClass(clazz, ExtensionFunctionDefinition.class)) {
                 Class<ExtensionFunctionDefinition> cle = (Class<ExtensionFunctionDefinition>)clazz;
                 Constructor<ExtensionFunctionDefinition> cc = cle.getConstructor(EMPTY_PARAMS);
@@ -213,7 +202,7 @@ public class XmlStuff {
      * @throws IOException
      * @throws XSpecPluginException
      */
-    private void decorateXsltCompiler() throws IOException, XSpecPluginException {
+    private File generateCatalog() throws IOException, XSpecPluginException {
         getLog().debug("buildUriResolver");
         CatalogWriter cw = new CatalogWriter(this.getClass().getClassLoader());
         getLog().debug("CatalogWriter instanciated");
@@ -221,7 +210,7 @@ public class XmlStuff {
         if(options.keepGeneratedCatalog) {
             getLog().info("keeping generated catalog: "+catalog.toURI().toURL().toExternalForm());
         }
-        resolverDecorator.decorate(xsltCompiler, catalog, getLog());
+        return catalog;
     }
     
     private void createXPathExecutables() throws SaxonApiException {
@@ -241,7 +230,7 @@ public class XmlStuff {
         getLog().debug("Using Coverage Reporter: " + xspecResources.getXSpecCoverageReporterUri());
         getLog().debug("Using Schematron step1: " + schematronResources.getSchStep1Uri());
         getLog().debug("Using Schematron step2: " + schematronResources.getSchStep2Uri());
-        getLog().debug("Using Schematrong step3: " + schematronResources.getSchStep3Uri());
+        getLog().debug("Using Schematron step3: " + schematronResources.getSchStep3Uri());
         getLog().debug("Using Schematron schut: " + xspecResources.getSchematronSchutConverterUri());
         getLog().debug("Using XML dependency scanner: " + pluginResources.getDependencyScannerUri());
         String baseUri = baseDir!=null ? baseDir.toURI().toURL().toExternalForm() : null;
@@ -267,8 +256,9 @@ public class XmlStuff {
         getLog().debug(pluginResources.getDependencyScannerUri()+" -> "+srcXmlDependencyScanner.getSystemId());
         
         // for code coverage
-        generateXspecUtilsUri = resolveSrc("generate-tests-utils.xsl", srcXsltCompiler.getSystemId(), "generate-tests-utils.xsl").getSystemId();
-        schLocationCompareUri = resolveSrc("../schematron/sch-location-compare.xsl", srcXsltCompiler.getSystemId(), "../schematron/sch-location-compare.xsl").getSystemId();
+      // for code coverage
+      String generateXspecUtilsUri = resolveSrc("generate-tests-utils.xsl", srcXsltCompiler.getSystemId(), "generate-tests-utils.xsl").getSystemId();
+      String schLocationCompareUri = resolveSrc("../schematron/sch-location-compare.xsl", srcXsltCompiler.getSystemId(), "../schematron/sch-location-compare.xsl").getSystemId();
         setXspec4xsltCompiler(compileXsl(srcXsltCompiler));
         setXspec4xqueryCompiler(compileXsl(srcXqueryCompiler));
         setReporter(compileReporter(srcReporter));
@@ -337,6 +327,7 @@ public class XmlStuff {
         return log;
     }
     public XsltExecutable compileXsl(Source source) throws SaxonApiException {
+      getLog().info("Compiling "+source.getSystemId());
         return getXsltCompiler().compile(source);
     }
 
@@ -349,7 +340,13 @@ public class XmlStuff {
     }
 
     public XsltCompiler getXsltCompiler() {
-        return xsltCompiler;
+      ResourceResolver resourceResolver = xsltCompiler.getResourceResolver();
+      if(resourceResolver!=null)
+        getLog().debug("compiler's ResourceResolver is "+ resourceResolver.getClass().getName());
+      URIResolver uriResolver = xsltCompiler.getURIResolver();
+      if(uriResolver!=null)
+        getLog().debug("compiler's URIResolver is "+ uriResolver.getClass().getName());
+      return xsltCompiler;
     }
 
     public XPathCompiler getXPathCompiler() {
@@ -397,8 +394,8 @@ public class XmlStuff {
     private void setXpExecGetXSpecType(XPathExecutable xpExecGetXSpecType) {
         this.xpExecGetXSpecType = xpExecGetXSpecType;
     }
-    
-    public URIResolver getUriResolver() { return xsltCompiler.getURIResolver(); }
+
+    public ResourceResolver getResourceResolver() { return xspecResourceResolver; }
 
     public XsltExecutable getXeSurefire() {
         return xeSurefire;
@@ -433,7 +430,11 @@ public class XmlStuff {
      */
     private Source resolveSrc(String source, String baseUri, String desc) throws XSpecPluginException {
         try {
-            Source ret = getUriResolver().resolve(source, baseUri);
+          ResourceRequest resourceRequest = new ResourceRequest();
+          resourceRequest.baseUri=baseUri;
+          resourceRequest.uri=source;
+          //Source ret = getUriResolver().resolve(source, baseUri);
+          Source ret = getResourceResolver().resolve(resourceRequest);
             if(ret == null) {
                 throw new XSpecPluginException("Could not find "+desc+" stylesheet in: "+source);
             }
@@ -443,7 +444,8 @@ public class XmlStuff {
         }
     }
     
-    private void setXpSchGetXSpecFile(XPathExecutable xe) { xpSchGetXSpec = xe; }
+    private void setXpSchGetXSpecFile(XPathExecutable xe) {
+    }
 
     private void setSchematronSchut(XsltExecutable xe) { schSchut = xe; }
     /**
@@ -487,47 +489,26 @@ public class XmlStuff {
         XPathSelector xps = getXpExecGetXSpecType().load();
         xps.setContextItem(doc);
         XdmValue values = xps.evaluate();
-        Object o = values.iterator();
-        if(o instanceof XdmSequenceIterator) {
-            for(XdmSequenceIterator it=(XdmSequenceIterator)o; it.hasNext();) {
-                XdmNode item=(XdmNode)(it.next());
-                if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
-                    String nodeName = item.getNodeName().getLocalName();
-                    switch(nodeName) {
-                        case "query":
-                        case "query-at": {
-                            return XSpecType.XQ;
-                        }
-                        case "schematron": {
-                            return XSpecType.SCH;
-                        }
-                        case "stylesheet": {
-                            return XSpecType.XSL;
-                        }
-                    }
-                }
+        Iterator<XdmItem> o = values.iterator();
+      for (XdmSequenceIterator it = (XdmSequenceIterator) o; it.hasNext(); ) {
+        XdmNode item = (XdmNode) (it.next());
+        if (item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
+          String nodeName = item.getNodeName().getLocalName();
+          switch (nodeName) {
+            case "query":
+            case "query-at": {
+              return XSpecType.XQ;
             }
-        } else {
-            for(Iterator<XdmItem> it=(Iterator<XdmItem>)o; it.hasNext();) {
-                XdmNode item=(XdmNode)(it.next());
-                if(item.getNodeKind().equals(XdmNodeKind.ATTRIBUTE)) {
-                    String nodeName = item.getNodeName().getLocalName();
-                    switch(nodeName) {
-                        case "query":
-                        case "query-at": {
-                            return XSpecType.XQ;
-                        }
-                        case "schematron": {
-                            return XSpecType.SCH;
-                        }
-                        case "stylesheet": {
-                            return XSpecType.XSL;
-                        }
-                    }
-                }
+            case "schematron": {
+              return XSpecType.SCH;
             }
+            case "stylesheet": {
+              return XSpecType.XSL;
+            }
+          }
         }
-        throw new SaxonApiException("This file does not seem to be a valid XSpec file: "+doc.getBaseURI().toString());
+      }
+      throw new SaxonApiException("This file does not seem to be a valid XSpec file: "+doc.getBaseURI().toString());
     }
     /**
      * We want to be sure that external-functions are allowed
@@ -539,4 +520,7 @@ public class XmlStuff {
         return ret;
     }
 
+  public SchematronImplResources getSchematronResources() {
+    return schematronResources;
+  }
 }

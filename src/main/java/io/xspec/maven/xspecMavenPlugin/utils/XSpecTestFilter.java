@@ -26,6 +26,7 @@
  */
 package io.xspec.maven.xspecMavenPlugin.utils;
 
+import net.sf.saxon.lib.ResourceResolver;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -47,7 +48,7 @@ public class XSpecTestFilter extends XMLFilterImpl implements ContentHandler {
     public XSpecTestFilter(
             final XMLReader parent,
             final String systemId,
-            final URIResolver uriResolver,
+            final ResourceResolver uriResolver,
             final LogProvider logProvider,
             boolean activateLogs,
             final String... logPrefix) {

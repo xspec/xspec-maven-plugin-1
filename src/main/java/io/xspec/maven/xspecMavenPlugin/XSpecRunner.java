@@ -1,7 +1,7 @@
 /**
  * Copyright © 2018, Christophe Marchand, XSpec organization
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the <organization> nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- *
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,11 +27,11 @@
 package io.xspec.maven.xspecMavenPlugin;
 
 import com.jenitennison.xslt.tests.XSLTCoverageTraceListener;
+import io.xspec.maven.xspecMavenPlugin.resolver.XSpecResourceResolver;
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.utils.*;
-import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.TraceListener;
 import net.sf.saxon.s9api.*;
 import net.sf.saxon.trans.UncheckedXPathException;
@@ -54,6 +54,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -92,9 +93,8 @@ public class XSpecRunner implements LogProvider {
     public static final QName INITIAL_TEMPLATE_NAME=new QName(XSPEC_NS, "main");
     public static final QName INLINE_CSS = new QName("inline-css");
     private static final String COVERAGE_ERROR_MESSAGE = "Coverage report is only available with Saxon-PE or Saxon-EE";
-    private boolean failed;
-    
-    public XSpecRunner(final Log log, final File baseDirectory) {
+
+  public XSpecRunner(final Log log, final File baseDirectory) {
         super();
         this.log = log;
         this.baseDirectory = baseDirectory;
@@ -148,7 +148,7 @@ public class XSpecRunner implements LogProvider {
         getLog().debug("Looking for XSpecs in: " + options.testDir);
         final List<File> xspecs = findAllXSpecs();
         getLog().info("Found " + xspecs.size() + " XSpecs...");
-        failed = false;
+      boolean failed = false;
         initProcessedFiles(xspecs.size());
         for (final File xspec : xspecs) {
             try {
@@ -217,7 +217,7 @@ public class XSpecRunner implements LogProvider {
             final XSpecResultsHandler resultsHandler = new XSpecResultsHandler();
             boolean processedFileAdded = false;
             try {
-                final XQueryExecutable xeXSpec = xmlStuff.getXqueryCompiler().compile(new FileInputStream(compiledXSpec.getCompiledStylesheet()));
+                final XQueryExecutable xeXSpec = xmlStuff.getXqueryCompiler().compile(Files.newInputStream(compiledXSpec.getCompiledStylesheet().toPath()));
                 final XQueryEvaluator xtXSpec = xeXSpec.load();
 
                 getLog().info("Executing XQuery XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
@@ -248,19 +248,19 @@ public class XSpecRunner implements LogProvider {
                         xt.setParameter(new QName("baseDir"), new XdmAtomicValue(options.testDir.toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
                         xt.setParameter(new QName("xspecUri"), new XdmAtomicValue(sourceFile.toURI().toURL().toExternalForm()));
-                        xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
+                        xt.setDestination(xmlStuff.newSerializer(NullOutputStream.INSTANCE));
                         xtSurefire = xt;
                     } catch(MalformedURLException ex) {
                         getLog().warn("Unable to generate surefire report", ex);
                     }
                 } else {
-                    xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
+                    xtSurefire = xmlStuff.newSerializer(NullOutputStream.INSTANCE);
                 }
                 ProcessedFile pf = new ProcessedFile(options.testDir, sourceFile, options.reportDir, xspecHtmlResult);
                 processedFiles.add(pf);
                 processedFileAdded = true;
                 String relativeCssPath = 
-                        (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
+                        (!pf.getRelativeCssPath().isEmpty() ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
                 reporter.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
                 //execute
                 
@@ -275,7 +275,7 @@ public class XSpecRunner implements LogProvider {
                                 reporter);
                 Source xspecSource = new StreamSource(sourceFile);
                 xtXSpec.setSource(xspecSource);
-                xtXSpec.setURIResolver(xmlStuff.getUriResolver());
+                xtXSpec.setResourceResolver(xmlStuff.getResourceResolver());
                 XdmValue result = xtXSpec.evaluate();
                 if(result==null) {
                     getLog().debug("processXQueryXSpec result is null");
@@ -303,7 +303,7 @@ public class XSpecRunner implements LogProvider {
                     resultsHandler.getFailed(), 
                     missed, 
                     compiledXSpec.getTests());
-            if(processedFiles.size()>0) {
+            if(!processedFiles.isEmpty()) {
                 processedFiles.get(processedFiles.size()-1).setResults(
                         resultsHandler.getPassed(), 
                         resultsHandler.getPending(), 
@@ -416,16 +416,22 @@ public class XSpecRunner implements LogProvider {
                 XsltTransformer xt = xmlStuff.getXeSurefire().load();
                 xt.setErrorListener(errorListener);
                 try {
-                    xt.setParameter(new QName("baseDir"), new XdmAtomicValue(options.testDir.toURI().toURL().toExternalForm()));
-                    xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
-                    xt.setParameter(new QName("xspecUri"), new XdmAtomicValue(sourceFile.toURI().toURL().toExternalForm()));
-                    xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
+                    xt.setParameter(
+                        new QName("baseDir"),
+                        new XdmAtomicValue(options.testDir.toURI().toURL().toExternalForm()));
+                    xt.setParameter(
+                        new QName("outputDir"),
+                        new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
+                    xt.setParameter(
+                        new QName("xspecUri"),
+                        new XdmAtomicValue(sourceFile.toURI().toURL().toExternalForm()));
+                    xt.setDestination(xmlStuff.newSerializer(NullOutputStream.INSTANCE));
                     xtSurefire = xt;
                 } catch(MalformedURLException ex) {
                     getLog().warn("Unable to generate surefire report", ex);
                 }
             } else {
-                xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
+                xtSurefire = xmlStuff.newSerializer(NullOutputStream.INSTANCE);
             }
             getLog().debug("\tsurefire report output set");
 
@@ -433,10 +439,9 @@ public class XSpecRunner implements LogProvider {
             ProcessedFile pf = new ProcessedFile(options.testDir, sourceFile, options.reportDir, xspecHtmlResult);
             getLog().debug("\tadding PF to list");
             processedFiles.add(pf);
-            processedFileAdded = true;
             getLog().debug("\tprocessedFile processed");
             String relativeCssPath = 
-                    (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
+                    (!pf.getRelativeCssPath().isEmpty() ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
             getLog().debug("\trelativeCssPath: "+relativeCssPath);
             // issue #36
             reporter.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
@@ -453,31 +458,24 @@ public class XSpecRunner implements LogProvider {
                             reporter);
             getLog().debug("\tdestination tree constructed");
 
-            XMLReader reader = xmlStuff.PARSER_FACTORY.newSAXParser().getXMLReader();
-            reader.setEntityResolver((EntityResolver)xmlStuff.getUriResolver());
+            XMLReader reader = XmlStuff.PARSER_FACTORY.newSAXParser().getXMLReader();
+            reader.setEntityResolver((EntityResolver)xmlStuff.getResourceResolver());
             Source xspecSource = new SAXSource(reader, new InputSource(new FileInputStream(sourceFile)));
             xspecSource.setSystemId(sourceFile.toURI().toString());
             xtXSpec.setSource(xspecSource);
-            xtXSpec.setURIResolver(xmlStuff.getUriResolver());
+            xtXSpec.setResourceResolver(xmlStuff.getResourceResolver());
             xtXSpec.setDestination(destination);
             xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
             getLog().debug("\tlaunching transform");
             xtXSpec.transform();
 
             getLog().debug("XSpec run");
-        } catch (final SaxonApiException te) {
-            getLog().error(te.getMessage());
-            getLog().debug(te);
-            if(!processedFileAdded) {
-                ProcessedFile pf = new ProcessedFile(options.testDir, sourceFile, options.reportDir, xspecCompiler.getXSpecHtmlResultPath(options.reportDir, sourceFile));
-                processedFiles.add(pf);
-            }
-        } catch (final FileNotFoundException | ParserConfigurationException | SAXException te) {
+        } catch (final SaxonApiException | FileNotFoundException | ParserConfigurationException | SAXException te) {
             getLog().error(te.getMessage());
             getLog().debug(te);
         }
 
-        //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
+      //missed tests come about when the XSLT processor aborts processing the XSpec due to an XSLT error
         final int missed = compiledXSpec.getTests() - resultsHandler.getTests();
 
         //report results
@@ -488,7 +486,7 @@ public class XSpecRunner implements LogProvider {
                 resultsHandler.getFailed(), 
                 missed, 
                 compiledXSpec.getTests());
-        if(processedFiles.size()>0) {
+        if(!processedFiles.isEmpty()) {
             processedFiles.get(processedFiles.size()-1).setResults(
                     resultsHandler.getPassed(), 
                     resultsHandler.getPending(), 
@@ -533,12 +531,12 @@ public class XSpecRunner implements LogProvider {
             getLog().info("Executing XSpec: " + compiledXSpec.getCompiledStylesheet().getName());
             final File xspecXmlResult = xspecCompiler.getXSpecXmlResultPath(options.reportDir, sourceFile);
 
-            XMLReader reader = xmlStuff.PARSER_FACTORY.newSAXParser().getXMLReader();
-            reader.setEntityResolver((EntityResolver)xmlStuff.getUriResolver());
+            XMLReader reader = XmlStuff.PARSER_FACTORY.newSAXParser().getXMLReader();
+            reader.setEntityResolver((EntityResolver)xmlStuff.getResourceResolver());
             Source xspecSource = new SAXSource(reader, new InputSource(new FileInputStream(sourceFile)));
             xspecSource.setSystemId(sourceFile.toURI().toString());
             xtXSpec.setSource(xspecSource);
-            xtXSpec.setURIResolver(xmlStuff.getUriResolver());
+            xtXSpec.setResourceResolver(xmlStuff.getResourceResolver());
             XdmDestination xspecResult = new XdmDestination();
             xtXSpec.setDestination(xspecResult);
             xtXSpec.setBaseOutputURI(xspecXmlResult.toURI().toString());
@@ -576,13 +574,13 @@ public class XSpecRunner implements LogProvider {
                     xt.setParameter(new QName("baseDir"), new XdmAtomicValue(options.testDir.toURI().toURL().toExternalForm()));
                     xt.setParameter(new QName("outputDir"), new XdmAtomicValue(options.surefireReportDir.toURI().toURL().toExternalForm()));
                     xt.setParameter(new QName("xspecUri"), new XdmAtomicValue(sourceFile.toURI().toURL().toExternalForm()));
-                    xt.setDestination(xmlStuff.newSerializer(new NullOutputStream()));
+                    xt.setDestination(xmlStuff.newSerializer(NullOutputStream.INSTANCE));
                     xtSurefire = xt;
                 } catch(MalformedURLException ex) {
                     getLog().warn("Unable to generate surefire report", ex);
                 }
             } else {
-                xtSurefire = xmlStuff.newSerializer(new NullOutputStream());
+                xtSurefire = xmlStuff.newSerializer(NullOutputStream.INSTANCE);
             }
             getLog().debug("\tsurefire report output set");
 
@@ -593,7 +591,7 @@ public class XSpecRunner implements LogProvider {
             processedFileAdded = true;
             getLog().debug("\tprocessedFile processed");
             String relativeCssPath = 
-                    (pf.getRelativeCssPath().length()>0 ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
+                    (!pf.getRelativeCssPath().isEmpty() ? pf.getRelativeCssPath()+"/" : "") + XmlStuff.RESOURCES_TEST_REPORT_CSS;
             getLog().debug("\trelativeCssPath: "+relativeCssPath);
             reporter.setParameter(XmlStuff.QN_REPORT_CSS, new XdmAtomicValue(relativeCssPath));
 
@@ -656,7 +654,7 @@ public class XSpecRunner implements LogProvider {
                 resultsHandler.getFailed(), 
                 missed, 
                 compiledXSpec.getTests());
-        if(processedFiles.size()>0) {
+        if(!processedFiles.isEmpty()) {
             processedFiles.get(processedFiles.size()-1).setResults(
                     resultsHandler.getPassed(), 
                     resultsHandler.getPending(), 
@@ -695,14 +693,13 @@ public class XSpecRunner implements LogProvider {
     /**
      * Defines environment. Mainly, <tt>session.getUserProperties()</tt>
      * and <tt>session.getSystemProperties()</tt>
+     *
      * @param executionProperties The properties provided by maven execution.
-     * @param options Execution options (usually, all Mojo parameters)
-     * @return 
+     * @param options             Execution options (usually, all Mojo parameters)
      */
-    public XSpecRunner setEnvironment(Properties executionProperties, RunnerOptions options) {
+    public void setEnvironment(Properties executionProperties, RunnerOptions options) {
         this.executionProperties.putAll(executionProperties);
         this.options = options;
-        return this;
     }
     
     /**
@@ -745,9 +742,14 @@ public class XSpecRunner implements LogProvider {
         File cssFile = new File(options.reportDir, XmlStuff.RESOURCES_TEST_REPORT_CSS);
         cssFile.getParentFile().mkdirs();
         try {
-            Source cssSource = xmlStuff.getUriResolver().resolve(xspecResources.getXSpecCssReportUri(), baseDirectory.toURI().toURL().toExternalForm());
+          // TODO : try to replace with a resourceResolver
+            Source cssSource = xmlStuff.getResourceResolver().resolve(
+                XSpecResourceResolver.buildRequest(
+                  xspecResources.getXSpecCssReportUri(),
+                    baseDirectory.toURI().toURL().toExternalForm())
+            );
             BufferedInputStream is = new BufferedInputStream(new URL(cssSource.getSystemId()).openStream());
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(cssFile));
+            BufferedOutputStream bos = new BufferedOutputStream(Files.newOutputStream(cssFile.toPath()));
             byte[] buffer = new byte[1024];
             int read = is.read(buffer);
             while(read>0) {

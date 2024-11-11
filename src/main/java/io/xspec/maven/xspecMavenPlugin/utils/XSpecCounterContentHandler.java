@@ -32,11 +32,11 @@ import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
 
 import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
+import io.xspec.maven.xspecMavenPlugin.resolver.XSpecResourceResolver;
+import net.sf.saxon.lib.ResourceResolver;
 import org.xml.sax.Attributes;
-import org.xml.sax.Parser;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLFilter;
 import org.xml.sax.XMLReader;
@@ -57,17 +57,17 @@ public class XSpecCounterContentHandler extends DefaultHandler2 {
     private boolean pendingScenario = true;
     private final LogProvider logProvider;
     private final String systemId;
-    private final URIResolver uriResolver;
+    private final ResourceResolver resourceResolver;
     private final Map<String, Counters> sharedScenarios;
     
     private final boolean activateLogs;
     private final String LOG_PREFIX;
     private XSpecCounterContentHandler importedTestFilter;
     
-    public XSpecCounterContentHandler(final String systemId, final URIResolver uriResolver, final LogProvider logProvider, boolean activateLogs, String... prefix) {
+    public XSpecCounterContentHandler(final String systemId, final ResourceResolver resourceResolver, final LogProvider logProvider, boolean activateLogs, String... prefix) {
         super();
         this.systemId=systemId;
-        this.uriResolver=uriResolver;
+        this.resourceResolver=resourceResolver;
         this.logProvider=logProvider;
         this.activateLogs = activateLogs;
         if(prefix.length>0) {
@@ -119,7 +119,11 @@ public class XSpecCounterContentHandler extends DefaultHandler2 {
             // in this particular case, we must count also in imported xspec
             String importedSystemId = null;
             try {
-                Source source = uriResolver.resolve(atts.getValue("href"), systemId);
+                Source source = resourceResolver.resolve(
+                    XSpecResourceResolver.buildRequest(
+                        atts.getValue("href"),
+                        systemId)
+                );
                 importedSystemId = source.getSystemId();
             } catch(TransformerException ex) {
                 logProvider.getLog().error("while resolving "+atts.getValue("href")+" to "+systemId, ex);
@@ -130,9 +134,10 @@ public class XSpecCounterContentHandler extends DefaultHandler2 {
                     if(activateLogs) {
                         logProvider.getLog().warn(LOG_PREFIX+"[in "+systemId+"] parsing imported XSpec "+importedSystemId);
                     }
-                    final Parser parser = XmlStuff.PARSER_FACTORY.newSAXParser().getParser();
+                  @SuppressWarnings("deprecation")
+                  final org.xml.sax.Parser parser = XmlStuff.PARSER_FACTORY.newSAXParser().getParser();
                     final XMLReader reader = new ParserAdapter(parser);
-                    importedTestFilter = new XSpecCounterContentHandler(importedSystemId, uriResolver, logProvider, activateLogs, XSPEC_NS+importedSystemId+": ");
+                    importedTestFilter = new XSpecCounterContentHandler(importedSystemId, resourceResolver, logProvider, activateLogs, XSPEC_NS+importedSystemId+": ");
                     XMLFilter filter = new XMLFilterImpl(reader) {
                         @Override
                         public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {

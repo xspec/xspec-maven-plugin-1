@@ -1,8 +1,9 @@
 package io.xspec.maven.xspecMavenPlugin.resources.impl;
 
-import io.xspec.maven.xspecMavenPlugin.resolver.ResolverS9;
+import io.xspec.maven.xspecMavenPlugin.resolver.XSpecResourceResolver;
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.utils.CatalogWriter;
+import net.sf.saxon.lib.ResourceRequest;
 import net.sf.saxon.lib.StandardURIResolver;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
@@ -22,11 +23,13 @@ public class DefaultXSpecImplResourceResolveTest {
         // Given
         CatalogWriter catalogWriter = new CatalogWriter(DefaultXSpecImplResources.class.getClassLoader());
         File catalogFile = catalogWriter.writeCatalog(null, null, false);
-        ResolverS9 resolver = new ResolverS9(saxonResolver, catalogFile, log);
-        XSpecImplResources resources = new DefaultXSpecImplResources();
+      XSpecResourceResolver xSpecResourceResolver = new XSpecResourceResolver(catalogFile, log);
+      XSpecImplResources resources = new DefaultXSpecImplResources();
+      ResourceRequest resourceRequest = new ResourceRequest();
+      resourceRequest.relativeUri = resources.getXSpecXslCompilerUri();
 
-        // When
-        Source ret = resolver.resolve(resources.getXSpecXslCompilerUri(), null);
+      // When
+        Source ret = xSpecResourceResolver.resolve(resourceRequest);
 
         // Then
         SoftAssertions softAssertions = new SoftAssertions();
