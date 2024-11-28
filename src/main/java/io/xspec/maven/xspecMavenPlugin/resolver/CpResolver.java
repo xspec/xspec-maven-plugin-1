@@ -10,6 +10,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -28,12 +29,10 @@ public class CpResolver implements ResourceResolver {
 
   @Override
   public Source resolve(ResourceRequest resourceRequest) throws XPathException {
-    String href = resourceRequest.relativeUri;
+    String href = resourceRequest.uri;
     String base = resourceRequest.baseUri;
-    if (isCpProtocol(href, base)) {
-      return resolveToClasspath(href, base);
-    }
-    return null;
+    Source ret = (isCpProtocol(href, base)) ? resolveToClasspath(href, base) : null;
+    return ret;
   }
 
   private boolean isCpProtocol(String href, String base) {
@@ -50,7 +49,7 @@ public class CpResolver implements ResourceResolver {
     }
     StreamSource ret = new StreamSource(is);
     String systemId = getClass().getResource(path).toExternalForm();
-    log.debug(systemId);
+    //log.debug(systemId);
     ret.setSystemId(normalizeUrl(systemId));
     return ret;
   }
