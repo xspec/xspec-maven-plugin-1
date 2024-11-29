@@ -73,7 +73,7 @@
       <groupId>net.sf.saxon</groupId>
       <artifactId>Saxon-HE</artifactId>
       <version>${saxon.version}</version>
-	      <!--scope>provided</scope-->
+      <scope>provided</scope>
       <exclusions>
 	      <exclusion>
 		      <groupId>org.xmlresolver</groupId>
@@ -178,7 +178,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.8.0</version>
+          <version>3.8.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -215,7 +215,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.9.0</version>
+          <version>3.13.0</version>
           <configuration>
             <source>1.8</source>
             <target>1.8</target>
@@ -240,22 +240,22 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>2.6</version>
+          <version>3.4.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
-          <version>2.5.2</version>
+          <version>3.1.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.7.1</version>
+          <version>3.21.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.8.0</version>
         </plugin>
         <plugin>
           <groupId>org.jacoco</groupId>
@@ -467,7 +467,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>3.2.7</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
