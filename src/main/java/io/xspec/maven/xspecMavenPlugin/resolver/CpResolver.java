@@ -10,7 +10,6 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
