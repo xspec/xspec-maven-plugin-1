@@ -81,7 +81,6 @@
             <artifactId>plexus-utils</artifactId>
             <version>4.0.2</version>
         </dependency>
-
         <dependency>
             <groupId>top.marchand.xml.maven</groupId>
             <artifactId>saxon.options.mvn.utils</artifactId>
@@ -142,7 +141,6 @@
             <artifactId>commons-io</artifactId>
             <version>2.18.0</version>
         </dependency>
-
         <!-- tests -->
         <dependency>
             <groupId>junit</groupId>
@@ -162,7 +160,6 @@
             <version>3.17.0</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>top.marchand.xml.ext-funct</groupId>
             <artifactId>basex</artifactId>
