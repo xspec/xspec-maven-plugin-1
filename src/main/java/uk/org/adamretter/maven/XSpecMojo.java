@@ -66,17 +66,17 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  * not embed any Saxon implementation. Just declare a dependency in plugin :
  * 
  * <pre>
- *   &lt;plugin>
- *     &lt;groupId>io.xspec.maven&lt;/groupId>
- *     &lt;artifactId>xspec-maven-plugin&lt;/artifactId>
- *     &lt;dependencies>
- *       &lt;dependency>
- *         &lt;groupId>net.sf.saxon&lt;/groupId>
- *         &lt;artifactId>Saxon-HE&lt;/artifactId>
- *         &lt;version>9.8.0-5&lt;/version>
- *       &lt;/dependency>
- *     &lt;/dependencies>
- *   &lt<;/plugin>
+ *   &lt;plugin&gt;
+ *     &lt;groupId&gt;io.xspec.maven&lt;/groupId&gt;
+ *     &lt;artifactId&gt;xspec-maven-plugin&lt;/artifactId&gt;
+ *     &lt;dependencies&gt;
+ *       &lt;dependency&gt;
+ *         &lt;groupId&gt;net.sf.saxon&lt;/groupId&gt;
+ *         &lt;artifactId&gt;Saxon-HE&lt;/artifactId&gt;
+ *         &lt;version&gt;9.8.0-5&lt;/version&gt;
+ *       &lt;/dependency&gt;
+ *     &lt;/dependencies&gt;
+ *   &lt;/plugin&gt;
  * </pre>
  *                 
  * Saxon version must be at least 9.8.0-5. Saxon-PE or Saxon-EE can be used, but you'll 
@@ -102,17 +102,17 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  * Saxon allows to create XPath extension functions in Java. See https://www.saxonica.com/documentation/index.html#!extensibility/functions.
  * gaulois-pipe has defined a common way to automatically install extension functions 
  * in Saxon. xspec-maven-plugin supports the same mecanism. It looks in classpath for 
- * <tt>META-INF/services/top.marchand.xml.gaulois.xml</tt> resources.
+ * {@code META-INF/services/top.marchand.xml.gaulois.xml} resources.
  * Each file declares extension functions in this format :
  * 
  * <pre>       
- *   &lt;gaulois-services>
- *     &lt;saxon>
- *       &lt;extensions>
- *         &lt;function>top.marchand.xml.extfunctions.basex.BaseXQuery&lt;/function>
- *       &lt;/extensions>
- *     &lt;/saxon>
- *   &lt;/gaulois-services>
+ *   &lt;gaulois-services&gt;
+ *     &lt;saxon&gt;
+ *       &lt;extensions&gt;
+ *         &lt;function&gt;top.marchand.xml.extfunctions.basex.BaseXQuery&lt;/function&gt;
+ *       &lt;/extensions&gt;
+ *     &lt;/saxon&gt;
+ *   &lt;/gaulois-services&gt;
  * </pre>
  *             
  * At least two function libraries are available and tested with xspec-maven-plugin : 
@@ -126,16 +126,16 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  * xspec-maven-plugin delaration :
  * 
  * <pre>
- *   &lt;plugin>
- *     &lt;groupId>io.xspec.maven&lt;/groupId>
- *     &lt;artifactId>xspec-maven-plugin&lt;/artifactId>
- *     &lt;dependencies>
- *       &lt;dependency>
- *         &lt;groupId>your.enterprise.groupId&lt;/groupId>
- *         &lt;artifactId>XPath-extension-functions&lt;/artifactId>
- *       &lt;/dependency>
- *     &lt;/dependencies>
- *   &lt;/plugin>
+ *   &lt;plugin&gt;
+ *     &lt;groupId&gt;io.xspec.maven&lt;/groupId&gt;
+ *     &lt;artifactId&gt;xspec-maven-plugin&lt;/artifactId&gt;
+ *     &lt;dependencies&gt;
+ *       &lt;dependency&gt;
+ *         &lt;groupId&gt;your.enterprise.groupId&lt;/groupId&gt;
+ *         &lt;artifactId&gt;XPath-extension-functions&lt;/artifactId&gt;
+ *       &lt;/dependency&gt;
+ *     &lt;/dependencies&gt;
+ *   &lt;/plugin&gt;
  * </pre>
  *             
  * All extension functions found will create a log in console when installed in Saxon.
@@ -217,11 +217,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * It allows to configure Saxon as it'll be used by plugin to run XSpecs. 
      * The main option that might be configured is xi, to activate or not XInclude.
      * <pre>
-     * &lt;configuration>
-     *   &lt;saxonOptions>
-     *     &lt;xi>on&lt;/xi>
-     *   &lt;/saxonOptions>
-     * &lt;/configuration>
+     * &lt;configuration&gt;
+     *   &lt;saxonOptions&gt;
+     *     &lt;xi&gt;on&lt;/xi&gt;
+     *   &lt;/saxonOptions&gt;
+     * &lt;/configuration&gt;
      * </pre>
      */
     @Parameter(name = "saxonOptions")
@@ -231,11 +231,11 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
      * Patterns fo files to exclude
      * Each found file that ends with an excluded value will be skipped.
      * <pre>
-     *  &lt;configuration>
-     *    &lt;excludes>
-     *      &lt;exclude>-TI.xspec&lt;/exclude>
-     *    &lt;/excludes>
-     *  &lt;/configuration>
+     *  &lt;configuration&gt;
+     *    &lt;excludes&gt;
+     *      &lt;exclude&gt;-TI.xspec&lt;/exclude&gt;
+     *    &lt;/excludes&gt;
+     *  &lt;/configuration&gt;
      * </pre>
      * Each file that ends with -TI.xspec will be skipped.
      */
@@ -258,8 +258,8 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * The directory where JUnit final report will be created.
      * xspec-maven-plugin produces on junit report file per XSpec file, in 
-     * <tt>reportDir</tt> directory, and creates a merged report, in <tt>junitReportDir</tt>, 
-     * named <tt>TEST-xspec&lt;suffix>.xml</tt>.
+     * {@code reportDir} directory, and creates a merged report, in {@code junitReportDir}, 
+     * named {@code TEST-xspec&lt;suffix&gt;.xml}.
      * suffix depends on execution id
      */
     @Parameter(defaultValue = "${project.build.directory}/surefire-reports", required = true)
@@ -284,7 +284,7 @@ public class XSpecMojo extends AbstractMojo implements LogProvider {
     /**
      * Defines if generated catalog should be kept or not.
      * xspec-maven-plugin generates its own catalog to access its own resources, 
-     * and if <tt>catalogFile</tt> is defined, adds a <tt>&lt;next-catalog /></tt>
+     * and if {@code catalogFile} is defined, adds a {@code &lt;next-catalog /&gt;}
      * entry in this generated catalog.
      * Only usefull to debug plugin.
      */

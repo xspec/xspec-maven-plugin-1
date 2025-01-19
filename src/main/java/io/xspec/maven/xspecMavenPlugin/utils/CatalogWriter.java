@@ -55,21 +55,23 @@ public class CatalogWriter {
     /**
      * Generates and write a catalog that resolves all resources for XSpec,
      * schematron and plugin implementation. If XSpec execution requires a user
-     * defined catalog, it may be specified in <tt>userCatalogFileName</tt>.<br/>
-     * <tt>userCatalogFileName</tt> may be null ; no <tt>&lt;nextCatalog&gt;</tt> 
-     * entry will be added to generated catalog.<br/>
-     * If a non null value is provided for <tt>userCatalogFileName</tt>, then
-     * a non null value <strong>must</strong> be provided for <tt>environment</tt> ;
+     * defined catalog, it may be specified in {@code userCatalogFileName}.
+     *
+     * {@code userCatalogFileName} may be null ; no {@code &lt;nextCatalog&gt;} 
+     * entry will be added to generated catalog.
+     *
+     * If a non null value is provided for {@code userCatalogFileName}, then
+     * a non null value <strong>must</strong> be provided for {@code environment} ;
      * else, a  IllegalArgumentException will be thrown.
      * @param userCatalogFilename The nextCatalog URI to add to generated catalog.
      * @param environment Environment properties, used to resolve all placeholders
-     * in <tt>userCatalogFileName</tt>.
+     * in {@code userCatalogFileName}.
      * @param keepGeneratedCatalog Indicates if generated catalog must be kept after
-     * plugin execution. If <tt>false</tt>, generated catalog will be deleted at
+     * plugin execution. If {@code false}, generated catalog will be deleted at
      * JVM exit.
      * @return Generated file
-     * @throws XSpecPluginException
-     * @throws IOException 
+     * @throws XSpecPluginException In case of any error
+     * @throws IOException In case of I/O error
      */
     public File writeCatalog(String userCatalogFilename, Properties environment, boolean keepGeneratedCatalog) throws XSpecPluginException, IOException, IllegalArgumentException {
         if(userCatalogFilename!=null && environment==null) {

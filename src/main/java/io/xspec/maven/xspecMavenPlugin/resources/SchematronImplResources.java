@@ -34,19 +34,19 @@ public interface SchematronImplResources {
 
   /**
    * Return Schxslt step1 URI
-   * @return
+   * @return Step1 uri
    */
   String getSchStep1Uri();
 
   /**
    * Return Schxslt step2 URI
-   * @return
+   * @return Step2 uri
    */
   String getSchStep2Uri();
 
   /**
    * Return Schxslt step3 URI
-   * @return
+   * @return Step3 uri
    */
   String getSchStep3Uri();
 }

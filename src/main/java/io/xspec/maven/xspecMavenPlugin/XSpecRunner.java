@@ -174,7 +174,7 @@ public class XSpecRunner implements LogProvider {
   /**
    * Process a XSpec file
    * @param xspec
-   * @return <tt>true</tt> if XSpec succeed, <tt>false</tt> otherwise.
+   * @return {@code true} if XSpec succeed, {@code false} otherwise.
    * @throws SaxonApiException
    * @throws TransformerException
    * @throws IOException
@@ -693,8 +693,8 @@ public class XSpecRunner implements LogProvider {
   }
 
   /**
-   * Defines environment. Mainly, <tt>session.getUserProperties()</tt>
-   * and <tt>session.getSystemProperties()</tt>
+   * Defines environment. Mainly, {@code session.getUserProperties()}
+   * and {@code session.getSystemProperties()}
    *
    * @param executionProperties The properties provided by maven execution.
    * @param options             Execution options (usually, all Mojo parameters)
@@ -706,7 +706,7 @@ public class XSpecRunner implements LogProvider {
 
   /**
    * Generates general index. May be overriden if required
-   * @throws XSpecPluginException
+   * @throws XSpecPluginException In case of any error
    */
   public void generateIndex() throws XSpecPluginException {
     if (processedFiles == null) {

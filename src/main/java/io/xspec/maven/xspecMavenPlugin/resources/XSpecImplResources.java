@@ -54,7 +54,7 @@ public interface XSpecImplResources {
     
     /**
      * Usually format-xspec-report.xsl
-     * @param useFolding
+     * @param useFolding Well, really need a description ?
      * @return XSpec reporter URI
      */
     public String getXSpecReporterUri(boolean useFolding);
@@ -67,7 +67,7 @@ public interface XSpecImplResources {
     
     /**
      * Usually test-report.css
-     * @return 
+     * @return test report css uri
      */
     public String getXSpecCssReportUri();
 

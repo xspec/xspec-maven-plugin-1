@@ -52,12 +52,12 @@ public class FileFinder {
     private final Log log;
 
     /**
-     * Creates a new FileFinder that will search in <tt>directoryToSearch</tt>,
-     * for files that match <tt>matchPattern</tt>, and are not excluded by
-     * patterns stored in <tt>excludes</tt>.Search is always recursive.
+     * Creates a new FileFinder that will search in {@code directoryToSearch},
+     * for files that match {@code matchPattern}, and are not excluded by
+     * patterns stored in {@code excludes}.Search is always recursive.
      * @param directoryToSearch The directory to sarch in
      * @param matchPattern The pattern files must match. If you want to search
-     * recursively, you have to use <tt>**\/</tt> pattern
+     * recursively, you have to use {@code **\/} pattern
      * @param excludes The patterns selected files must not match
      * @param log Logger to use
      */
@@ -75,8 +75,8 @@ public class FileFinder {
     
     /**
      * Searches for files.
-     * Files <b>must</b> match <tt>matchPattern</tt>, and must not match any
-     * of <tt>excludes</tt> patterns.
+     * Files <b>must</b> match {@code matchPattern}, and must not match any
+     * of {@code excludes} patterns.
      * @return The found files.
      * @throws IOException If any problem occurs.
      */

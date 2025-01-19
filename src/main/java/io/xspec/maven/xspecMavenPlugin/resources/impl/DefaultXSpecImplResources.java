@@ -94,7 +94,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
 
   /**
    * Defines the XSpec compiler for XSL URI
-   * @param xspecXslCompilerUri
+   * @param xspecXslCompilerUri The xspec xsl compiler URI
    */
   public void setXSpecXslCompilerUri(String xspecXslCompilerUri) {
     this.xspecXslCompilerUri = xspecXslCompilerUri;
@@ -102,7 +102,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
 
   /**
    * Defines the XSpec compiler for XQuery URI
-   * @param xspecXQueryCompilerUri
+   * @param xspecXQueryCompilerUri The xspec XQuery compiler uri
    */
   public void setXSpecXQueryCompiler(String xspecXQueryCompilerUri) {
     this.xspecXQueryCompilerUri = xspecXQueryCompilerUri;
@@ -110,7 +110,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
 
   /**
    * Defines the XSpec-for-Schematron converter URI
-   * @param schematronUnitTestConverter
+   * @param schematronUnitTestConverter The schematron unit-test converter
    */
   public void setSchematronSchutConverter(String schematronUnitTestConverter) {
     this.schematronUnitTestConverter = schematronUnitTestConverter;
@@ -118,7 +118,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
 
   /**
    * Defines the XSpec reporter URI
-   * @param xspecReporter
+   * @param xspecReporter The xspec reporter
    */
   public void setXSpecReporter(String xspecReporter) {
     this.xspecReporter = xspecReporter;
@@ -126,7 +126,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
 
   /**
    * Defines the XSpec Code Coverage reporter URI
-   * @param xspecCoverageReporter
+   * @param xspecCoverageReporter The xspec coverage reporter
    */
   public void setXSpecCoverageReporter(String xspecCoverageReporter) {
     this.xspecCoverageReporter = xspecCoverageReporter;
@@ -134,7 +134,7 @@ public class DefaultXSpecImplResources implements XSpecImplResources {
 
   /**
    * Defines the report Css URI
-   * @param testReportCss
+   * @param testReportCss the test report CSS
    */
   public void setTestReportCss(String testReportCss) {
     this.testReportCss = testReportCss;

@@ -168,28 +168,17 @@ public class XSpecCompiler implements LogProvider {
    * points to the XSLT (the compiled at phase 1)</li>
    * </ol>
    *
-   * @param xspecDocument
-   * @return
-   * @throws SaxonApiException
-   * @throws TransformerException
-   * @throws IOException
+   * @param xspecDocument the xspec to process
+   * @return the schematron doc
+   * @throws SaxonApiException In case of xslt error
+   * @throws TransformerException In case of uri resolving problem
+   * @throws IOException In case of I/O error
    */
   public XdmNode prepareSchematronDocument(XdmNode xspecDocument) throws SaxonApiException, TransformerException, IOException {
     XsltTransformer schematronCompiler = xmlStuff.getSchematronCompiler().load();
     schematronCompiler.setParameter(new QName("STEP1-PREPROCESSOR-URI"), new XdmAtomicValue(xmlStuff.getSchematronResources().getSchStep1Uri()));
     schematronCompiler.setParameter(new QName("STEP2-PREPROCESSOR-URI"), new XdmAtomicValue(xmlStuff.getSchematronResources().getSchStep2Uri()));
     schematronCompiler.setParameter(new QName("STEP3-PREPROCESSOR-URI"), new XdmAtomicValue(xmlStuff.getSchematronResources().getSchStep3Uri()));
-//      XPathSelector xp = xmlStuff.getXPathCompiler().compile("/x:description/x:param[@name='phase'][1]/text()").load();
-//        xp.setContextItem(xspecDocument);
-//        XdmItem phaseItem = xp.evaluateSingle();
-//        if(phaseItem!=null) {
-//            String phase = phaseItem.getStringValue();
-//            getLog().debug("Evaluating phase: "+phase);
-//            if(phase!=null && !phase.isEmpty()) {
-//                step3.setParameter(new QName("phase"), new XdmAtomicValue(phase));
-//            }
-//        }
-//        step3.setParameter(new QName("allow-foreign"), new XdmAtomicValue("true"));
 
     File sourceFile = new File(xspecDocument.getBaseURI());
     // compiling schematron
@@ -289,13 +278,13 @@ public class XSpecCompiler implements LogProvider {
   }
 
   /**
-   * Copies <tt>referencedFile</tt> located relative to <tt>baseUri</tt> to
-   * <tt>resutBase</tt>/<tt>referencedFile</tt>.
-   * @param baseUri
-   * @param referencedFile
-   * @param resultBase
-   * @throws IOException
-   * @throws URISyntaxException
+   * Copies {@code referencedFile} located relative to {@code baseUri} to
+   * {@code resutBase / referencedFile}.
+   * @param baseUri base reference
+   * @param referencedFile file to copy
+   * @param resultBase base to copy to
+   * @throws IOException In case of I/O error
+   * @throws URISyntaxException If URI is not correct
    */
   protected void copyFile(String baseUri, String referencedFile, File resultBase) throws IOException, URISyntaxException {
     getLog().debug("copyFile(" + baseUri + ", " + referencedFile + ", " + resultBase.getAbsolutePath() + ")");

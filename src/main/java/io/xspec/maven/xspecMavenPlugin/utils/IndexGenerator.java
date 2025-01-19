@@ -62,7 +62,7 @@ public class IndexGenerator {
     
     /**
      * Generates the general index. It's an HTML file, located in reportDir.
-     * @throws XSpecPluginException 
+     * @throws XSpecPluginException In case of any error
      */
     public void generateIndex() throws XSpecPluginException {
         File index = new File(options.reportDir, "index.html");

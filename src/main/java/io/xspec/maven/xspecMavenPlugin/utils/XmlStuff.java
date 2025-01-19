@@ -447,7 +447,7 @@ public class XmlStuff {
   }
 
   /**
-   * Return XSL for <tt>schut-to-xspec.xsl</tt>
+   * Return XSL for {@code schut-to-xspec.xsl}
    * @return schut-to-xspec.xsl XSL
    */
   public XsltExecutable getSchematronSchut() {
@@ -502,8 +502,8 @@ public class XmlStuff {
 
   /**
    * Returns the XSpec tested file kind
-   * @param doc
-   * @return XSpecType
+   * @param doc the doc to examine
+   * @return XSpecType The type of XSpec (XSLT, XQuery, Schematron)
    * @throws SaxonApiException If file is not a XSpec one
    */
   public XSpecType getXSpecType(XdmNode doc) throws SaxonApiException {
