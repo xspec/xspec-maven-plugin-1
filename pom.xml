@@ -24,7 +24,7 @@
 
     <scm>
         <connection>scm:git:https://github.com/xspec/xspec-maven-plugin-1.git</connection>
-        <developerConnection>scm:git@github.com:xspec/xspec-maven-plugin-1.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:xspec/xspec-maven-plugin-1.git</developerConnection>
         <url>scm:git:https://github.com/xspec/xspec-maven-plugin-1.git</url>
         <tag>HEAD</tag>
     </scm>
