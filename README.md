@@ -20,20 +20,20 @@ __Plugin declaration__
     <plugin>
       <groupId>io.xspec.maven</groupId>
       <artifactId>xspec-maven-plugin</artifactId>
-      <version>3.0.0</version>
+      <version>3.1.3</version>
       <dependencies>
         <!-- if you have a license, feel free to add Saxon-PE
            or Saxon-EE instead of Saxon-HE -->
         <dependency>
           <groupId>net.sf.saxon</groupId>
           <artifactId>Saxon-HE</artifactId>
-          <!-- Saxon 12.4 is required since 3.0.0 -->
+          <!-- Saxon 12.4 is required since 3.1.3 -->
           <version>12.5</version>
         </dependency>
         <dependency>
           <groupId>io.xspec</groupId>
           <artifactId>xspec</artifactId>
-          <!-- XSpec 3.1.3 is required since 3.0.0 -->
+          <!-- XSpec 3.1.3 is required since 3.1.3 -->
           <version>3.1.3</version>
         </dependency>
       </dependencies>
@@ -110,7 +110,7 @@ If you are doing this in a forked execution such as that used by the Maven Relea
 
 * Must I define the Saxon dependency ?
 
-**Yes, you must**. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, if you have licences. As Maven doesn't provide a mechanism for a default dependency, you must specify it. You can also choose another releases of Saxon ; 12.4 is required since 3.0.0.
+**Yes, you must**. This is to allow to choose between Saxon-HE, Saxon-PE or Saxon-EE, if you have licences. As Maven doesn't provide a mechanism for a default dependency, you must specify it. You can also choose another releases of Saxon ; 12.4 is required since 3.1.3.
 
 * Must I define the XSpec dependency ?
 
