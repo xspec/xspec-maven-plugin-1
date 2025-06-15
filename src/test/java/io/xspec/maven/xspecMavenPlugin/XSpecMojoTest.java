@@ -1,18 +1,18 @@
 /**
  * Copyright © 2017, Christophe Marchand
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the <organization> nor the
+ * names of its contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,7 +27,12 @@
 package io.xspec.maven.xspecMavenPlugin;
 
 import java.io.File;
+import java.nio.file.Path;
+
+import org.apache.maven.plugin.Mojo;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import uk.org.adamretter.maven.XSpecMojo;
 
@@ -36,18 +41,27 @@ import uk.org.adamretter.maven.XSpecMojo;
  * @author <a href="christophe@marchand.top">Christophe Marchand</a>
  */
 public class XSpecMojoTest extends AbstractMojoTestCase {
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-    }
-    
-    public void testMojoExists() throws Exception {
-        File testPom = new File( getBasedir(), "target/test-classes/projectName with spaces/pom.xml" );
-        assertEquals("testPom does not exists", true, testPom.exists());
-        assertEquals("testPom is not a regular file", true, testPom.isFile());
-        XSpecMojo mojo = new XSpecMojo();
-        PlexusConfiguration pc = extractPluginConfiguration("xspec-maven-plugin", testPom);
-        mojo = (XSpecMojo)configureMojo(mojo, pc);
-        assertNotNull("Mojo does not exists", mojo );
-    }
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
+
+  public void testMojoExists() throws Exception {
+    SoftAssertions softly = new SoftAssertions();
+    File testFile = getTestFile("src/test/resources/projectName with spaces/pom.xml");
+    softly.assertThat(testFile).exists();
+    XSpecMojo mojo = new XSpecMojo();
+    PlexusConfiguration pc = extractPluginConfiguration("xspec-maven-plugin", testFile);
+    mojo = (XSpecMojo) configureMojo(mojo, pc);
+    softly.assertThat(mojo)
+          .isNotNull();
+    softly.assertThat(mojo).isNotNull();
+    softly.assertAll();
+  }
 }

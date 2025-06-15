@@ -44,6 +44,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.version>3.6.3</maven.version>
         <maven.plugin-plugin.version>3.6.4</maven.plugin-plugin.version>
         <saxon.version>12.4</saxon.version>
     </properties>
@@ -53,31 +54,36 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.9.9</version>
+            <version>${maven.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>3.9.9</version>
+            <version>${maven.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.9.0</version>
+            <version>3.6.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-compat</artifactId>
-            <version>3.9.9</version>
+            <version>${maven.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
             <version>4.0.2</version>
+        </dependency-->
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-utils</artifactId>
+            <version>3.6.0</version>
         </dependency>
         <dependency>
             <groupId>top.marchand.xml.maven</groupId>
@@ -85,15 +91,15 @@
             <version>1.1.0</version>
         </dependency>
         <dependency>
-            <groupId>top.marchand.java.utils</groupId>
-            <artifactId>classpath-utils</artifactId>
-            <version>1.02.01</version>
-        </dependency>
-        <dependency>
             <groupId>org.mricaud.xml</groupId>
             <artifactId>xut</artifactId>
             <version>0.1.2</version>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>top.marchand.java.utils</groupId>
+            <artifactId>classpath-utils</artifactId>
+            <version>1.02.01</version>
         </dependency>
         <!-- XML -->
         <dependency>

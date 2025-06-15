@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
 <project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.xspec.maven.tests</groupId>
+    <artifactId>t001</artifactId>
+    <version>1.00.00-SNAPSHOT</version>
+    <packaging>jar</packaging>
     <build>
         <plugins>
             <plugin>
@@ -10,7 +15,6 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <phase>test</phase>
                         <goals>
                             <goal>run-xspec</goal>
                         </goals>
