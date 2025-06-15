@@ -34,6 +34,7 @@ import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Properties;
 import net.sf.saxon.s9api.XdmNode;
@@ -150,6 +151,32 @@ public class XSpecRunnerTest extends TestUtils {
         XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
         List<File> xspecFiles = runner.findAllXSpecs();
         assertEquals("wrong number of XSpecFiles found", 0, xspecFiles.size());
+    }
+
+    @Test
+    public void verifyFailingXSpecIsReported() throws Exception {
+        RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
+        runnerOptions.testDir = new File(getTestDirectory(), "failingXslt");
+        XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
+        List<File> xspecFiles = runner.findAllXSpecs();
+        assertEquals("wrong number of XSpecFiles found", 2, xspecFiles.size());
+        try {
+            runner.execute();
+            fail("Should have given an error");
+        } catch (XSpecPluginException ex) {
+            // XSpec test should be missed
+        }
+        runner.generateIndex();
+        File surefireReport = new File(getProjectDirectory(), "target/surefire-reports/TEST-xsl1.xspec.xml");
+        assertTrue("Surefire report doesn't exist", surefireReport.exists());
+        assertTrue("Surefire report is not a file", surefireReport.isFile());
+        assertFalse("Surefire report should report on failing test",
+                Files.readString(surefireReport.toPath()).contains("<testsuites/>"));
+        File surefireReport2 = new File(getProjectDirectory(), "target/surefire-reports/TEST-xsl2.xspec.xml");
+        assertTrue("Surefire report 2 doesn't exist", surefireReport2.exists());
+        assertTrue("Surefire report 2 is not a file", surefireReport2.isFile());
+        assertFalse("Surefire report 2 should report on failing test",
+                Files.readString(surefireReport2.toPath()).contains("<testsuites/>"));
     }
 
     private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
