@@ -101,7 +101,7 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  * 
  * Saxon allows to create XPath extension functions in Java. See https://www.saxonica.com/documentation/index.html#!extensibility/functions.
  * gaulois-pipe has defined a common way to automatically install extension functions 
- * in Saxon. xspec-maven-plugin supports the same mecanism. It looks in classpath for 
+ * in Saxon. xspec-maven-plugin supports the same mechanism. It looks in classpath for
  * {@code META-INF/services/top.marchand.xml.gaulois.xml} resources.
  * Each file declares extension functions in this format :
  * 
