@@ -1,0 +1,4 @@
+Do not add files in this folder, there is a test
+that relies on havind exactly 2 xspec files here.
+
+io.xspec.maven.xspecMavenPlugin.XSpecRunnerTest#verifyFailingXSpecIsReported
