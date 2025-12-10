@@ -45,9 +45,24 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.plugin-plugin.version>3.6.4</maven.plugin-plugin.version>
-        <saxon.version>12.4</saxon.version>
+        <saxon.version>12.9</saxon.version>
     </properties>
 
+    <prerequisites>
+      <maven>3.6.3</maven>
+    </prerequisites>
+  
+    <dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>org.junit</groupId>
+          <artifactId>junit-bom</artifactId>
+          <version>6.0.1</version>
+          <scope>import</scope>
+          <type>pom</type>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
     <dependencies>
         <!-- maven -->
         <dependency>
@@ -121,7 +136,7 @@
         <dependency>
             <groupId>xml-apis</groupId>
             <artifactId>xml-apis</artifactId>
-            <version>2.0.2</version>
+            <version>1.0.b2</version>
         </dependency>
         <dependency>
             <groupId>net.java.dev.stax-utils</groupId>
@@ -140,13 +155,17 @@
             <version>2.18.0</version>
         </dependency>
         <!-- tests -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
             <groupId>org.apache.maven.plugin-testing</groupId>
             <artifactId>maven-plugin-testing-harness</artifactId>
             <version>3.3.0</version>
@@ -178,17 +197,17 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.9.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>3.4.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>2.4</version>
+                    <version>3.4.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -215,10 +234,10 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
+                    <version>3.14.1</version>
                     <configuration>
-                        <source>11</source>
-                        <target>11</target>
+                        <source>17</source>
+                        <target>17</target>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                         </compilerArgs>
@@ -226,7 +245,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M1</version>
+                    <version>3.5.4</version>
                     <configuration>
                         <useManifestOnlyJar>false</useManifestOnlyJar>
                         <useSystemClassLoader>true</useSystemClassLoader>
@@ -240,12 +259,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.4.2</version>
+                    <version>3.5.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
-                    <version>3.1.1</version>
+                    <version>3.3.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -255,12 +274,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>3.8.0</version>
+                    <version>3.9.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.2</version>
+                    <version>0.8.14</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -312,17 +331,13 @@
                         <configuration>
                             <failOnWarning>true</failOnWarning>
                             <ignoredUsedUndeclaredDependencies>
-                                <ignoredUsedUndeclaredDependency>org.eclipse.sisu:org.eclipse.sisu.plexus
-                                </ignoredUsedUndeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>org.eclipse.sisu:org.eclipse.sisu.plexus </ignoredUsedUndeclaredDependency>
                             </ignoredUsedUndeclaredDependencies>
                             <ignoredUnusedDeclaredDependencies>
-                                <ignoredUnusedDeclaredDependency>org.apache.maven:maven-compat
-                                </ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>top.marchand.java.utils:classpath-utils
-                                </ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.apache.maven:maven-compat </ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>top.marchand.java.utils:classpath-utils </ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.mricaud.xml:xut</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>top.marchand.xml.ext-funct:basex
-                                </ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>top.marchand.xml.ext-funct:basex </ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>
@@ -413,15 +428,12 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!--systemPropertyVariables>
-                      <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
-                    </systemPropertyVariables-->
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.6.2</version>
                 <executions>
                     <execution>
                         <goals>
@@ -435,7 +447,7 @@
                             <allowSnapshots>false</allowSnapshots>
                         </banDynamicVersions>
                         <requireJavaVersion>
-                            <version>[11.0.0,12.0.0)</version>
+                            <version>[17.0.0,18.0.0)</version>
                         </requireJavaVersion>
                     </rules>
                 </configuration>
@@ -473,7 +485,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.7</version>
+                        <version>3.2.8</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -492,7 +504,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.7</version>
+                        <version>1.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>xspec-io.ossrh</serverId>
@@ -514,7 +526,6 @@
                 <reportSets>
                     <reportSet>
                         <reports>
-                            <!-- select non-aggregate reports -->
                             <report>report</report>
                         </reports>
                     </reportSet>
