@@ -65,9 +65,8 @@ public class XSpecRunnerTest extends TestUtils {
     runner.extractCssResource();
     File expectedFile = new File(getBaseDirectory(), "target/xspec-reports/resources/test-report.css");
     Assertions
-        .assertThat(expectedFile.exists())
-        .as(expectedFile.getAbsolutePath() + " does not exists")
-        .isTrue();
+        .assertThat(expectedFile)
+        .exists();
   }
 
   @Test
@@ -92,27 +91,26 @@ public class XSpecRunnerTest extends TestUtils {
     RunnerOptions options = new RunnerOptions(getBaseDirectory());
     options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
     XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
-    File xspecFile = new File(getBaseDirectory().getParentFile()
-                                                .getParentFile()
-                                                .getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1" +
-        ".xspec");
+    File xspecFile = new File(
+        getBaseDirectory()
+            .getParentFile()
+            .getParentFile()
+            .getParentFile(),
+        "src/test/resources/filesToTest/xsltTestCase/xsl1.xspec");
     XdmNode node = runner.getXmlStuff()
                          .getDocumentBuilder()
                          .build(xspecFile);
     SoftAssertions softly = new SoftAssertions();
     softly
         .assertThat(node)
-        .as("node is null")
         .isNotNull();
     softly
         .assertThat(node.getBaseURI())
-        .as("node baseUri is null")
         .isNotNull();
     runner.initProcessedFiles(1);
     boolean ret = runner.processXsltXSpec(node);
     softly
         .assertThat(ret)
-        .as("XSpec failed")
         .isTrue();
     softly.assertAll();
   }
@@ -122,46 +120,49 @@ public class XSpecRunnerTest extends TestUtils {
     RunnerOptions options = new RunnerOptions(getBaseDirectory());
     options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
     XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
-    File xspecFile = new File(getBaseDirectory().getParentFile()
-                                                .getParentFile()
-                                                .getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1" +
-        ".xspec");
+    File xspecFile = new File(
+        getBaseDirectory()
+            .getParentFile()
+            .getParentFile()
+            .getParentFile(),
+        "src/test/resources/filesToTest/xsltTestCase/xsl1.xspec");
     XdmNode node = runner.getXmlStuff()
                          .getDocumentBuilder()
                          .build(xspecFile);
-    Assertions.assertThat(node)
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(node)
               .isNotNull();
-    Assertions.assertThat(node.getBaseURI())
+    softly.assertThat(node.getBaseURI())
               .isNotNull();
     runner.initProcessedFiles(1);
     runner.processXsltXSpec(node);
     runner.generateIndex();
     File indexFile = new File(options.reportDir, "index.html");
-    Assertions
+    softly
         .assertThat(indexFile)
-        .as("index file " + indexFile.getAbsolutePath() + " does not exist")
         .exists();
-    Assertions.assertThat(indexFile)
-              .as("index file " + indexFile.getAbsolutePath() + " is not a file")
-              .isFile();
+    softly
+        .assertThat(indexFile)
+        .isFile();
+    softly.assertAll();
   }
 
   @Test
   public void executeTest() throws Exception {
-    getLog().info("baseDirectory: " + getBaseDirectory().getAbsolutePath());
     RunnerOptions options = new RunnerOptions(getBaseDirectory());
     options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
-    getLog().info("reportDirectory: " + options.reportDir.getAbsolutePath());
     XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
     runner.execute();
     File indexFile = new File(options.reportDir, "index.html");
     runner.generateIndex();
-    Assertions.assertThat(indexFile)
-              .as("index file " + indexFile.getAbsolutePath() + " does not exist")
-              .exists();
-    Assertions.assertThat(indexFile)
-              .as("index file " + indexFile.getAbsolutePath() + " is not a file")
-              .isFile();
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(indexFile)
+        .exists();
+    softly
+        .assertThat(indexFile)
+        .isFile();
+    softly.assertAll();
   }
 
   @Test
@@ -170,14 +171,14 @@ public class XSpecRunnerTest extends TestUtils {
     runnerOptions.testDir = new File(getTestDirectory(), "xsltTestCase");
     XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
     List<File> xspecFiles = runner.findAllXSpecs();
-    Assertions
+    SoftAssertions softly = new SoftAssertions();
+    softly
         .assertThat(xspecFiles)
-        .as("wrong number of XSpecFiles found")
         .hasSize(1);
-    Assertions
+    softly
         .assertThat(xspecFiles.get(0))
-        .as("wrong XSpecFiles found")
         .hasName("xsl1.xspec");
+    softly.assertAll();
   }
 
   @Test
@@ -202,7 +203,7 @@ public class XSpecRunnerTest extends TestUtils {
         .hasSize(0);
   }
 
-  private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
+  private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, URISyntaxException {
     XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
     runner.setResources(
         new DefaultXSpecImplResources(),
@@ -214,7 +215,7 @@ public class XSpecRunnerTest extends TestUtils {
   }
 
   private XSpecRunner getNewRunner(SaxonOptions saxonOptions) throws IllegalStateException, XSpecPluginException,
-      MalformedURLException, URISyntaxException {
+      URISyntaxException {
     return getNewRunner(saxonOptions, new RunnerOptions(getBaseDirectory()));
   }
 }
