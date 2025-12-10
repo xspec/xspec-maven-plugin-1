@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:description 
+  xmlns:x="http://www.jenitennison.com/xslt/xspec"
+  xslt-version="3.0"
+  stylesheet="xsl-with-one-xsl-imported.xsl"
+  >
+  
+  <x:scenario label="Given an element, it must be copied as is">
+    <x:context><element /></x:context>
+    <x:expect label="The same element"><element /></x:expect>
+  </x:scenario>
+  
+</x:description>

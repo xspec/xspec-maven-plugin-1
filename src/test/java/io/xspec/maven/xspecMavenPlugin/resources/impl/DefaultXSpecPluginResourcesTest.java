@@ -27,8 +27,8 @@
 package io.xspec.maven.xspecMavenPlugin.resources.impl;
 
 import io.xspec.maven.xspecMavenPlugin.resources.XSpecPluginResources;
-import static org.junit.Assert.*;
-import org.junit.Test;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link DefaultXSpecPluginResources}
@@ -39,21 +39,21 @@ public class DefaultXSpecPluginResourcesTest {
     @Test
     public void testClassImplementsInterface() {
         DefaultXSpecPluginResources impl = new DefaultXSpecPluginResources();
-        assertTrue("class does not implements interface", (impl instanceof XSpecPluginResources));
+        Assertions.assertThat(impl).isInstanceOf(XSpecPluginResources.class);
     }
     
     @Test
     public void testResourcesPrefixes() {
         DefaultXSpecPluginResources impl = new DefaultXSpecPluginResources();
-        assertTrue(
-                "dependencyScanner does not starts with XML_UTILILITES prefix", 
-                impl.getDependencyScannerUri().startsWith(DefaultXSpecPluginResources.XML_UTILITIES_PREFIX));
+        Assertions
+            .assertThat(impl.getDependencyScannerUri())
+            .startsWith(DefaultXSpecPluginResources.XML_UTILITIES_PREFIX);
     }
     
     @Test
     public void testSettersAreEfficient() {
         DefaultXSpecPluginResources impl = new DefaultXSpecPluginResources();
         impl.setDependencyScanner("");
-        assertEquals("setDependencyScanner is not efficient", "", impl.getDependencyScannerUri());
+        Assertions.assertThat(impl.getDependencyScannerUri()).isEqualTo("");
     }
 }

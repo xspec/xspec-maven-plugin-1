@@ -27,10 +27,9 @@
 package io.xspec.maven.xspecMavenPlugin.resources.impl;
 
 import io.xspec.maven.xspecMavenPlugin.resources.SchematronImplResources;
-import static org.junit.Assert.*;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link DefaultSchematronImplResources}

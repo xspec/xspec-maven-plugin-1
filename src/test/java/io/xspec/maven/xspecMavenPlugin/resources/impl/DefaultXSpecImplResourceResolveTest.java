@@ -9,9 +9,9 @@ import net.sf.saxon.lib.StandardURIResolver;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.assertj.core.api.SoftAssertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.URIResolver;
@@ -42,12 +42,12 @@ public class DefaultXSpecImplResourceResolveTest {
   private URIResolver saxonResolver;
   private Log log = new SystemStreamLog();
 
-  @Before
+  @BeforeEach
   public void before() {
     saxonResolver = new StandardURIResolver();
   }
 
-  @After
+  @AfterEach
   public void after() {
     saxonResolver = null;
   }

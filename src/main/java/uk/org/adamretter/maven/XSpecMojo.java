@@ -121,7 +121,7 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  * <li>https://github.com/AxelCourt/saxon-marklogic-ext</li>
  * </ul>
  * 
- * If you want want to add your own extension functions to XSpec engine, create a maven 
+ * If you want to add your own extension functions to XSpec engine, create a maven
  * project with function implementation, a service file, and add it as a dependency to 
  * xspec-maven-plugin delaration :
  * 

@@ -331,25 +331,11 @@ public class XSpecRunner implements LogProvider {
    */
   final boolean processXsltXSpec(XdmNode xspec) throws SaxonApiException, FileNotFoundException {
     File actualSourceFile = new File(xspec.getBaseURI());
-    // Try to determine where was the original XSpec file, in case of XSpec on schematron
-    File sourceFile = actualSourceFile;
-    XPathSelector xps = xmlStuff.getXPathCompiler().compile("/x:description/@xspec-original-location").load();
-    xps.setContextItem(xspec);
-    XdmItem item = xps.evaluateSingle();
-    if (item != null) {
-      String value = item.getStringValue();
-      if (!value.isEmpty()) {
-        try {
-          sourceFile = new File(new URI(value));
-        } catch (URISyntaxException ex) {
-          getLog().error("This should never be possible ! Check /x:description/@xspec-original-location", ex);
-        }
-      }
-    }
+    File sourceFile = determineWhereWasOriginalXSpecFile(xspec, actualSourceFile);
     getLog().debug("sourceFile is " + sourceFile.getAbsolutePath());
-
     boolean wasItAnXSpecOnSchematron = !sourceFile.equals(actualSourceFile);
     /* compile the test stylesheet */
+
     final CompiledXSpec compiledXSpec = xspecCompiler.compileXSpecForXslt(actualSourceFile);
     if (compiledXSpec == null) {
       return false;
@@ -377,6 +363,24 @@ public class XSpecRunner implements LogProvider {
         // ben, rien !
       }
     }
+  }
+
+  private File determineWhereWasOriginalXSpecFile(XdmNode xspec, File actualSourceFile) throws SaxonApiException {
+    File sourceFile = actualSourceFile;
+    XPathSelector xps = xmlStuff.getXPathCompiler().compile("/x:description/@xspec-original-location").load();
+    xps.setContextItem(xspec);
+    XdmItem item = xps.evaluateSingle();
+    if (item != null) {
+      String value = item.getStringValue();
+      if (!value.isEmpty()) {
+        try {
+          sourceFile = new File(new URI(value));
+        } catch (URISyntaxException ex) {
+          getLog().error("This should never be possible ! Check /x:description/@xspec-original-location", ex);
+        }
+      }
+    }
+    return sourceFile;
   }
 
   private boolean runXsltXspecWithoutCoverage(

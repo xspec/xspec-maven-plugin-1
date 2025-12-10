@@ -37,8 +37,8 @@ import net.sf.saxon.s9api.XdmNode;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.assertj.core.api.Assertions;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 
 import javax.xml.transform.stream.StreamSource;
@@ -62,7 +62,7 @@ public class GetXSpecTypeTest {
         return log;
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         File baseDir = new File(".");
         RunnerOptions options = new RunnerOptions(baseDir);

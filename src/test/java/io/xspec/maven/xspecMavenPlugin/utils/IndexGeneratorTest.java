@@ -1,18 +1,18 @@
 /**
  * Copyright © 2019, Christophe Marchand, XSpec organization
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the <organization> nor the
+ * names of its contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,20 +27,22 @@
 package io.xspec.maven.xspecMavenPlugin.utils;
 
 import io.xspec.maven.xspecMavenPlugin.TestUtils;
-import static io.xspec.maven.xspecMavenPlugin.TestUtils.getBaseDirectory;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultSchematronImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
+
 import net.sf.saxon.Configuration;
 import net.sf.saxon.s9api.Processor;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 
 /**
@@ -48,72 +50,89 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  * @author cmarchand
  */
 public class IndexGeneratorTest extends TestUtils {
-    private final RunnerOptions options = new RunnerOptions(new File("target/tests"));
-    private XmlStuff xmlStuff;
-    private boolean isDoctypeAndHtmlTagOnSameLine;
-    
-    @Before
-    public void before() {
-        Configuration saxonConfiguration = Configuration.newConfiguration();
-        Processor proc = new Processor(saxonConfiguration);
-        isDoctypeAndHtmlTagOnSameLine = proc.getSaxonProductVersion().startsWith("10.")
-                || proc.getSaxonProductVersion().startsWith("11.");
-        try {
-            xmlStuff = new XmlStuff(
-                    new SaxonOptions(),
-                    getLog(), 
-                    new DefaultXSpecImplResources(), 
-                    new DefaultXSpecPluginResources(), 
-                    new DefaultSchematronImplResources(), 
-                    getBaseDirectory(), 
-                    options, 
-                    new Properties());
-        } catch(Exception ex) {
-            throw new RuntimeException("while creating xmlStuff", ex);
-        }
-    }
+  private final RunnerOptions options = new RunnerOptions(new File("target/tests"));
+  private XmlStuff xmlStuff;
+  private boolean isDoctypeAndHtmlTagOnSameLine;
 
-    @Test
-    public void constructorTest() {
-        IndexGenerator gen = new IndexGenerator(options, Collections.EMPTY_LIST, xmlStuff);
-        assertEquals("options are not set", this.options, gen.options);
-        assertEquals("processedFiles are not set", 0, gen.processedFiles.size());
+  @BeforeEach
+  public void before() {
+    Configuration saxonConfiguration = Configuration.newConfiguration();
+    Processor proc = new Processor(saxonConfiguration);
+    isDoctypeAndHtmlTagOnSameLine = proc.getSaxonProductVersion()
+                                        .startsWith("10.")
+        || proc.getSaxonProductVersion()
+               .startsWith("11.");
+    try {
+      xmlStuff = new XmlStuff(
+          new SaxonOptions(),
+          getLog(),
+          new DefaultXSpecImplResources(),
+          new DefaultXSpecPluginResources(),
+          new DefaultSchematronImplResources(),
+          getBaseDirectory(),
+          options,
+          new Properties());
+    } catch (Exception ex) {
+      throw new RuntimeException("while creating xmlStuff", ex);
     }
-    
-    @Test
-    public void indexFileTest() throws Exception {
-        IndexGenerator gen = new IndexGenerator(options, Collections.EMPTY_LIST, xmlStuff);
-        gen.generateIndex();
-        File expected = new File(options.reportDir, "index.html");
-        assertTrue("index file not generated", expected.exists());
-        assertTrue("index file is not a file", expected.isFile());
-        // WARNING: with Saxon 9.8, there are only 38 lines
-        long nbLines = 41;
-        if (isDoctypeAndHtmlTagOnSameLine) {
-            // Saxon 10 and 11 have DOCTYPE on same line as <html> tag
-            nbLines--;
-        }
-        assertEquals("index should have "+nbLines+" lines", nbLines, Files.lines(expected.toPath()).count());
+  }
+
+  @Test
+  public void constructorTest() {
+    List<ProcessedFile> emptyList = Collections.emptyList();
+    IndexGenerator gen = new IndexGenerator(options, emptyList, xmlStuff);
+    Assertions.assertThat(gen.options)
+              .isEqualTo(this.options);
+    Assertions.assertThat(gen.processedFiles)
+              .hasSize(0);
+  }
+
+  @Test
+  public void indexFileTest() throws Exception {
+    List<ProcessedFile> emptyList = Collections.emptyList();
+    IndexGenerator gen = new IndexGenerator(options, emptyList, xmlStuff);
+    gen.generateIndex();
+    File expected = new File(options.reportDir, "index.html");
+    Assertions.assertThat(expected)
+              .exists();
+    Assertions.assertThat(expected)
+              .isFile();
+    // WARNING: with Saxon 9.8, there are only 38 lines
+    int nbLines = 41;
+    if (isDoctypeAndHtmlTagOnSameLine) {
+      // Saxon 10 and 11 have DOCTYPE on same line as <html> tag
+      nbLines--;
     }
-    
-    @Test
-    public void tableContentTest() throws Exception {
-        ProcessedFile pf = new ProcessedFile(
-                options.testDir, 
-                new File(options.testDir, "toto.xspec"),
-                options.reportDir, 
-                new File(options.reportDir, "toto.xspec.html"));
-        pf.setResults(10, 1, 1, 1, 13);
-        IndexGenerator gen = new IndexGenerator(options, Arrays.asList(pf), xmlStuff);
-        gen.generateIndex();
-        File expected = new File(options.reportDir, "index.html");
-        // WARNING : with Saxon 9.8, there are only 39 lines
-        long nbLines = 42 + 3 + 8;
-        if (isDoctypeAndHtmlTagOnSameLine) {
-            // Saxon 10 and 11 have DOCTYPE on same line as <html> tag
-            nbLines--;
-        }
-        assertEquals("index should have "+nbLines+" lines", nbLines, Files.lines(expected.toPath()).count());
-        assertEquals("table should contain 1 red row", 1, Files.lines(expected.toPath()).filter(l -> l.contains("class=\"error\"")).count());
+    Assertions
+        .assertThat(Files.lines(expected.toPath()))
+        .hasSize(nbLines);
+  }
+
+  @Test
+  public void tableContentTest() throws Exception {
+    ProcessedFile pf = new ProcessedFile(
+        options.testDir,
+        new File(options.testDir, "toto.xspec"),
+        options.reportDir,
+        new File(options.reportDir, "toto.xspec.html"));
+    pf.setResults(10, 1, 1, 1, 13);
+    IndexGenerator gen = new IndexGenerator(options, Arrays.asList(pf), xmlStuff);
+    gen.generateIndex();
+    File expected = new File(options.reportDir, "index.html");
+    // WARNING : with Saxon 9.8, there are only 39 lines
+    int nbLines = 42 + 3 + 8;
+    if (isDoctypeAndHtmlTagOnSameLine) {
+      // Saxon 10 and 11 have DOCTYPE on same line as <html> tag
+      nbLines--;
     }
+    Assertions
+        .assertThat(Files.lines(expected.toPath()))
+        .hasSize(nbLines);
+    Assertions
+        .assertThat(
+            Files
+                .lines(expected.toPath())
+                .filter(l -> l.contains("class=\"error\"")))
+        .hasSize(1);
+  }
 }

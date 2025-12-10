@@ -1,18 +1,18 @@
 /**
  * Copyright © 2018, Christophe Marchand, XSpec organization
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the <organization> nor the
+ * names of its contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ * <p>
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,14 +31,17 @@ import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecImplResources;
 import io.xspec.maven.xspecMavenPlugin.resources.impl.DefaultXSpecPluginResources;
 import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Properties;
+
 import net.sf.saxon.s9api.XdmNode;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.Test;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 
 /**
@@ -46,124 +49,172 @@ import top.marchand.maven.saxon.utils.SaxonOptions;
  * @author cmarchand
  */
 public class XSpecRunnerTest extends TestUtils {
-    
-    
-    @Test
-    public void extractCssResourceTest() throws Exception {
-        XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
-        runner.setResources(
-                new DefaultXSpecImplResources(), 
-                new DefaultSchematronImplResources(), 
-                new DefaultXSpecPluginResources());
-        RunnerOptions options = new RunnerOptions(getBaseDirectory());
-        runner.setEnvironment(new Properties(), options);
 
-        runner.init(new SaxonOptions());
-        runner.extractCssResource();
-        File expectedFile = new File(getBaseDirectory(), "target/xspec-reports/resources/test-report.css");
-        assertTrue(expectedFile.getAbsolutePath()+" does not exists", expectedFile.exists());
-    }
-    
-    @Test(expected = IllegalStateException.class)
-    public void initBeforeSetResources() throws Exception {
-        XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
-        runner.init(new SaxonOptions());
-        fail("calling init(SaxonOption) before setResources(...) should throw an IllegalStateException");
-    }
-    
-    @Test(expected = IllegalStateException.class)
-    public void initTwiceTest() throws Exception {
-        SaxonOptions saxonOptions = new SaxonOptions();
-        XSpecRunner runner = getNewRunner(saxonOptions);
-        getLog().debug("calling runner.init a second time");
-        runner.init(saxonOptions);
-        fail("init shouldn't be call twice without throwing an IllegalStateException");
-    }
 
-    @Test
-    public void processXsltXspecTest() throws Exception {
-        RunnerOptions options = new RunnerOptions(getBaseDirectory());
-        options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
-        XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
-        File xspecFile = new File(getBaseDirectory().getParentFile().getParentFile().getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1.xspec");
-        XdmNode node = runner.getXmlStuff().getDocumentBuilder().build(xspecFile);
-        assertNotNull("node is null", node);
-        assertNotNull("node baseUri is null", node.getBaseURI());
-        runner.initProcessedFiles(1);
-        boolean ret = runner.processXsltXSpec(node);
-        assertTrue("XSpec failed", ret);
-    }
-    @Test
-    public void generateIndexWithXsltTest() throws Exception {
-        RunnerOptions options = new RunnerOptions(getBaseDirectory());
-        options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
-        XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
-        File xspecFile = new File(getBaseDirectory().getParentFile().getParentFile().getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1.xspec");
-        XdmNode node = runner.getXmlStuff().getDocumentBuilder().build(xspecFile);
-        assertNotNull("node is null", node);
-        assertNotNull("node baseUri is null", node.getBaseURI());
-        runner.initProcessedFiles(1);
-        runner.processXsltXSpec(node);
-        runner.generateIndex();
-        File indexFile = new File(options.reportDir,"index.html");
-        assertTrue("index file "+indexFile.getAbsolutePath()+" does not exist", indexFile.exists());
-        assertTrue("index file "+indexFile.getAbsolutePath()+" is not a file", indexFile.isFile());
-    }
-    
-    @Test
-    public void executeTest() throws Exception {
-        getLog().info("baseDirectory: "+getBaseDirectory().getAbsolutePath());
-        RunnerOptions options = new RunnerOptions(getBaseDirectory());
-        options.testDir=new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
-        getLog().info("reportDirectory: "+options.reportDir.getAbsolutePath());
-        XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
-        runner.execute();
-        File indexFile = new File(options.reportDir,"index.html");
-        runner.generateIndex();
-        assertTrue("index file "+indexFile.getAbsolutePath()+" does not exist", indexFile.exists());
-        assertTrue("index file "+indexFile.getAbsolutePath()+" is not a file", indexFile.isFile());
-    }
-    
-    @Test
-    public void findAllXSpecsTests() throws Exception {
-        RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
-        runnerOptions.testDir = new File(getTestDirectory(), "xsltTestCase");
-        XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
-        List<File> xspecFiles = runner.findAllXSpecs();
-        assertEquals("wrong number of XSpecFiles found", 1, xspecFiles.size());
-        assertEquals("wrong file found", "xsl1.xspec", xspecFiles.get(0).getName());
-    }
+  @Test
+  public void extractCssResourceTest() throws Exception {
+    XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
+    runner.setResources(
+        new DefaultXSpecImplResources(),
+        new DefaultSchematronImplResources(),
+        new DefaultXSpecPluginResources());
+    RunnerOptions options = new RunnerOptions(getBaseDirectory());
+    runner.setEnvironment(new Properties(), options);
 
-    @Test
-    public void findAllXSpecsTestsNonExistingDir() throws Exception {
-        RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
-        runnerOptions.testDir = new File(getTestDirectory(), "unexisting");
-        XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
-        List<File> xspecFiles = runner.findAllXSpecs();
-        assertEquals("wrong number of XSpecFiles found", 0, xspecFiles.size());
-    }
+    runner.init(new SaxonOptions());
+    runner.extractCssResource();
+    File expectedFile = new File(getBaseDirectory(), "target/xspec-reports/resources/test-report.css");
+    Assertions
+        .assertThat(expectedFile.exists())
+        .as(expectedFile.getAbsolutePath() + " does not exists")
+        .isTrue();
+  }
 
-    @Test
-    public void findAllXSpecsTestsDirWithoutXspecFiles() throws Exception {
-        RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
-        runnerOptions.testDir = new File(getTestDirectory(), "samples");
-        XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
-        List<File> xspecFiles = runner.findAllXSpecs();
-        assertEquals("wrong number of XSpecFiles found", 0, xspecFiles.size());
-    }
+  @Test
+  public void initBeforeSetResources() throws Exception {
+    XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
+    Assertions
+        .assertThatThrownBy(() -> runner.init(new SaxonOptions()))
+        .isInstanceOf(IllegalStateException.class);
+  }
 
-    private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
-        XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
-        runner.setResources(
-                new DefaultXSpecImplResources(), 
-                new DefaultSchematronImplResources(), 
-                new DefaultXSpecPluginResources());
-        runner.setEnvironment(new Properties(), runnerOptions);
-        runner.init(saxonOptions);
-        return runner;
-    }
-    
-    private XSpecRunner getNewRunner(SaxonOptions saxonOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
-       return  getNewRunner(saxonOptions, new RunnerOptions(getBaseDirectory()));
-    }
+  @Test
+  public void initTwiceTest() throws Exception {
+    SaxonOptions saxonOptions = new SaxonOptions();
+    XSpecRunner runner = getNewRunner(saxonOptions);
+    Assertions
+        .assertThatThrownBy(() -> runner.init(saxonOptions))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  public void processXsltXspecTest() throws Exception {
+    RunnerOptions options = new RunnerOptions(getBaseDirectory());
+    options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
+    XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
+    File xspecFile = new File(getBaseDirectory().getParentFile()
+                                                .getParentFile()
+                                                .getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1" +
+        ".xspec");
+    XdmNode node = runner.getXmlStuff()
+                         .getDocumentBuilder()
+                         .build(xspecFile);
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(node)
+        .as("node is null")
+        .isNotNull();
+    softly
+        .assertThat(node.getBaseURI())
+        .as("node baseUri is null")
+        .isNotNull();
+    runner.initProcessedFiles(1);
+    boolean ret = runner.processXsltXSpec(node);
+    softly
+        .assertThat(ret)
+        .as("XSpec failed")
+        .isTrue();
+    softly.assertAll();
+  }
+
+  @Test
+  public void generateIndexWithXsltTest() throws Exception {
+    RunnerOptions options = new RunnerOptions(getBaseDirectory());
+    options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
+    XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
+    File xspecFile = new File(getBaseDirectory().getParentFile()
+                                                .getParentFile()
+                                                .getParentFile(), "src/test/resources/filesToTest/xsltTestCase/xsl1" +
+        ".xspec");
+    XdmNode node = runner.getXmlStuff()
+                         .getDocumentBuilder()
+                         .build(xspecFile);
+    Assertions.assertThat(node)
+              .isNotNull();
+    Assertions.assertThat(node.getBaseURI())
+              .isNotNull();
+    runner.initProcessedFiles(1);
+    runner.processXsltXSpec(node);
+    runner.generateIndex();
+    File indexFile = new File(options.reportDir, "index.html");
+    Assertions
+        .assertThat(indexFile)
+        .as("index file " + indexFile.getAbsolutePath() + " does not exist")
+        .exists();
+    Assertions.assertThat(indexFile)
+              .as("index file " + indexFile.getAbsolutePath() + " is not a file")
+              .isFile();
+  }
+
+  @Test
+  public void executeTest() throws Exception {
+    getLog().info("baseDirectory: " + getBaseDirectory().getAbsolutePath());
+    RunnerOptions options = new RunnerOptions(getBaseDirectory());
+    options.testDir = new File(getProjectDirectory(), "src/test/resources/filesToTest/xsltTestCase");
+    getLog().info("reportDirectory: " + options.reportDir.getAbsolutePath());
+    XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
+    runner.execute();
+    File indexFile = new File(options.reportDir, "index.html");
+    runner.generateIndex();
+    Assertions.assertThat(indexFile)
+              .as("index file " + indexFile.getAbsolutePath() + " does not exist")
+              .exists();
+    Assertions.assertThat(indexFile)
+              .as("index file " + indexFile.getAbsolutePath() + " is not a file")
+              .isFile();
+  }
+
+  @Test
+  public void findAllXSpecsTests() throws Exception {
+    RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
+    runnerOptions.testDir = new File(getTestDirectory(), "xsltTestCase");
+    XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
+    List<File> xspecFiles = runner.findAllXSpecs();
+    Assertions
+        .assertThat(xspecFiles)
+        .as("wrong number of XSpecFiles found")
+        .hasSize(1);
+    Assertions
+        .assertThat(xspecFiles.get(0))
+        .as("wrong XSpecFiles found")
+        .hasName("xsl1.xspec");
+  }
+
+  @Test
+  public void findAllXSpecsTestsNonExistingDir() throws Exception {
+    RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
+    runnerOptions.testDir = new File(getTestDirectory(), "unexisting");
+    XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
+    List<File> xspecFiles = runner.findAllXSpecs();
+    Assertions
+        .assertThat(xspecFiles)
+        .hasSize(0);
+  }
+
+  @Test
+  public void findAllXSpecsTestsDirWithoutXspecFiles() throws Exception {
+    RunnerOptions runnerOptions = new RunnerOptions(getProjectDirectory());
+    runnerOptions.testDir = new File(getTestDirectory(), "samples");
+    XSpecRunner runner = getNewRunner(new SaxonOptions(), runnerOptions);
+    List<File> xspecFiles = runner.findAllXSpecs();
+    Assertions
+        .assertThat(xspecFiles)
+        .hasSize(0);
+  }
+
+  private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, MalformedURLException, URISyntaxException {
+    XSpecRunner runner = new XSpecRunner(getLog(), getBaseDirectory());
+    runner.setResources(
+        new DefaultXSpecImplResources(),
+        new DefaultSchematronImplResources(),
+        new DefaultXSpecPluginResources());
+    runner.setEnvironment(new Properties(), runnerOptions);
+    runner.init(saxonOptions);
+    return runner;
+  }
+
+  private XSpecRunner getNewRunner(SaxonOptions saxonOptions) throws IllegalStateException, XSpecPluginException,
+      MalformedURLException, URISyntaxException {
+    return getNewRunner(saxonOptions, new RunnerOptions(getBaseDirectory()));
+  }
 }

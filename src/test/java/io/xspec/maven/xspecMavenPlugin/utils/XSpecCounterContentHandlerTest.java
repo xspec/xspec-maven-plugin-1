@@ -37,28 +37,23 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
 import io.xspec.maven.xspecMavenPlugin.XSpecRunner;
 import net.sf.saxon.Configuration;
 import net.sf.saxon.lib.DirectResourceResolver;
-import net.sf.saxon.lib.Resource;
 import net.sf.saxon.lib.ResourceRequest;
 import net.sf.saxon.lib.ResourceResolver;
 import org.apache.maven.plugin.logging.Log;
 
-import static org.junit.Assert.*;
-
+import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.Attributes2Impl;
 import org.xml.sax.helpers.AttributesImpl;
-import org.xmlresolver.Resolver;
 
 /**
  * Tests XSpecCounterCH
@@ -68,7 +63,7 @@ import org.xmlresolver.Resolver;
 public class XSpecCounterContentHandlerTest {
   private Configuration configuration;
 
-  @Before
+  @BeforeEach
   public void initConf() {
     configuration = new Configuration();
   }
@@ -82,11 +77,13 @@ public class XSpecCounterContentHandlerTest {
         createLogProvider(log),
         false); // false de-activates logs
     counter.startElement(XSpecRunner.XSPEC_NS, "description", "x:description", new Attributes2Impl());
-    assertEquals(0, log.getDebugCount());
-    assertEquals(0, log.getInfoCount());
-    assertEquals(0, log.getWarnCount());
-    assertEquals(0, log.getErrorCount());
-    assertNull(log.getLastLog());
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(log.getDebugCount()).isEqualTo(0);
+    softly.assertThat(log.getInfoCount()).isEqualTo(0);
+    softly.assertThat(log.getWarnCount()).isEqualTo(0);
+    softly.assertThat(log.getErrorCount()).isEqualTo(0);
+    softly.assertThat(log.getLastLog()).isNull();
+    softly.assertAll();
   }
 
   @Test
@@ -99,11 +96,15 @@ public class XSpecCounterContentHandlerTest {
         true,    // true activates logs
         "[XSpec] ");
     counter.startElement(XSpecRunner.XSPEC_NS, "description", "x:description", new Attributes2Impl());
-    assertEquals(1, log.getDebugCount());
-    assertEquals(0, log.getInfoCount());
-    assertEquals(0, log.getWarnCount());
-    assertEquals(0, log.getErrorCount());
-    assertEquals("[XSpec] startElement(http://www.jenitennison.com/xslt/xspec,description,x:description,...)", log.getLastLog());
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(log.getDebugCount()).isEqualTo(1);
+    softly.assertThat(log.getInfoCount()).isEqualTo(0);
+    softly.assertThat(log.getWarnCount()).isEqualTo(0);
+    softly.assertThat(log.getErrorCount()).isEqualTo(0);
+    softly
+        .assertThat(log.getLastLog())
+        .isEqualTo("[XSpec] startElement(http://www.jenitennison.com/xslt/xspec,description,x:description,...)");
+    softly.assertAll();
   }
 
   @Test
@@ -123,8 +124,10 @@ public class XSpecCounterContentHandlerTest {
     counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "scenario", "x:scenario");
     counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description");
     counter.endDocument();
-    assertEquals(1, counter.getTests());
-    assertEquals(0, counter.getPendingTests());
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(counter.getTests()).isEqualTo(1);
+    softly.assertThat(counter.getPendingTests()).isEqualTo(0);
+    softly.assertAll();
   }
 
   @Test
@@ -146,8 +149,10 @@ public class XSpecCounterContentHandlerTest {
     counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "scenario", "x:scenario");
     counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description");
     counter.endDocument();
-    assertEquals(1, counter.getTests());
-    assertEquals(1, counter.getPendingTests());
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(counter.getTests()).isEqualTo(1);
+    softly.assertThat(counter.getPendingTests()).isEqualTo(1);
+    softly.assertAll();
   }
 
   @Test
@@ -171,8 +176,10 @@ public class XSpecCounterContentHandlerTest {
     counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "pending", "x:pending");
     counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description");
     counter.endDocument();
-    assertEquals(1, counter.getTests());
-    assertEquals(1, counter.getPendingTests());
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(counter.getTests()).isEqualTo(1);
+    softly.assertThat(counter.getPendingTests()).isEqualTo(1);
+    softly.assertAll();
   }
 
   @Test
@@ -193,7 +200,7 @@ public class XSpecCounterContentHandlerTest {
     counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "import", "x:import");
     counter.endElement(XSpecCounterContentHandler.XSPEC_NS, "description", "x:description");
     counter.endDocument();
-    assertEquals(1, counter.getTests());
+    Assertions.assertThat(counter.getTests()).isEqualTo(1);
   }
 
   @Test
