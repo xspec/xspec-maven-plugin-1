@@ -771,7 +771,10 @@ public class XSpecRunner implements LogProvider {
     }
   }
 
-  // for UT only
+  /**
+   * Only for unit tets, should not be exposed anymore
+   * @return all XML stuff
+   */
   XmlStuff getXmlStuff() {
     return xmlStuff;
   }
@@ -784,4 +787,13 @@ public class XSpecRunner implements LogProvider {
     processedFiles = new ArrayList<>(size);
   }
 
+  /**
+   * Only for unit tests, should not be exposed
+   * @return true if all tests passed
+   */
+  boolean succeed() {
+    return processedFiles
+        .stream()
+        .allMatch(f -> f.getPassed() == f.getTotal());
+  }
 }

@@ -33,14 +33,18 @@ import io.xspec.maven.xspecMavenPlugin.utils.RunnerOptions;
 import io.xspec.maven.xspecMavenPlugin.utils.XSpecPluginException;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 import net.sf.saxon.s9api.XdmNode;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import top.marchand.maven.saxon.utils.SaxonOptions;
 
@@ -131,9 +135,9 @@ public class XSpecRunnerTest extends TestUtils {
                          .build(xspecFile);
     SoftAssertions softly = new SoftAssertions();
     softly.assertThat(node)
-              .isNotNull();
+          .isNotNull();
     softly.assertThat(node.getBaseURI())
-              .isNotNull();
+          .isNotNull();
     runner.initProcessedFiles(1);
     runner.processXsltXSpec(node);
     runner.generateIndex();
@@ -201,6 +205,78 @@ public class XSpecRunnerTest extends TestUtils {
     Assertions
         .assertThat(xspecFiles)
         .hasSize(0);
+  }
+
+  @Test
+  @DisplayName("Check that XSL are tested from their original location")
+  public void test_10() throws Exception {
+    // Given
+    String directory = "files-with-resources";
+    RunnerOptions options = new RunnerOptions(getBaseDirectory());
+    options.testDir = new File(getProjectDirectory(), "src/test/resources/" + directory);
+    XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
+
+    String testedXsl = "xsl-with-one-xsl-imported.xsl";
+    String testedXslAbsoluteFilename = new File(options.testDir, testedXsl).getAbsolutePath();
+    String xspecCompiledFilename = "target/xspec-reports/xsl-with-one-xsl-imported.xspec/xslt/xsl-with-one-xsl-imported.xspec.xslt";
+    File xspecCompiledFile = new File(getBaseDirectory(), xspecCompiledFilename);
+    // When
+    runner.execute();
+    // Then
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(xspecCompiledFile)
+        .exists()
+        .isFile();
+    Optional<String> referencedXsl = Files
+        .lines(xspecCompiledFile.toPath())
+        .filter(s -> s.contains("<xsl:import"))
+        .map(s -> s.replaceFirst(".*href=\"file:", ""))
+        .map(s -> s.replaceFirst("\".*$", ""))
+        .map(String::trim)
+        .findFirst();
+    softly
+        .assertThat(referencedXsl)
+        .isNotEmpty()
+        .hasValue(testedXslAbsoluteFilename);
+    softly.assertAll();
+  }
+  @Test
+  @DisplayName("Check that XSL can read their references")
+  public void test_11() throws Exception {
+    // Given
+    String directory = "files-with-references";
+    RunnerOptions options = new RunnerOptions(getBaseDirectory());
+    options.testDir = new File(getProjectDirectory(), "src/test/resources/" + directory);
+    XSpecRunner runner = getNewRunner(new SaxonOptions(), options);
+
+//    String testedXsl = "xsl-with-one-xsl-imported.xsl";
+//    String testedXslAbsoluteFilename = new File(options.testDir, testedXsl).getAbsolutePath();
+//    String xspecCompiledFilename = "target/xspec-reports/xsl-with-one-xsl-imported.xspec/xslt/xsl-with-one-xsl-imported.xspec.xslt";
+//    File xspecCompiledFile = new File(getBaseDirectory(), xspecCompiledFilename);
+    // When
+    runner.execute();
+    // Then
+    SoftAssertions softly = new SoftAssertions();
+//    softly
+//        .assertThat(xspecCompiledFile)
+//        .exists()
+//        .isFile();
+//    Optional<String> referencedXsl = Files
+//        .lines(xspecCompiledFile.toPath())
+//        .filter(s -> s.contains("<xsl:import"))
+//        .map(s -> s.replaceFirst(".*href=\"file:", ""))
+//        .map(s -> s.replaceFirst("\".*$", ""))
+//        .map(String::trim)
+//        .findFirst();
+//    softly
+//        .assertThat(referencedXsl)
+//        .isNotEmpty()
+//        .hasValue(testedXslAbsoluteFilename);
+    softly
+        .assertThat(runner.succeed())
+        .isTrue();
+    softly.assertAll();
   }
 
   private XSpecRunner getNewRunner(SaxonOptions saxonOptions, RunnerOptions runnerOptions) throws IllegalStateException, XSpecPluginException, URISyntaxException {

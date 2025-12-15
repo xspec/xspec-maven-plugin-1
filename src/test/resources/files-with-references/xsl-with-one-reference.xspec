@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:description 
+  xmlns:x="http://www.jenitennison.com/xslt/xspec"
+  xmlns:urn="io:xspec:tests:imported"
+  xslt-version="3.0"
+  stylesheet="xsl-with-one-reference.xsl"
+  >
+  
+  <x:scenario label="Given an element, it must be copied as is">
+    <x:call function="urn:inner"/>
+    <x:expect label="line 1" select="'line 1'"/>
+  </x:scenario>
+  
+</x:description>

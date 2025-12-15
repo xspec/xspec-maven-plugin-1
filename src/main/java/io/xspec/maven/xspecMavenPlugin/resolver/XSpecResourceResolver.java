@@ -33,26 +33,26 @@ public class XSpecResourceResolver implements ResourceResolver {
   }
   @Override
   public Source resolve(ResourceRequest resourceRequest) throws XPathException {
-    logger.debug("resolve("+toString(resourceRequest)+")");
+//    logger.debug("resolve("+toString(resourceRequest)+")");
     Source ret = first.resolve(resourceRequest);
     if (ret != null) {
-      logger.debug("   resolved by CP -> "+ret.getSystemId());
+//      logger.debug("   resolved by CP -> "+ret.getSystemId());
       return ret;
     } else {
       ret = second.resolve(resourceRequest);
     }
     if (ret != null) {
-      logger.debug("   resolved by catalog -> "+ret.getSystemId());
+//      logger.debug("   resolved by catalog -> "+ret.getSystemId());
       return ret;
     } else {
       ret = third.resolve(resourceRequest);
     }
     if (ret != null) {
-      logger.debug("   resolved by direct -> "+ret.getSystemId());
+//      logger.debug("   resolved by direct -> "+ret.getSystemId());
       return ret;
     }
     outputRequest(resourceRequest);
-    logger.error("Dans le cul !");
+    logger.error("Missed !");
     return null;
   }
 
@@ -84,7 +84,7 @@ public class XSpecResourceResolver implements ResourceResolver {
     ret += "   nature:         " + resourceRequest.nature + "\n";
     ret += "   purpose:        " + resourceRequest.purpose + "\n";
     ret += "   uriIsNamespace: " + resourceRequest.uriIsNamespace + "\n";
-    logger.debug(ret);
+    logger.error(ret);
   }
 
 }
